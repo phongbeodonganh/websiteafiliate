@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Newspaper, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Lock, User, Newspaper, ArrowRight, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
@@ -69,19 +69,6 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
-          {/* Quick Demo Credentials */}
-          <div className="mb-6 bg-slate-950/80 border border-slate-800/80 p-4 rounded-xl text-xs space-y-1.5">
-            <p className="font-semibold text-amber-400 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> Pre-seeded Demo Accounts:
-            </p>
-            <p className="text-slate-300">
-              • <strong>Admin (Full Access):</strong> <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">admin</code> / <code className="bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-mono">password123</code>
-            </p>
-            <p className="text-slate-300">
-              • <strong>Editor (Isolated Access):</strong> <code className="bg-slate-900 px-1.5 py-0.5 rounded text-cyan-300 font-mono">editor_john</code> / <code className="bg-slate-900 px-1.5 py-0.5 rounded text-cyan-300 font-mono">password123</code>
-            </p>
-          </div>
-
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -100,7 +87,7 @@ export default function AdminLoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin or editor_john"
+                  placeholder="Enter your username"
                   required
                   className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner"
                 />

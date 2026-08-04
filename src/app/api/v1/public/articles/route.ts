@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { articles, users, categories, subCategories } from '@/lib/db/schema';
-import { eq, and, desc, like, or, count } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel, CategoryModel, SubCategoryModel } from '@/lib/db/models';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const tab = searchParams.get('tab'); // 'hot' | 'popular' | 'latest'
+  const tab = searchParams.get('tab');
   const categorySlug = searchParams.get('category_slug') || searchParams.get('category');
   const subCategorySlug = searchParams.get('sub_category_slug') || searchParams.get('sub_category');
   const searchKeyword = searchParams.get('search') || searchParams.get('q');
@@ -14,69 +13,66 @@ export async function GET(req: Request) {
   const offset = (page - 1) * limit;
 
   try {
-    const conditions = [eq(articles.status, 'published')];
+    await connectToDatabase();
+    const filter: Record<string, any> = { status: 'published' };
 
     if (tab === 'hot') {
-      conditions.push(eq(articles.isFeatured, true));
+      filter.is_featured = true;
     }
 
     if (categorySlug) {
-      const catObj = await db.select().from(categories).where(eq(categories.slug, categorySlug)).get();
-      if (catObj) conditions.push(eq(articles.categoryId, catObj.id));
+      const catObj = await CategoryModel.findOne({ slug: categorySlug });
+      if (catObj) filter.category_id = catObj._id;
     }
 
     if (subCategorySlug) {
-      const subCatObj = await db.select().from(subCategories).where(eq(subCategories.slug, subCategorySlug)).get();
-      if (subCatObj) conditions.push(eq(articles.subCategoryId, subCatObj.id));
+      const subCatObj = await SubCategoryModel.findOne({ slug: subCategorySlug });
+      if (subCatObj) filter.sub_category_id = subCatObj._id;
     }
 
     if (searchKeyword && searchKeyword.trim()) {
-      const kw = `%${searchKeyword.trim()}%`;
-      conditions.push(or(like(articles.title, kw), like(articles.excerpt, kw), like(articles.content, kw))!);
+      const regex = new RegExp(searchKeyword.trim(), 'i');
+      filter.$or = [{ title: regex }, { excerpt: regex }, { content: regex }];
     }
 
-    const orderColumn = tab === 'popular' ? desc(articles.viewCount) : desc(articles.createdAt);
+    const sortOption: Record<string, 1 | -1> = tab === 'popular' ? { view_count: -1 } : { created_at: -1 };
 
-    // Total count for pagination
-    const countResult = await db
-      .select({ total: count() })
-      .from(articles)
-      .where(and(...conditions));
-
-    const total = countResult[0]?.total || 0;
+    const total = await ArticleModel.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
 
-    const result = await db
-      .select({
-        id: articles.id,
-        title: articles.title,
-        slug: articles.slug,
-        excerpt: articles.excerpt,
-        content: articles.content,
-        status: articles.status,
-        isFeatured: articles.isFeatured,
-        viewCount: articles.viewCount,
-        revenue: articles.revenue,
-        metaTitle: articles.metaTitle,
-        metaDescription: articles.metaDescription,
-        thumbnailUrl: articles.thumbnailUrl,
-        createdAt: articles.createdAt,
-        updatedAt: articles.updatedAt,
-        authorName: users.name,
-        authorAvatar: users.avatar,
-        categoryName: categories.name,
-        categorySlug: categories.slug,
-        subCategoryName: subCategories.name,
-        subCategorySlug: subCategories.slug,
-      })
-      .from(articles)
-      .leftJoin(users, eq(articles.authorId, users.id))
-      .leftJoin(categories, eq(articles.categoryId, categories.id))
-      .leftJoin(subCategories, eq(articles.subCategoryId, subCategories.id))
-      .where(and(...conditions))
-      .orderBy(orderColumn)
-      .limit(limit)
-      .offset(offset);
+    const rawArticles = await ArticleModel.find(filter)
+      .populate('author_id', 'name avatar username')
+      .populate('category_id', 'name slug')
+      .populate('sub_category_id', 'name slug')
+      .sort(sortOption)
+      .skip(offset)
+      .limit(limit);
+
+    const result = rawArticles.map((art) => {
+      const doc = art.toObject();
+      return {
+        id: doc._id.toString(),
+        title: doc.title,
+        slug: doc.slug,
+        excerpt: doc.excerpt,
+        content: doc.content,
+        status: doc.status,
+        isFeatured: doc.is_featured,
+        viewCount: doc.view_count,
+        revenue: doc.revenue,
+        metaTitle: doc.meta_title,
+        metaDescription: doc.meta_description,
+        thumbnailUrl: doc.thumbnail_url,
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+        authorName: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Unknown Tác giả',
+        authorAvatar: (doc.author_id as any)?.avatar || 'A',
+        categoryName: (doc.category_id as any)?.name || null,
+        categorySlug: (doc.category_id as any)?.slug || null,
+        subCategoryName: (doc.sub_category_id as any)?.name || null,
+        subCategorySlug: (doc.sub_category_id as any)?.slug || null,
+      };
+    });
 
     return NextResponse.json({
       status: 'success',

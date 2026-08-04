@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { articles, users } from '@/lib/db/schema';
-import { eq, sql, and } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel } from '@/lib/db/models';
 
 export async function GET(
   req: Request,
@@ -9,27 +8,9 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    await connectToDatabase();
 
-    // Tìm bài viết theo slug và status = 'published'
-    const article = await db
-      .select({
-        id: articles.id,
-        title: articles.title,
-        slug: articles.slug,
-        content: articles.content,
-        status: articles.status,
-        viewCount: articles.viewCount,
-        metaTitle: articles.metaTitle,
-        metaDescription: articles.metaDescription,
-        thumbnailUrl: articles.thumbnailUrl,
-        createdAt: articles.createdAt,
-        updatedAt: articles.updatedAt,
-        author: users.username,
-      })
-      .from(articles)
-      .leftJoin(users, eq(articles.authorId, users.id))
-      .where(and(eq(articles.slug, slug), eq(articles.status, 'published')))
-      .get();
+    const article = await ArticleModel.findOne({ slug, status: 'published' }).populate('author_id', 'username name');
 
     if (!article) {
       return NextResponse.json(
@@ -38,17 +19,26 @@ export async function GET(
       );
     }
 
-    // Tự động tăng lượt xem view_count
-    await db
-      .update(articles)
-      .set({ viewCount: sql`${articles.viewCount} + 1` })
-      .where(eq(articles.id, article.id));
+    article.view_count += 1;
+    await article.save();
+
+    const doc = article.toObject();
 
     return NextResponse.json({
       status: 'success',
       data: {
-        ...article,
-        viewCount: article.viewCount + 1,
+        id: doc._id.toString(),
+        title: doc.title,
+        slug: doc.slug,
+        content: doc.content,
+        status: doc.status,
+        viewCount: doc.view_count,
+        metaTitle: doc.meta_title,
+        metaDescription: doc.meta_description,
+        thumbnailUrl: doc.thumbnail_url,
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+        author: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Admin',
       },
     });
   } catch (error) {

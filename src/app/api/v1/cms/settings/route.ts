@@ -1,40 +1,63 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { settings } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { SettingModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { eq, sql } from 'drizzle-orm';
 
-// GET /api/v1/cms/settings - Lấy cấu hình hệ thống & SEO
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    let currentSettings = await db.select().from(settings).where(eq(settings.id, 1)).get();
+    await connectToDatabase();
+    let currentSettings = await SettingModel.findOne();
 
     if (!currentSettings) {
-      const [inserted] = await db
-        .insert(settings)
-        .values({
-          id: 1,
-          siteTitle: 'NEXUS FINANCE',
-          metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
-          focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
-          canonicalUrl: 'https://nexusfinance.vn',
-          hreflang: 'vi-VN',
-          geoTarget: 'VN',
-        })
-        .returning();
-      currentSettings = inserted;
+      currentSettings = await SettingModel.create({
+        site_title: 'NEXUS FINANCE GLOBAL',
+        metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
+        focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
+        canonicalUrl: 'https://nexusfinance.global',
+        hreflang: 'en-US',
+        geoTarget: 'GLOBAL',
+      });
     }
+
+    const doc = currentSettings.toObject();
 
     return NextResponse.json({
       status: 'success',
-      data: currentSettings,
+      data: {
+        id: doc._id.toString(),
+        siteTitle: doc.site_title,
+        metaDescription: doc.metaDescription,
+        focusKeywords: doc.focusKeywords,
+        canonicalUrl: doc.canonicalUrl,
+        hreflang: doc.hreflang,
+        geoTarget: doc.geoTarget,
+        businessName: doc.businessName,
+        businessAddress: doc.businessAddress,
+        businessPhone: doc.businessPhone,
+        ogImageUrl: doc.ogImageUrl,
+        schemaJsonld: doc.schemaJsonld,
+        headScripts: doc.headScripts,
+        primaryColor: doc.primary_color,
+        accentColor: doc.accent_color,
+        themeMode: doc.theme_mode,
+        fontFamily: doc.font_family,
+        logoUrl: doc.logo_url,
+        faviconUrl: doc.favicon_url,
+        bannerText: doc.banner_text,
+        footerText: doc.footer_text,
+        customCss: doc.custom_css,
+        geoLatitude: doc.geo_latitude,
+        geoLongitude: doc.geo_longitude,
+        geoRegionName: doc.geo_region_name,
+        geoPlacename: doc.geo_placename,
+        updatedAt: doc.updated_at,
+      },
     });
   } catch (error) {
     return NextResponse.json({ status: 'error', message: 'Lỗi lấy cấu hình hệ thống' }, { status: 500 });
   }
 }
 
-// PUT /api/v1/cms/settings - Lưu cấu hình hệ thống & SEO (Admin Only)
 export async function PUT(req: Request) {
   const currentUser = getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
@@ -71,48 +94,74 @@ export async function PUT(req: Request) {
       geoPlacename,
     } = body;
 
-    const payload = {
-      id: 1,
-      siteTitle,
-      metaDescription,
-      focusKeywords,
-      canonicalUrl,
-      hreflang,
-      geoTarget,
-      businessName,
-      businessAddress,
-      businessPhone,
-      ogImageUrl,
-      schemaJsonld,
-      headScripts,
-      primaryColor,
-      accentColor,
-      themeMode,
-      fontFamily,
-      logoUrl,
-      faviconUrl,
-      bannerText,
-      footerText,
-      customCss,
-      geoLatitude,
-      geoLongitude,
-      geoRegionName,
-      geoPlacename,
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-    };
+    await connectToDatabase();
+    let currentSettings = await SettingModel.findOne();
 
-    const [updated] = await db
-      .insert(settings)
-      .values(payload)
-      .onConflictDoUpdate({
-        target: settings.id,
-        set: payload,
-      })
-      .returning();
+    if (!currentSettings) {
+      currentSettings = new SettingModel();
+    }
+
+    if (siteTitle !== undefined) currentSettings.site_title = siteTitle;
+    if (metaDescription !== undefined) currentSettings.metaDescription = metaDescription;
+    if (focusKeywords !== undefined) currentSettings.focusKeywords = focusKeywords;
+    if (canonicalUrl !== undefined) currentSettings.canonicalUrl = canonicalUrl;
+    if (hreflang !== undefined) currentSettings.hreflang = hreflang;
+    if (geoTarget !== undefined) currentSettings.geoTarget = geoTarget;
+    if (businessName !== undefined) currentSettings.businessName = businessName;
+    if (businessAddress !== undefined) currentSettings.businessAddress = businessAddress;
+    if (businessPhone !== undefined) currentSettings.businessPhone = businessPhone;
+    if (ogImageUrl !== undefined) currentSettings.ogImageUrl = ogImageUrl;
+    if (schemaJsonld !== undefined) currentSettings.schemaJsonld = schemaJsonld;
+    if (headScripts !== undefined) currentSettings.headScripts = headScripts;
+    if (primaryColor !== undefined) currentSettings.primary_color = primaryColor;
+    if (accentColor !== undefined) currentSettings.accent_color = accentColor;
+    if (themeMode !== undefined) currentSettings.theme_mode = themeMode;
+    if (fontFamily !== undefined) currentSettings.font_family = fontFamily;
+    if (logoUrl !== undefined) currentSettings.logo_url = logoUrl;
+    if (faviconUrl !== undefined) currentSettings.favicon_url = faviconUrl;
+    if (bannerText !== undefined) currentSettings.banner_text = bannerText;
+    if (footerText !== undefined) currentSettings.footer_text = footerText;
+    if (customCss !== undefined) currentSettings.custom_css = customCss;
+    if (geoLatitude !== undefined) currentSettings.geo_latitude = Number(geoLatitude);
+    if (geoLongitude !== undefined) currentSettings.geo_longitude = Number(geoLongitude);
+    if (geoRegionName !== undefined) currentSettings.geo_region_name = geoRegionName;
+    if (geoPlacename !== undefined) currentSettings.geo_placename = geoPlacename;
+    currentSettings.updated_at = new Date();
+
+    await currentSettings.save();
+    const doc = currentSettings.toObject();
 
     return NextResponse.json({
       status: 'success',
-      data: updated,
+      data: {
+        id: doc._id.toString(),
+        siteTitle: doc.site_title,
+        metaDescription: doc.metaDescription,
+        focusKeywords: doc.focusKeywords,
+        canonicalUrl: doc.canonicalUrl,
+        hreflang: doc.hreflang,
+        geoTarget: doc.geoTarget,
+        businessName: doc.businessName,
+        businessAddress: doc.businessAddress,
+        businessPhone: doc.businessPhone,
+        ogImageUrl: doc.ogImageUrl,
+        schemaJsonld: doc.schemaJsonld,
+        headScripts: doc.headScripts,
+        primaryColor: doc.primary_color,
+        accentColor: doc.accent_color,
+        themeMode: doc.theme_mode,
+        fontFamily: doc.font_family,
+        logoUrl: doc.logo_url,
+        faviconUrl: doc.favicon_url,
+        bannerText: doc.banner_text,
+        footerText: doc.footer_text,
+        customCss: doc.custom_css,
+        geoLatitude: doc.geo_latitude,
+        geoLongitude: doc.geo_longitude,
+        geoRegionName: doc.geo_region_name,
+        geoPlacename: doc.geo_placename,
+        updatedAt: doc.updated_at,
+      },
     });
   } catch (error) {
     console.error('Settings save error:', error);

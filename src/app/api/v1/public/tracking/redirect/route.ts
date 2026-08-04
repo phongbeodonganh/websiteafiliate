@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { clickLogs, affiliateLinks, articles } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ClickLogModel, AffiliateLinkModel, ArticleModel } from '@/lib/db/models';
 import { getClientIp, appendSubId } from '@/lib/utils';
 
 export async function GET(req: Request) {
@@ -14,24 +13,24 @@ export async function GET(req: Request) {
   }
 
   try {
+    await connectToDatabase();
     const ipAddress = getClientIp(req);
 
-    // Ghi log click
-    await db.insert(clickLogs).values({
-      articleId: Number(articleId),
-      affiliateLinkId: Number(affiliateLinkId),
-      ipAddress,
+    await ClickLogModel.create({
+      article_id: articleId,
+      affiliate_link_id: affiliateLinkId,
+      ip_address: ipAddress,
     });
 
-    const article = await db.select().from(articles).where(eq(articles.id, Number(articleId))).get();
-    const affLink = await db.select().from(affiliateLinks).where(eq(affiliateLinks.id, Number(affiliateLinkId))).get();
+    const article = await ArticleModel.findById(articleId);
+    const affLink = await AffiliateLinkModel.findById(affiliateLinkId);
 
     if (!affLink) {
       return NextResponse.redirect(new URL('/', req.url));
     }
 
     const subId = article ? article.slug : `art_${articleId}`;
-    const destinationUrl = appendSubId(affLink.baseUrl, subId);
+    const destinationUrl = appendSubId(affLink.base_url, subId);
 
     return NextResponse.redirect(destinationUrl, 302);
   } catch (error) {

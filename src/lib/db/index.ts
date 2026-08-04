@@ -10,26 +10,26 @@ sqlite.pragma('journal_mode = WAL');
 export const db = drizzle(sqlite, { schema });
 
 export function initDb() {
-  try { sqlite.exec(`ALTER TABLE affiliate_links ADD COLUMN is_top_pick INTEGER DEFAULT 0;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE categories ADD COLUMN description TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE categories ADD COLUMN meta_title TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE categories ADD COLUMN meta_description TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE sub_categories ADD COLUMN description TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE sub_categories ADD COLUMN meta_title TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE sub_categories ADD COLUMN meta_description TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN primary_color TEXT DEFAULT '#0f172a';`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN accent_color TEXT DEFAULT '#f59e0b';`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN theme_mode TEXT DEFAULT 'dark';`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN font_family TEXT DEFAULT 'Inter';`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN logo_url TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN favicon_url TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN banner_text TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN footer_text TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN custom_css TEXT;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_latitude REAL DEFAULT 40.7128;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_longitude REAL DEFAULT -74.0060;`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_region_name TEXT DEFAULT 'US-NY';`); } catch {}
-  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_placename TEXT DEFAULT 'New York';`); } catch {}
+  try { sqlite.exec(`ALTER TABLE affiliate_links ADD COLUMN is_top_pick INTEGER DEFAULT 0;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE categories ADD COLUMN description TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE categories ADD COLUMN meta_title TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE categories ADD COLUMN meta_description TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE sub_categories ADD COLUMN description TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE sub_categories ADD COLUMN meta_title TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE sub_categories ADD COLUMN meta_description TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN primary_color TEXT DEFAULT '#0f172a';`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN accent_color TEXT DEFAULT '#f59e0b';`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN theme_mode TEXT DEFAULT 'dark';`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN font_family TEXT DEFAULT 'Inter';`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN logo_url TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN favicon_url TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN banner_text TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN footer_text TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN custom_css TEXT;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_latitude REAL DEFAULT 40.7128;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_longitude REAL DEFAULT -74.0060;`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_region_name TEXT DEFAULT 'US-NY';`); } catch { }
+  try { sqlite.exec(`ALTER TABLE settings ADD COLUMN geo_placename TEXT DEFAULT 'New York';`); } catch { }
 
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS users (

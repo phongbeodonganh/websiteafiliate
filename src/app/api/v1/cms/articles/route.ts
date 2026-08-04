@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { articles, users, categories, subCategories } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { eq, desc } from 'drizzle-orm';
 import { slugify } from '@/lib/utils';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
@@ -13,40 +12,40 @@ export async function GET(req: Request) {
   }
 
   try {
-    let baseQuery = db
-      .select({
-        id: articles.id,
-        authorId: articles.authorId,
-        categoryId: articles.categoryId,
-        subCategoryId: articles.subCategoryId,
-        title: articles.title,
-        slug: articles.slug,
-        excerpt: articles.excerpt,
-        content: articles.content,
-        status: articles.status,
-        isFeatured: articles.isFeatured,
-        viewCount: articles.viewCount,
-        revenue: articles.revenue,
-        metaTitle: articles.metaTitle,
-        metaDescription: articles.metaDescription,
-        thumbnailUrl: articles.thumbnailUrl,
-        createdAt: articles.createdAt,
-        updatedAt: articles.updatedAt,
-        authorName: users.name,
-        categoryName: categories.name,
-        subCategoryName: subCategories.name,
-      })
-      .from(articles)
-      .leftJoin(users, eq(articles.authorId, users.id))
-      .leftJoin(categories, eq(articles.categoryId, categories.id))
-      .leftJoin(subCategories, eq(articles.subCategoryId, subCategories.id));
+    await connectToDatabase();
+    const filter = user.role === 'admin' ? {} : { author_id: user.userId.toString() };
 
-    let articleList;
-    if (user.role === 'admin') {
-      articleList = await baseQuery.orderBy(desc(articles.createdAt));
-    } else {
-      articleList = await baseQuery.where(eq(articles.authorId, user.userId)).orderBy(desc(articles.createdAt));
-    }
+    const rawArticles = await ArticleModel.find(filter)
+      .populate('author_id', 'name username')
+      .populate('category_id', 'name slug')
+      .populate('sub_category_id', 'name slug')
+      .sort({ created_at: -1 });
+
+    const articleList = rawArticles.map((art) => {
+      const doc = art.toObject();
+      return {
+        id: doc._id.toString(),
+        authorId: doc.author_id ? (doc.author_id as any)._id?.toString() || doc.author_id.toString() : null,
+        authorName: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Unknown',
+        categoryId: doc.category_id ? (doc.category_id as any)._id?.toString() || doc.category_id.toString() : null,
+        categoryName: (doc.category_id as any)?.name || null,
+        subCategoryId: doc.sub_category_id ? (doc.sub_category_id as any)._id?.toString() || doc.sub_category_id.toString() : null,
+        subCategoryName: (doc.sub_category_id as any)?.name || null,
+        title: doc.title,
+        slug: doc.slug,
+        excerpt: doc.excerpt,
+        content: doc.content,
+        status: doc.status,
+        isFeatured: doc.is_featured,
+        viewCount: doc.view_count,
+        revenue: doc.revenue,
+        metaTitle: doc.meta_title,
+        metaDescription: doc.meta_description,
+        thumbnailUrl: doc.thumbnail_url,
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+      };
+    });
 
     return NextResponse.json({
       status: 'success',
@@ -86,35 +85,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: 'error', message: 'Title and Content are required' }, { status: 400 });
     }
 
+    await connectToDatabase();
     let finalSlug = slug ? slugify(slug) : slugify(title);
-    const existing = await db.select().from(articles).where(eq(articles.slug, finalSlug)).get();
+    const existing = await ArticleModel.findOne({ slug: finalSlug });
     if (existing) {
       finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
     }
 
-    const [newArticle] = await db
-      .insert(articles)
-      .values({
-        authorId: user.userId,
-        categoryId: categoryId ? Number(categoryId) : null,
-        subCategoryId: subCategoryId ? Number(subCategoryId) : null,
-        title,
-        slug: finalSlug,
-        excerpt: excerpt || '',
-        content,
-        status: status || 'draft',
-        isFeatured: Boolean(isFeatured),
-        revenue: revenue ? Number(revenue) : 0,
-        metaTitle: metaTitle || title,
-        metaDescription: metaDescription || '',
-        thumbnailUrl: thumbnailUrl || '',
-      })
-      .returning();
+    const newArticle = await ArticleModel.create({
+      author_id: user.userId.toString(),
+      category_id: categoryId || undefined,
+      sub_category_id: subCategoryId || undefined,
+      title,
+      slug: finalSlug,
+      excerpt: excerpt || '',
+      content,
+      status: status || 'draft',
+      is_featured: Boolean(isFeatured),
+      revenue: revenue ? Number(revenue) : 0,
+      meta_title: metaTitle || title,
+      meta_description: metaDescription || '',
+      thumbnail_url: thumbnailUrl || '',
+    });
 
     return NextResponse.json(
       {
         status: 'success',
-        data: newArticle,
+        data: {
+          id: newArticle._id.toString(),
+          ...newArticle.toObject(),
+        },
       },
       { status: 201 }
     );

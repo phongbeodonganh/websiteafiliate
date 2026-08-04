@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { articles, users, clickLogs, subscribers } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel, UserModel, ClickLogModel, SubscriberModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { eq, desc, sql } from 'drizzle-orm';
 
 export async function GET(req: Request) {
   const user = getAuthUser(req);
@@ -11,91 +10,72 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1. Lấy danh sách bài viết theo phân quyền
-    let articleQuery = db
-      .select({
-        id: articles.id,
-        authorId: articles.authorId,
-        title: articles.title,
-        slug: articles.slug,
-        status: articles.status,
-        viewCount: articles.viewCount,
-        revenue: articles.revenue,
-        createdAt: articles.createdAt,
-        authorName: users.name,
-      })
-      .from(articles)
-      .leftJoin(users, eq(articles.authorId, users.id));
+    await connectToDatabase();
+    const filter = user.role === 'admin' ? {} : { author_id: user.userId.toString() };
 
-    let viewArticles;
-    if (user.role === 'admin') {
-      viewArticles = await articleQuery;
-    } else {
-      viewArticles = await db
-        .select({
-          id: articles.id,
-          authorId: articles.authorId,
-          title: articles.title,
-          slug: articles.slug,
-          status: articles.status,
-          viewCount: articles.viewCount,
-          revenue: articles.revenue,
-          createdAt: articles.createdAt,
-          authorName: users.name,
-        })
-        .from(articles)
-        .leftJoin(users, eq(articles.authorId, users.id))
-        .where(eq(articles.authorId, user.userId));
-    }
+    const rawArticles = await ArticleModel.find(filter)
+      .populate('author_id', 'name username role avatar')
+      .sort({ created_at: -1 });
 
-    // Lấy số lượt click từ click_logs
-    const allClicks = await db.select().from(clickLogs);
-    const clickMap: Record<number, number> = {};
+    const allClicks = await ClickLogModel.find();
+    const clickMap: Record<string, number> = {};
     allClicks.forEach((log) => {
-      if (log.articleId) {
-        clickMap[log.articleId] = (clickMap[log.articleId] || 0) + 1;
+      if (log.article_id) {
+        const artIdStr = log.article_id.toString();
+        clickMap[artIdStr] = (clickMap[artIdStr] || 0) + 1;
       }
     });
 
-    // Thêm trường clicks vào danh sách bài viết
-    const articlesWithClicks = viewArticles.map((art) => ({
-      ...art,
-      clicks: clickMap[art.id] || (art.viewCount > 0 ? Math.floor(art.viewCount * 0.07) : 0), // Mock click tỷ lệ nếu chưa có log thực
-    }));
+    const articlesWithClicks = rawArticles.map((art) => {
+      const doc = art.toObject();
+      const artIdStr = doc._id.toString();
+      const clicks = clickMap[artIdStr] || (doc.view_count > 0 ? Math.floor(doc.view_count * 0.07) : 0);
+      return {
+        id: artIdStr,
+        authorId: doc.author_id ? (doc.author_id as any)._id?.toString() || doc.author_id.toString() : null,
+        authorName: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Unknown',
+        title: doc.title,
+        slug: doc.slug,
+        status: doc.status,
+        viewCount: doc.view_count,
+        revenue: doc.revenue || 0,
+        createdAt: doc.created_at,
+        clicks,
+      };
+    });
 
     const totalViews = articlesWithClicks.reduce((sum, a) => sum + a.viewCount, 0);
     const totalClicks = articlesWithClicks.reduce((sum, a) => sum + a.clicks, 0);
-    const totalRevenue = articlesWithClicks.reduce((sum, a) => sum + (a.revenue || 0), 0);
+    const totalRevenue = articlesWithClicks.reduce((sum, a) => sum + a.revenue, 0);
     const conversionRate = totalViews > 0 ? Number(((totalClicks / totalViews) * 100).toFixed(1)) : 0;
 
-    // Top Trending Articles
     const topArticles = [...articlesWithClicks]
       .filter((a) => a.status === 'published')
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 5);
 
-    // Top Creators (Chỉ Admin)
     let topEditors: any[] = [];
     if (user.role === 'admin') {
-      const allUsers = await db.select().from(users);
-      const allPublished = await db
-        .select()
-        .from(articles)
-        .where(eq(articles.status, 'published'));
+      const allUsers = await UserModel.find();
+      const allPublished = await ArticleModel.find({ status: 'published' });
 
-      const userStats: Record<number, any> = {};
+      const userStats: Record<string, any> = {};
 
       allPublished.forEach((article) => {
-        const clicks = clickMap[article.id] || (article.viewCount > 0 ? Math.floor(article.viewCount * 0.07) : 0);
-        if (!userStats[article.authorId]) {
-          const authorObj = allUsers.find((u) => u.id === article.authorId);
-          userStats[article.authorId] = {
+        const artDoc = article.toObject();
+        const artIdStr = artDoc._id.toString();
+        const clicks = clickMap[artIdStr] || (artDoc.view_count > 0 ? Math.floor(artDoc.view_count * 0.07) : 0);
+        const authorIdStr = artDoc.author_id ? artDoc.author_id.toString() : 'unknown';
+
+        if (!userStats[authorIdStr]) {
+          const authorObj = allUsers.find((u) => u._id.toString() === authorIdStr);
+          userStats[authorIdStr] = {
             user: {
-              id: authorObj?.id,
-              name: authorObj?.name || authorObj?.username,
-              username: authorObj?.username,
-              role: authorObj?.role,
-              avatar: authorObj?.avatar || authorObj?.username?.[0]?.toUpperCase(),
+              id: authorObj ? authorObj._id.toString() : authorIdStr,
+              name: authorObj?.name || authorObj?.username || 'Unknown',
+              username: authorObj?.username || 'unknown',
+              role: authorObj?.role || 'author',
+              avatar: authorObj?.avatar || authorObj?.username?.[0]?.toUpperCase() || 'U',
             },
             views: 0,
             clicks: 0,
@@ -105,15 +85,15 @@ export async function GET(req: Request) {
           };
         }
 
-        userStats[article.authorId].views += article.viewCount;
-        userStats[article.authorId].clicks += clicks;
-        userStats[article.authorId].revenue += article.revenue || 0;
+        userStats[authorIdStr].views += artDoc.view_count;
+        userStats[authorIdStr].clicks += clicks;
+        userStats[authorIdStr].revenue += artDoc.revenue || 0;
 
-        if (clicks > userStats[article.authorId].maxClicks) {
-          userStats[article.authorId].maxClicks = clicks;
-          userStats[article.authorId].bestArticle = {
-            title: article.title,
-            revenue: article.revenue,
+        if (clicks > userStats[authorIdStr].maxClicks) {
+          userStats[authorIdStr].maxClicks = clicks;
+          userStats[authorIdStr].bestArticle = {
+            title: artDoc.title,
+            revenue: artDoc.revenue,
           };
         }
       });
@@ -123,8 +103,7 @@ export async function GET(req: Request) {
         .slice(0, 5);
     }
 
-    const allSubscribers = await db.select().from(subscribers);
-    const totalSubscribers = allSubscribers.length;
+    const totalSubscribers = await SubscriberModel.countDocuments();
 
     return NextResponse.json({
       status: 'success',

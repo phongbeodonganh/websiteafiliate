@@ -1,29 +1,45 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { categories, subCategories, articles } from '@/lib/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { CategoryModel, SubCategoryModel, ArticleModel } from '@/lib/db/models';
 
 export async function GET() {
   try {
-    const allCategories = await db.select().from(categories);
-    const allSubCategories = await db.select().from(subCategories);
-    const allArticles = await db.select({
-      id: articles.id,
-      categoryId: articles.categoryId,
-      subCategoryId: articles.subCategoryId,
-    }).from(articles).where(eq(articles.status, 'published'));
+    await connectToDatabase();
+    const allCategories = await CategoryModel.find();
+    const allSubCategories = await SubCategoryModel.find();
+    const allArticles = await ArticleModel.find({ status: 'published' }, 'category_id sub_category_id');
 
     const data = allCategories.map((cat) => {
+      const catDoc = cat.toObject();
+      const catIdStr = catDoc._id.toString();
+
       const subs = allSubCategories
-        .filter((sub) => sub.categoryId === cat.id)
-        .map((sub) => ({
-          ...sub,
-          articleCount: allArticles.filter((a) => a.subCategoryId === sub.id).length,
-        }));
+        .filter((sub) => sub.category_id.toString() === catIdStr)
+        .map((sub) => {
+          const subDoc = sub.toObject();
+          const subIdStr = subDoc._id.toString();
+          return {
+            id: subIdStr,
+            categoryId: catIdStr,
+            name: subDoc.name,
+            slug: subDoc.slug,
+            description: subDoc.description,
+            metaTitle: subDoc.meta_title,
+            metaDescription: subDoc.meta_description,
+            createdAt: subDoc.created_at,
+            articleCount: allArticles.filter((a) => a.sub_category_id?.toString() === subIdStr).length,
+          };
+        });
 
       return {
-        ...cat,
-        articleCount: allArticles.filter((a) => a.categoryId === cat.id).length,
+        id: catIdStr,
+        name: catDoc.name,
+        slug: catDoc.slug,
+        description: catDoc.description,
+        metaTitle: catDoc.meta_title,
+        metaDescription: catDoc.meta_description,
+        createdAt: catDoc.created_at,
+        articleCount: allArticles.filter((a) => a.category_id?.toString() === catIdStr).length,
         subCategories: subs,
       };
     });

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { articles } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { eq, sql } from 'drizzle-orm';
 import { slugify } from '@/lib/utils';
 
 // PUT /api/v1/cms/articles/:id (With 403 Ownership Check)
@@ -17,14 +16,14 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const articleId = Number(id);
+    await connectToDatabase();
 
-    const existingArticle = await db.select().from(articles).where(eq(articles.id, articleId)).get();
+    const existingArticle = await ArticleModel.findById(id);
     if (!existingArticle) {
       return NextResponse.json({ status: 'error', message: 'Article not found' }, { status: 404 });
     }
 
-    if (user.role !== 'admin' && existingArticle.authorId !== user.userId) {
+    if (user.role !== 'admin' && existingArticle.author_id.toString() !== user.userId.toString()) {
       return NextResponse.json(
         { status: 'error', message: '403 Forbidden - You are not authorized to edit this article' },
         { status: 403 }
@@ -47,32 +46,28 @@ export async function PUT(
       thumbnailUrl,
     } = body;
 
-    const updateData: Record<string, any> = {
-      updatedAt: sql`CURRENT_TIMESTAMP`,
-    };
+    if (title !== undefined) existingArticle.title = title;
+    if (slug !== undefined) existingArticle.slug = slugify(slug);
+    if (excerpt !== undefined) existingArticle.excerpt = excerpt;
+    if (content !== undefined) existingArticle.content = content;
+    if (status !== undefined) existingArticle.status = status;
+    if (isFeatured !== undefined) existingArticle.is_featured = Boolean(isFeatured);
+    if (categoryId !== undefined) existingArticle.category_id = categoryId || undefined;
+    if (subCategoryId !== undefined) existingArticle.sub_category_id = subCategoryId || undefined;
+    if (revenue !== undefined) existingArticle.revenue = Number(revenue);
+    if (metaTitle !== undefined) existingArticle.meta_title = metaTitle;
+    if (metaDescription !== undefined) existingArticle.meta_description = metaDescription;
+    if (thumbnailUrl !== undefined) existingArticle.thumbnail_url = thumbnailUrl;
+    existingArticle.updated_at = new Date();
 
-    if (title !== undefined) updateData.title = title;
-    if (slug !== undefined) updateData.slug = slugify(slug);
-    if (excerpt !== undefined) updateData.excerpt = excerpt;
-    if (content !== undefined) updateData.content = content;
-    if (status !== undefined) updateData.status = status;
-    if (isFeatured !== undefined) updateData.isFeatured = Boolean(isFeatured);
-    if (categoryId !== undefined) updateData.categoryId = categoryId ? Number(categoryId) : null;
-    if (subCategoryId !== undefined) updateData.subCategoryId = subCategoryId ? Number(subCategoryId) : null;
-    if (revenue !== undefined) updateData.revenue = Number(revenue);
-    if (metaTitle !== undefined) updateData.metaTitle = metaTitle;
-    if (metaDescription !== undefined) updateData.metaDescription = metaDescription;
-    if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl;
-
-    const [updatedArticle] = await db
-      .update(articles)
-      .set(updateData)
-      .where(eq(articles.id, articleId))
-      .returning();
+    await existingArticle.save();
 
     return NextResponse.json({
       status: 'success',
-      data: updatedArticle,
+      data: {
+        id: existingArticle._id.toString(),
+        ...existingArticle.toObject(),
+      },
     });
   } catch (error) {
     console.error('CMS PUT Article error:', error);
@@ -92,21 +87,21 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const articleId = Number(id);
+    await connectToDatabase();
 
-    const existingArticle = await db.select().from(articles).where(eq(articles.id, articleId)).get();
+    const existingArticle = await ArticleModel.findById(id);
     if (!existingArticle) {
       return NextResponse.json({ status: 'error', message: 'Article not found' }, { status: 404 });
     }
 
-    if (user.role !== 'admin' && existingArticle.authorId !== user.userId) {
+    if (user.role !== 'admin' && existingArticle.author_id.toString() !== user.userId.toString()) {
       return NextResponse.json(
         { status: 'error', message: '403 Forbidden - You are not authorized to delete this article' },
         { status: 403 }
       );
     }
 
-    await db.delete(articles).where(eq(articles.id, articleId));
+    await ArticleModel.findByIdAndDelete(id);
 
     return NextResponse.json({
       status: 'success',

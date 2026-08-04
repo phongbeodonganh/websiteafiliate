@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { clickLogs, articles, affiliateLinks } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ClickLogModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { eq, desc } from 'drizzle-orm';
 
 export async function GET(req: Request) {
   const user = getAuthUser(req);
@@ -18,20 +17,24 @@ export async function GET(req: Request) {
   }
 
   try {
-    const logs = await db
-      .select({
-        id: clickLogs.id,
-        articleTitle: articles.title,
-        articleSlug: articles.slug,
-        affiliateName: affiliateLinks.name,
-        ipAddress: clickLogs.ipAddress,
-        clickedAt: clickLogs.clickedAt,
-      })
-      .from(clickLogs)
-      .leftJoin(articles, eq(clickLogs.articleId, articles.id))
-      .leftJoin(affiliateLinks, eq(clickLogs.affiliateLinkId, affiliateLinks.id))
-      .orderBy(desc(clickLogs.clickedAt))
+    await connectToDatabase();
+    const rawLogs = await ClickLogModel.find()
+      .populate('article_id', 'title slug')
+      .populate('affiliate_link_id', 'name')
+      .sort({ clicked_at: -1 })
       .limit(100);
+
+    const logs = rawLogs.map((log) => {
+      const doc = log.toObject();
+      return {
+        id: doc._id.toString(),
+        articleTitle: (doc.article_id as any)?.title || 'Unlinked',
+        articleSlug: (doc.article_id as any)?.slug || '',
+        affiliateName: (doc.affiliate_link_id as any)?.name || 'Direct Link',
+        ipAddress: doc.ip_address || '127.0.0.1',
+        clickedAt: doc.clicked_at,
+      };
+    });
 
     return NextResponse.json({
       status: 'success',

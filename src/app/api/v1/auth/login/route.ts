@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { UserModel } from '@/lib/db/models';
 import { verifyPassword, signToken } from '@/lib/auth';
-import { eq } from 'drizzle-orm';
 
 export async function POST(req: Request) {
   try {
@@ -16,8 +15,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Tìm user theo username
-    const user = await db.select().from(users).where(eq(users.username, username)).get();
+    await connectToDatabase();
+    const user = await UserModel.findOne({ username });
 
     if (!user) {
       return NextResponse.json(
@@ -26,8 +25,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Kiểm tra password
-    const isPasswordValid = await verifyPassword(password, user.passwordHash);
+    if (user.status === 'inactive') {
+      return NextResponse.json(
+        { status: 'error', message: 'Tài khoản đã bị vô hiệu hóa' },
+        { status: 403 }
+      );
+    }
+
+    const isPasswordValid = await verifyPassword(password, user.password_hash);
     if (!isPasswordValid) {
       return NextResponse.json(
         { status: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
@@ -35,9 +40,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Tạo JWT Token
     const tokenPayload = {
-      userId: user.id,
+      userId: user._id.toString(),
       username: user.username,
       role: user.role,
     };
@@ -47,9 +51,11 @@ export async function POST(req: Request) {
       status: 'success',
       token,
       user: {
-        id: user.id,
+        id: user._id.toString(),
         username: user.username,
         role: user.role,
+        name: user.name,
+        avatar: user.avatar,
       },
     });
   } catch (error) {

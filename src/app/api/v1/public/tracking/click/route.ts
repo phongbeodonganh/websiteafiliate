@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { clickLogs, affiliateLinks, articles } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ClickLogModel, AffiliateLinkModel, ArticleModel } from '@/lib/db/models';
 import { getClientIp, appendSubId } from '@/lib/utils';
 
 export async function POST(req: Request) {
@@ -16,18 +15,17 @@ export async function POST(req: Request) {
       );
     }
 
+    await connectToDatabase();
     const ipAddress = getClientIp(req);
 
-    // 1. Ghi log click vào DB
-    await db.insert(clickLogs).values({
-      articleId: Number(article_id),
-      affiliateLinkId: Number(affiliate_link_id),
-      ipAddress,
+    await ClickLogModel.create({
+      article_id,
+      affiliate_link_id,
+      ip_address: ipAddress,
     });
 
-    // 2. Lấy thông tin bài viết và link affiliate gốc
-    const article = await db.select().from(articles).where(eq(articles.id, Number(article_id))).get();
-    const affLink = await db.select().from(affiliateLinks).where(eq(affiliateLinks.id, Number(affiliate_link_id))).get();
+    const article = await ArticleModel.findById(article_id);
+    const affLink = await AffiliateLinkModel.findById(affiliate_link_id);
 
     if (!affLink) {
       return NextResponse.json(
@@ -36,9 +34,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Tạo destination URL có gắn sub_id = article.slug
     const subId = article ? article.slug : `art_${article_id}`;
-    const destinationUrl = appendSubId(affLink.baseUrl, subId);
+    const destinationUrl = appendSubId(affLink.base_url, subId);
 
     return NextResponse.json({
       status: 'success',

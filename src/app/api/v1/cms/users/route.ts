@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users, articles } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { UserModel, ArticleModel } from '@/lib/db/models';
 import { getAuthUser, hashPassword } from '@/lib/auth';
-import { eq, desc } from 'drizzle-orm';
 
-// GET /api/v1/cms/users - Danh sách nhân sự / cộng tác viên (Admin Only)
 export async function GET(req: Request) {
   const currentUser = getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
@@ -15,26 +13,21 @@ export async function GET(req: Request) {
   }
 
   try {
-    const userList = await db
-      .select({
-        id: users.id,
-        username: users.username,
-        role: users.role,
-        name: users.name,
-        status: users.status,
-        avatar: users.avatar,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .orderBy(desc(users.createdAt));
+    await connectToDatabase();
+    const rawUsers = await UserModel.find().sort({ created_at: -1 });
+    const allArticles = await ArticleModel.find({}, 'author_id status');
 
-    // Đếm số bài viết của từng user
-    const allArticles = await db.select().from(articles);
-
-    const dataWithArticleCounts = userList.map((u) => {
-      const userArts = allArticles.filter((a) => a.authorId === u.id);
+    const dataWithArticleCounts = rawUsers.map((u) => {
+      const uDoc = u.toObject();
+      const userArts = allArticles.filter((a) => a.author_id.toString() === uDoc._id.toString());
       return {
-        ...u,
+        id: uDoc._id.toString(),
+        username: uDoc.username,
+        role: uDoc.role,
+        name: uDoc.name,
+        status: uDoc.status,
+        avatar: uDoc.avatar,
+        createdAt: uDoc.created_at,
         totalArticles: userArts.length,
         publishedArticles: userArts.filter((a) => a.status === 'published').length,
       };
@@ -49,7 +42,6 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/v1/cms/users - Thêm user / cộng tác viên mới (Admin Only)
 export async function POST(req: Request) {
   const currentUser = getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
@@ -70,7 +62,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const existing = await db.select().from(users).where(eq(users.username, username)).get();
+    await connectToDatabase();
+    const existing = await UserModel.findOne({ username });
     if (existing) {
       return NextResponse.json(
         { status: 'error', message: 'Tên đăng nhập đã tồn tại trên hệ thống' },
@@ -81,23 +74,20 @@ export async function POST(req: Request) {
     const passwordHash = await hashPassword(password);
     const avatar = name ? name[0].toUpperCase() : username[0].toUpperCase();
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        username,
-        passwordHash,
-        role: role || 'editor',
-        name: name || username,
-        status: status || 'active',
-        avatar,
-      })
-      .returning();
+    const newUser = await UserModel.create({
+      username,
+      password_hash: passwordHash,
+      role: role || 'editor',
+      name: name || username,
+      status: status || 'active',
+      avatar,
+    });
 
     return NextResponse.json(
       {
         status: 'success',
         data: {
-          id: newUser.id,
+          id: newUser._id.toString(),
           username: newUser.username,
           role: newUser.role,
           name: newUser.name,

@@ -4,9 +4,8 @@ import AffiliateTracker from '@/components/AffiliateTracker';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Eye, Calendar, User, ArrowLeft, Share2, ShieldCheck, Tag, Globe, ChevronRight } from 'lucide-react';
-import { db } from '@/lib/db';
-import { articles, users, settings, categories, subCategories } from '@/lib/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel } from '@/lib/db/models';
 import type { Metadata } from 'next';
 
 export const revalidate = 0;
@@ -17,11 +16,8 @@ interface ArticlePageProps {
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const article = await db
-    .select()
-    .from(articles)
-    .where(and(eq(articles.slug, slug), eq(articles.status, 'published')))
-    .get();
+  await connectToDatabase();
+  const article = await ArticleModel.findOne({ slug, status: 'published' });
 
   if (!article) {
     return {
@@ -29,8 +25,8 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     };
   }
 
-  const title = article.metaTitle || article.title;
-  const description = article.metaDescription || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
+  const title = article.meta_title || article.title;
+  const description = article.meta_description || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
 
   return {
     title: `${title} | NEXUS FINANCE GLOBAL`,
@@ -45,10 +41,10 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       siteName: 'NEXUS FINANCE GLOBAL',
       locale: 'en_US',
       type: 'article',
-      publishedTime: article.createdAt || undefined,
+      publishedTime: article.created_at ? new Date(article.created_at).toISOString() : undefined,
       images: [
         {
-          url: article.thumbnailUrl || 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1200&auto=format&fit=crop',
+          url: article.thumbnail_url || 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1200&auto=format&fit=crop',
           width: 1200,
           height: 630,
           alt: title,
@@ -60,65 +56,52 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
 export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const { slug } = await params;
+  await connectToDatabase();
 
-  const article = await db
-    .select({
-      id: articles.id,
-      title: articles.title,
-      slug: articles.slug,
-      excerpt: articles.excerpt,
-      content: articles.content,
-      viewCount: articles.viewCount,
-      revenue: articles.revenue,
-      metaTitle: articles.metaTitle,
-      metaDescription: articles.metaDescription,
-      thumbnailUrl: articles.thumbnailUrl,
-      createdAt: articles.createdAt,
-      authorName: users.name,
-      authorAvatar: users.avatar,
-      categoryName: categories.name,
-    })
-    .from(articles)
-    .leftJoin(users, eq(articles.authorId, users.id))
-    .leftJoin(categories, eq(articles.categoryId, categories.id))
-    .where(and(eq(articles.slug, slug), eq(articles.status, 'published')))
-    .get();
+  const article = await ArticleModel.findOne({ slug, status: 'published' })
+    .populate('author_id', 'name username avatar')
+    .populate('category_id', 'name slug');
 
   if (!article) {
     notFound();
   }
 
   // Increment view count
-  await db
-    .update(articles)
-    .set({ viewCount: sql`${articles.viewCount} + 1` })
-    .where(eq(articles.id, article.id));
+  article.view_count += 1;
+  await article.save();
+
+  const doc = article.toObject();
 
   // Related articles
-  const relatedArticles = await db
-    .select({
-      id: articles.id,
-      title: articles.title,
-      slug: articles.slug,
-      thumbnailUrl: articles.thumbnailUrl,
-      viewCount: articles.viewCount,
-    })
-    .from(articles)
-    .where(and(eq(articles.status, 'published'), sql`${articles.id} != ${article.id}`))
-    .limit(3);
+  const rawRelated = await ArticleModel.find({
+    status: 'published',
+    _id: { $ne: doc._id },
+  }).limit(3);
+
+  const relatedArticles = rawRelated.map((rel) => ({
+    id: rel._id.toString(),
+    title: rel.title,
+    slug: rel.slug,
+    thumbnailUrl: rel.thumbnail_url,
+    viewCount: rel.view_count,
+  }));
+
+  const authorName = (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Global Analyst';
+  const categoryName = (doc.category_id as any)?.name || 'Global Strategy';
+  const formattedDate = doc.created_at ? new Date(doc.created_at).toISOString().split('T')[0] : '';
 
   // Schema NewsArticle JSON-LD in English
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
-    headline: article.title,
-    description: article.metaDescription || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150),
-    image: [article.thumbnailUrl || 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1200&auto=format&fit=crop'],
-    datePublished: article.createdAt,
-    dateModified: article.createdAt,
+    headline: doc.title,
+    description: doc.meta_description || doc.excerpt || doc.content.replace(/<[^>]*>?/gm, '').substring(0, 150),
+    image: [doc.thumbnail_url || 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1200&auto=format&fit=crop'],
+    datePublished: doc.created_at,
+    dateModified: doc.updated_at || doc.created_at,
     author: {
       '@type': 'Person',
-      name: article.authorName || 'Nexus Global Analyst',
+      name: authorName,
     },
     publisher: {
       '@type': 'Organization',
@@ -162,39 +145,39 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           {/* Header */}
           <header className="mb-10 text-center relative z-10">
             <div className="text-amber-400 text-xs font-semibold tracking-widest uppercase mb-3">
-              {article.categoryName || 'Global Strategy'} • In-Depth Analysis
+              {categoryName} • In-Depth Analysis
             </div>
 
             <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
-              {article.title}
+              {doc.title}
             </h1>
 
             <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 border-b border-slate-800 pb-6">
               <span className="flex items-center gap-1.5 text-slate-200">
-                <User size={14} className="text-amber-400" /> By <strong>{article.authorName || 'Global Analyst'}</strong>
+                <User size={14} className="text-amber-400" /> By <strong>{authorName}</strong>
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Calendar size={14} className="text-slate-500" /> {article.createdAt?.split(' ')[0]}
+                <Calendar size={14} className="text-slate-500" /> {formattedDate}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                <Eye size={14} /> {article.viewCount + 1} Views
+                <Eye size={14} /> {doc.view_count} Views
               </span>
             </div>
           </header>
 
           {/* Thumbnail */}
-          {article.thumbnailUrl && (
+          {doc.thumbnail_url && (
             <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-slate-800 mb-10 shadow-2xl">
-              <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
+              <img src={doc.thumbnail_url} alt={doc.title} className="w-full h-full object-cover" />
             </div>
           )}
 
           {/* Content HTML */}
           <div
             className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif prose-headings:text-white prose-headings:font-sans prose-a:text-amber-400 hover:prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: doc.content }}
           />
 
           {/* Transparent Partner Disclosure */}

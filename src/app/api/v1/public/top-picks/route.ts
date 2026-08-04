@@ -1,11 +1,27 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { affiliateLinks } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { AffiliateLinkModel } from '@/lib/db/models';
 
 export async function GET() {
   try {
-    const topPicks = await db.select().from(affiliateLinks).where(eq(affiliateLinks.isTopPick, true));
+    await connectToDatabase();
+    const rawPicks = await AffiliateLinkModel.find({ is_top_pick: true }).sort({ created_at: -1 });
+
+    const topPicks = rawPicks.map((link) => {
+      const doc = link.toObject();
+      return {
+        id: doc._id.toString(),
+        name: doc.name,
+        baseUrl: doc.base_url,
+        base_url: doc.base_url,
+        commission: doc.commission,
+        cookie: doc.cookie,
+        isTopPick: doc.is_top_pick,
+        is_top_pick: doc.is_top_pick,
+        createdAt: doc.created_at,
+      };
+    });
+
     return NextResponse.json({
       status: 'success',
       data: topPicks,

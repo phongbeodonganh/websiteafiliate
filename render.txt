@@ -1,0 +1,29 @@
+Hostname
+An internal hostname used by your Render services.
+dpg-d9opsirl550s73f65ekg-a
+
+Port
+5432
+
+Database
+websiteafiliate
+
+Username
+websiteafiliate_user
+
+Password
+OvRWQyJlsjwBUiFQ94V1C0hwC7gieFFx
+
+
+Internal Database URL
+postgresql://websiteafiliate_user:OvRWQyJlsjwBUiFQ94V1C0hwC7gieFFx@dpg-d9opsirl550s73f65ekg-a/websiteafiliate
+
+
+External Database URL
+postgresql://websiteafiliate_user:OvRWQyJlsjwBUiFQ94V1C0hwC7gieFFx@dpg-d9opsirl550s73f65ekg-a.singapore-postgres.render.com/websiteafiliate
+
+
+PSQL Command
+PGPASSWORD=OvRWQyJlsjwBUiFQ94V1C0hwC7gieFFx psql -h dpg-d9opsirl550s73f65ekg-a.singapore-postgres.render.com -U websiteafiliate_user websiteafiliate
+
+

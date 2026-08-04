@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { UserModel } from '@/lib/db/models';
 import { getAuthUser, hashPassword } from '@/lib/auth';
-import { eq } from 'drizzle-orm';
 
-// PUT /api/v1/cms/users/:id (Admin Only)
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,30 +14,31 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const userId = Number(id);
     const body = await req.json();
     const { name, role, status, password } = body;
 
-    const updateData: Record<string, any> = {};
-    if (name !== undefined) updateData.name = name;
-    if (role !== undefined) updateData.role = role;
-    if (status !== undefined) updateData.status = status;
-    if (password) updateData.passwordHash = await hashPassword(password);
+    await connectToDatabase();
+    const userDoc = await UserModel.findById(id);
 
-    const [updated] = await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, userId))
-      .returning();
+    if (!userDoc) {
+      return NextResponse.json({ status: 'error', message: 'User not found' }, { status: 404 });
+    }
+
+    if (name !== undefined) userDoc.name = name;
+    if (role !== undefined) userDoc.role = role;
+    if (status !== undefined) userDoc.status = status;
+    if (password) userDoc.password_hash = await hashPassword(password);
+
+    await userDoc.save();
 
     return NextResponse.json({
       status: 'success',
       data: {
-        id: updated.id,
-        username: updated.username,
-        role: updated.role,
-        name: updated.name,
-        status: updated.status,
+        id: userDoc._id.toString(),
+        username: userDoc.username,
+        role: userDoc.role,
+        name: userDoc.name,
+        status: userDoc.status,
       },
     });
   } catch (error) {
@@ -47,7 +46,6 @@ export async function PUT(
   }
 }
 
-// DELETE /api/v1/cms/users/:id (Admin Only)
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -59,16 +57,16 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const userId = Number(id);
 
-    if (userId === currentUser.userId) {
+    if (id === currentUser.userId.toString()) {
       return NextResponse.json(
         { status: 'error', message: 'Không thể xóa tài khoản của chính mình' },
         { status: 400 }
       );
     }
 
-    await db.delete(users).where(eq(users.id, userId));
+    await connectToDatabase();
+    await UserModel.findByIdAndDelete(id);
 
     return NextResponse.json({
       status: 'success',

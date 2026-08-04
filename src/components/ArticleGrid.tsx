@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Eye, ArrowUpRight, Star, Loader2, ChevronDown } from 'lucide-react';
 
 export interface ArticleItem {
-  id: number;
+  id: string | number;
   title: string;
   slug: string;
   excerpt?: string | null;

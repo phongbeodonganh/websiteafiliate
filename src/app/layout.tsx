@@ -51,7 +51,7 @@ export default async function RootLayout({
   let sysSettings;
   try {
     sysSettings = await db.select().from(settings).where(eq(settings.id, 1)).get();
-  } catch (e) {}
+  } catch (e) { }
 
   const geoRegion = sysSettings?.geoRegionName || "US-NY";
   const geoPlace = sysSettings?.geoPlacename || "New York";

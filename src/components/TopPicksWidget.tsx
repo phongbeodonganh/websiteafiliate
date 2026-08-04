@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Star, Zap, ExternalLink, ShieldCheck, Clock, Award } from 'lucide-react';
 
 interface TopPick {
-  id: number;
+  id: string | number;
   name: string;
   baseUrl: string;
   commission: string;

@@ -19,9 +19,8 @@ import {
   Cpu,
   Coins,
 } from 'lucide-react';
-import { db } from '@/lib/db';
-import { articles, users, settings, categories, subCategories } from '@/lib/db/schema';
-import { eq, and, desc, like, or, count } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { ArticleModel, CategoryModel, SubCategoryModel, SettingModel } from '@/lib/db/models';
 import type { Metadata } from 'next';
 import PublicNav from '@/components/PublicNav';
 import TopPicksWidget from '@/components/TopPicksWidget';
@@ -48,112 +47,160 @@ async function getHomePageData(
   pageStr: string = '1'
 ) {
   try {
+    await connectToDatabase();
     const page = Math.max(1, parseInt(pageStr, 10));
     const limit = 6;
     const offset = (page - 1) * limit;
 
-    const allCategories = await db.select().from(categories);
-    const allSubCategories = await db.select().from(subCategories);
+    const rawCategories = await CategoryModel.find();
+    const rawSubCategories = await SubCategoryModel.find();
 
-    const formattedCategories = allCategories.map((cat) => ({
-      ...cat,
-      subCategories: allSubCategories.filter((sub) => sub.categoryId === cat.id),
-    }));
+    const formattedCategories = rawCategories.map((cat) => {
+      const catDoc = cat.toObject();
+      const catIdStr = catDoc._id.toString();
+      const subs = rawSubCategories
+        .filter((sub) => sub.category_id.toString() === catIdStr)
+        .map((sub) => ({
+          id: sub._id.toString(),
+          categoryId: catIdStr,
+          name: sub.name,
+          slug: sub.slug,
+          description: sub.description,
+          metaTitle: sub.meta_title,
+          metaDescription: sub.meta_description,
+          createdAt: sub.created_at,
+        }));
+      return {
+        id: catIdStr,
+        name: catDoc.name,
+        slug: catDoc.slug,
+        description: catDoc.description,
+        metaTitle: catDoc.meta_title,
+        metaDescription: catDoc.meta_description,
+        createdAt: catDoc.created_at,
+        subCategories: subs,
+      };
+    });
 
-    const conditions = [eq(articles.status, 'published')];
+    const filter: Record<string, any> = { status: 'published' };
 
     if (tab === 'hot') {
-      conditions.push(eq(articles.isFeatured, true));
+      filter.is_featured = true;
     }
 
     if (categorySlug) {
-      const catObj = allCategories.find((c) => c.slug === categorySlug);
-      if (catObj) conditions.push(eq(articles.categoryId, catObj.id));
+      const catObj = rawCategories.find((c) => c.slug === categorySlug);
+      if (catObj) filter.category_id = catObj._id;
     }
 
     if (subCategorySlug) {
-      const subCatObj = allSubCategories.find((s) => s.slug === subCategorySlug);
-      if (subCatObj) conditions.push(eq(articles.subCategoryId, subCatObj.id));
+      const subCatObj = rawSubCategories.find((s) => s.slug === subCategorySlug);
+      if (subCatObj) filter.sub_category_id = subCatObj._id;
     }
 
     if (searchKeyword && searchKeyword.trim()) {
-      const kw = `%${searchKeyword.trim()}%`;
-      conditions.push(or(like(articles.title, kw), like(articles.excerpt, kw), like(articles.content, kw))!);
+      const regex = new RegExp(searchKeyword.trim(), 'i');
+      filter.$or = [{ title: regex }, { excerpt: regex }, { content: regex }];
     }
 
-    const orderColumn = tab === 'popular' ? desc(articles.viewCount) : desc(articles.createdAt);
+    const sortOption: Record<string, 1 | -1> = tab === 'popular' ? { view_count: -1 } : { created_at: -1 };
 
-    // Count for pagination
-    const countResult = await db.select({ total: count() }).from(articles).where(and(...conditions));
-    const total = countResult[0]?.total || 0;
+    const total = await ArticleModel.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
 
-    const publishedArticles = await db
-      .select({
-        id: articles.id,
-        title: articles.title,
-        slug: articles.slug,
-        excerpt: articles.excerpt,
-        content: articles.content,
-        metaDescription: articles.metaDescription,
-        thumbnailUrl: articles.thumbnailUrl,
-        viewCount: articles.viewCount,
-        isFeatured: articles.isFeatured,
-        revenue: articles.revenue,
-        createdAt: articles.createdAt,
-        authorName: users.name,
-        authorAvatar: users.avatar,
-        categoryName: categories.name,
-        categorySlug: categories.slug,
-        subCategoryName: subCategories.name,
-        subCategorySlug: subCategories.slug,
-      })
-      .from(articles)
-      .leftJoin(users, eq(articles.authorId, users.id))
-      .leftJoin(categories, eq(articles.categoryId, categories.id))
-      .leftJoin(subCategories, eq(articles.subCategoryId, subCategories.id))
-      .where(and(...conditions))
-      .orderBy(orderColumn)
-      .limit(limit)
-      .offset(offset);
+    const rawArticles = await ArticleModel.find(filter)
+      .populate('author_id', 'name avatar username')
+      .populate('category_id', 'name slug')
+      .populate('sub_category_id', 'name slug')
+      .sort(sortOption)
+      .skip(offset)
+      .limit(limit);
+
+    const publishedArticles = rawArticles.map((art) => {
+      const doc = art.toObject();
+      return {
+        id: doc._id.toString(),
+        title: doc.title,
+        slug: doc.slug,
+        excerpt: doc.excerpt,
+        content: doc.content,
+        metaDescription: doc.meta_description,
+        thumbnailUrl: doc.thumbnail_url,
+        viewCount: doc.view_count,
+        isFeatured: doc.is_featured,
+        revenue: doc.revenue,
+        createdAt: doc.created_at ? new Date(doc.created_at).toISOString().split('T')[0] : '',
+        authorName: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Global Analyst',
+        authorAvatar: (doc.author_id as any)?.avatar || 'A',
+        categoryName: (doc.category_id as any)?.name || null,
+        categorySlug: (doc.category_id as any)?.slug || null,
+        subCategoryName: (doc.sub_category_id as any)?.name || null,
+        subCategorySlug: (doc.sub_category_id as any)?.slug || null,
+      };
+    });
 
     // Niche Row 1: Finance & Crypto Articles
-    const catFinanceObj = allCategories.find((c) => c.slug === 'finance-crypto');
-    const financeArticles = catFinanceObj
-      ? await db
-          .select({
-            id: articles.id,
-            title: articles.title,
-            slug: articles.slug,
-            excerpt: articles.excerpt,
-            thumbnailUrl: articles.thumbnailUrl,
-            viewCount: articles.viewCount,
-            createdAt: articles.createdAt,
-          })
-          .from(articles)
-          .where(and(eq(articles.status, 'published'), eq(articles.categoryId, catFinanceObj.id)))
-          .limit(3)
+    const catFinanceObj = rawCategories.find((c) => c.slug === 'finance-crypto');
+    const rawFinanceArticles = catFinanceObj
+      ? await ArticleModel.find({ status: 'published', category_id: catFinanceObj._id }).limit(3)
       : [];
+    const financeArticles = rawFinanceArticles.map((art) => ({
+      id: art._id.toString(),
+      title: art.title,
+      slug: art.slug,
+      excerpt: art.excerpt,
+      thumbnailUrl: art.thumbnail_url,
+      viewCount: art.view_count,
+      createdAt: art.created_at ? new Date(art.created_at).toISOString().split('T')[0] : '',
+    }));
 
     // Niche Row 2: Cloud & Tech Articles
-    const catTechObj = allCategories.find((c) => c.slug === 'cloud-tech-tools');
-    const techArticles = catTechObj
-      ? await db
-          .select({
-            id: articles.id,
-            title: articles.title,
-            slug: articles.slug,
-            excerpt: articles.excerpt,
-            thumbnailUrl: articles.thumbnailUrl,
-            viewCount: articles.viewCount,
-            createdAt: articles.createdAt,
-          })
-          .from(articles)
-          .where(and(eq(articles.status, 'published'), eq(articles.categoryId, catTechObj.id)))
-          .limit(3)
+    const catTechObj = rawCategories.find((c) => c.slug === 'cloud-tech-tools');
+    const rawTechArticles = catTechObj
+      ? await ArticleModel.find({ status: 'published', category_id: catTechObj._id }).limit(3)
       : [];
+    const techArticles = rawTechArticles.map((art) => ({
+      id: art._id.toString(),
+      title: art.title,
+      slug: art.slug,
+      excerpt: art.excerpt,
+      thumbnailUrl: art.thumbnail_url,
+      viewCount: art.view_count,
+      createdAt: art.created_at ? new Date(art.created_at).toISOString().split('T')[0] : '',
+    }));
 
-    const currentSettings = await db.select().from(settings).where(eq(settings.id, 1)).get();
+    const rawSettings = await SettingModel.findOne();
+    const currentSettings = rawSettings
+      ? {
+          id: rawSettings._id.toString(),
+          siteTitle: rawSettings.site_title,
+          metaDescription: rawSettings.metaDescription,
+          focusKeywords: rawSettings.focusKeywords,
+          canonicalUrl: rawSettings.canonicalUrl,
+          hreflang: rawSettings.hreflang,
+          geoTarget: rawSettings.geoTarget,
+          businessName: rawSettings.businessName,
+          businessAddress: rawSettings.businessAddress,
+          businessPhone: rawSettings.businessPhone,
+          ogImageUrl: rawSettings.ogImageUrl,
+          schemaJsonld: rawSettings.schemaJsonld,
+          headScripts: rawSettings.headScripts,
+          primaryColor: rawSettings.primary_color,
+          accentColor: rawSettings.accent_color,
+          themeMode: rawSettings.theme_mode,
+          fontFamily: rawSettings.font_family,
+          logoUrl: rawSettings.logo_url,
+          faviconUrl: rawSettings.favicon_url,
+          bannerText: rawSettings.banner_text,
+          footerText: rawSettings.footer_text,
+          customCss: rawSettings.custom_css,
+          geoLatitude: rawSettings.geo_latitude,
+          geoLongitude: rawSettings.geo_longitude,
+          geoRegionName: rawSettings.geo_region_name,
+          geoPlacename: rawSettings.geo_placename,
+          updatedAt: rawSettings.updated_at,
+        }
+      : null;
 
     return {
       publishedArticles,
@@ -252,7 +299,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </div>
 
       {/* Public Navigation */}
-      <PublicNav categoriesList={categoryList} siteSettings={siteSettings} />
+      <PublicNav categoriesList={categoryList as any} siteSettings={siteSettings} />
 
       {/* Main Content */}
       <main className="relative z-10 pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-20 w-full flex-1">
@@ -409,9 +456,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <Link
                   key={cat.id}
                   href={`/?category=${cat.slug}`}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${
-                    category === cat.slug ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'border-slate-800 text-slate-400 hover:text-white'
-                  }`}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors shrink-0 ${category === cat.slug ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'border-slate-800 text-slate-400 hover:text-white'
+                    }`}
                 >
                   {cat.name}
                 </Link>

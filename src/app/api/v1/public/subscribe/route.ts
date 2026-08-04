@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { subscribers } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { SubscriberModel } from '@/lib/db/models';
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +12,9 @@ export async function POST(req: Request) {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    const existing = await db.select().from(subscribers).where(eq(subscribers.email, cleanEmail)).get();
+    await connectToDatabase();
+    const existing = await SubscriberModel.findOne({ email: cleanEmail });
+
     if (existing) {
       return NextResponse.json({
         status: 'success',
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
       });
     }
 
-    await db.insert(subscribers).values({ email: cleanEmail });
+    await SubscriberModel.create({ email: cleanEmail });
 
     return NextResponse.json({
       status: 'success',

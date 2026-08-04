@@ -18,10 +18,10 @@ import {
 } from 'lucide-react';
 
 interface CategoryItem {
-  id: number;
+  id: string | number;
   name: string;
   slug: string;
-  subCategories?: Array<{ id: number; name: string; slug: string }>;
+  subCategories?: Array<{ id: string | number; name: string; slug: string }>;
 }
 
 interface PublicNavProps {

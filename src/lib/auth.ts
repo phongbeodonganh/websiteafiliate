@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'affiliate_secret_key_v3_super_secure';
 
 export interface AuthPayload {
-  userId: number;
+  userId: string | number;
   username: string;
   role: 'admin' | 'editor' | 'author';
 }
