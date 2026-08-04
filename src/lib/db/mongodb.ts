@@ -4,9 +4,9 @@ import path from 'path';
 import dns from 'dns';
 
 try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
+  dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
   dns.setDefaultResultOrder('ipv4first');
-} catch {}
+} catch { }
 
 function getMongoUri(): string {
   if (process.env.MONGODB_URI) {
@@ -52,6 +52,13 @@ if (!cached) {
 export async function connectToDatabase(): Promise<typeof mongoose> {
   if (cached!.conn) {
     return cached!.conn;
+  }
+
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+    dns.setDefaultResultOrder('ipv4first');
+  } catch {
+    // Ignore DNS override errors if in restricted environment
   }
 
   if (!cached!.promise) {

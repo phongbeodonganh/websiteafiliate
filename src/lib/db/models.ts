@@ -96,6 +96,11 @@ export interface IArticle extends Document {
   meta_title?: string;
   meta_description?: string;
   thumbnail_url?: string;
+  focus_keyword?: string;
+  key_takeaways?: string[];
+  entities?: string[];
+  faq_schema?: { question: string; answer: string }[];
+  affiliate_placements?: { affiliate_link_id: mongoose.Types.ObjectId; position_label: string }[];
   created_at: Date;
   updated_at: Date;
 }
@@ -115,8 +120,23 @@ const ArticleSchema = new Schema<IArticle>({
   meta_title: { type: String },
   meta_description: { type: String },
   thumbnail_url: { type: String },
+  focus_keyword: { type: String },
+  key_takeaways: [{ type: String }],
+  entities: [{ type: String }],
+  faq_schema: [
+    {
+      question: { type: String },
+      answer: { type: String },
+    },
+  ],
+  affiliate_placements: [
+    {
+      affiliate_link_id: { type: Schema.Types.ObjectId, ref: 'AffiliateLink' },
+      position_label: { type: String, default: 'top_cta' },
+    },
+  ],
   created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now }
+  updated_at: { type: Date, default: Date.now },
 });
 
 // 6. ArticleAffiliateRelation

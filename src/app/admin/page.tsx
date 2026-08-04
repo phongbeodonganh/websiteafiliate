@@ -857,25 +857,111 @@ export default function AdminDashboardPage() {
     </div>
   );
 
-  // Article Editor Form V4.0
+  // Article Editor Form V5.1 (SEO & GEO Studio)
   const ArticleEditorForm = () => {
     const [title, setTitle] = useState(editingArticle?.title || '');
     const [slug, setSlug] = useState(editingArticle?.slug || '');
     const [excerpt, setExcerpt] = useState(editingArticle?.excerpt || '');
     const [content, setContent] = useState(editingArticle?.content || '');
     const [status, setStatus] = useState(editingArticle?.status || 'published');
-    const [isFeatured, setIsFeatured] = useState(editingArticle?.isFeatured || false);
-    const [categoryId, setCategoryId] = useState(editingArticle?.categoryId || '');
-    const [subCategoryId, setSubCategoryId] = useState(editingArticle?.subCategoryId || '');
-    const [thumbnailUrl, setThumbnailUrl] = useState(editingArticle?.thumbnailUrl || '');
-    const [metaTitle, setMetaTitle] = useState(editingArticle?.metaTitle || '');
-    const [metaDescription, setMetaDescription] = useState(editingArticle?.metaDescription || '');
+    const [isFeatured, setIsFeatured] = useState(editingArticle?.isFeatured || editingArticle?.is_featured || false);
+    const [categoryId, setCategoryId] = useState(editingArticle?.categoryId || editingArticle?.category_id?._id || editingArticle?.category_id || '');
+    const [subCategoryId, setSubCategoryId] = useState(editingArticle?.subCategoryId || editingArticle?.sub_category_id?._id || editingArticle?.sub_category_id || '');
+    const [thumbnailUrl, setThumbnailUrl] = useState(editingArticle?.thumbnailUrl || editingArticle?.thumbnail_url || '');
+    const [metaTitle, setMetaTitle] = useState(editingArticle?.metaTitle || editingArticle?.meta_title || '');
+    const [metaDescription, setMetaDescription] = useState(editingArticle?.metaDescription || editingArticle?.meta_description || '');
 
-    const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId));
+    // GEO States
+    const [focusKeyword, setFocusKeyword] = useState(editingArticle?.focusKeyword || editingArticle?.focus_keyword || '');
+    const [keyTakeawaysText, setKeyTakeawaysText] = useState<string>(
+      Array.isArray(editingArticle?.keyTakeaways || editingArticle?.key_takeaways)
+        ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
+        : ''
+    );
+    const [entitiesText, setEntitiesText] = useState<string>(
+      Array.isArray(editingArticle?.entities)
+        ? editingArticle.entities.join(', ')
+        : ''
+    );
+    const [faqRows, setFaqRows] = useState<Array<{ question: string; answer: string }>>(
+      Array.isArray(editingArticle?.faqSchema || editingArticle?.faq_schema) && (editingArticle?.faqSchema || editingArticle?.faq_schema).length > 0
+        ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
+        : [{ question: '', answer: '' }]
+    );
+
+    const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId) || c.id === categoryId);
+
+    const handleTitleChange = (val: string) => {
+      setTitle(val);
+      if (!slug) {
+        const generated = val
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[đĐ]/g, 'd')
+          .replace(/[^a-z0-9\s-]/g, '')
+          .trim()
+          .replace(/\s+/g, '-');
+        setSlug(generated);
+      }
+    };
+
+    const handleAiTakeawaysGenerate = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/v1/cms/ai/generate-takeaways', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ title, content }),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status === 'success' && json.data) {
+            setKeyTakeawaysText(json.data.keyTakeaways.join('\n'));
+            if (!entitiesText) {
+              setEntitiesText(json.data.entities.join(', '));
+            }
+            alert('Đã sinh Key Takeaways & Entities chuẩn GEO!');
+            return;
+          }
+        }
+      } catch {}
+      setKeyTakeawaysText(
+        `- Phân tích giải pháp cho bài viết "${title || 'AI Insights'}".\n- Tích hợp mô hình Generative Engine mới nhất.\n- Tối ưu hóa quy trình tự động hóa.`
+      );
+      alert('Đã sinh Key Takeaways mẫu!');
+    };
+
+    const addFaqRow = () => {
+      setFaqRows([...faqRows, { question: '', answer: '' }]);
+    };
+
+    const removeFaqRow = (index: number) => {
+      setFaqRows(faqRows.filter((_, i) => i !== index));
+    };
+
+    const updateFaqRow = (index: number, field: 'question' | 'answer', val: string) => {
+      const updated = [...faqRows];
+      updated[index][field] = val;
+      setFaqRows(updated);
+    };
 
     const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
       const token = localStorage.getItem('token');
+
+      const takeawaysList = keyTakeawaysText
+        .split('\n')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      const entitiesList = entitiesText
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      const validFaq = faqRows.filter((f) => f.question.trim() && f.answer.trim());
+
       const payload = {
         title,
         slug,
@@ -883,11 +969,15 @@ export default function AdminDashboardPage() {
         content,
         status,
         isFeatured,
-        categoryId,
-        subCategoryId,
+        categoryId: categoryId || undefined,
+        subCategoryId: subCategoryId || undefined,
         thumbnailUrl,
-        metaTitle,
-        metaDescription,
+        focusKeyword,
+        metaTitle: metaTitle || title,
+        metaDescription: metaDescription || excerpt,
+        keyTakeaways: takeawaysList,
+        entities: entitiesList,
+        faqSchema: validFaq,
       };
 
       try {
@@ -908,7 +998,7 @@ export default function AdminDashboardPage() {
 
         const data = await res.json();
         if (res.ok && data.status === 'success') {
-          alert('Article saved successfully!');
+          alert('Article saved successfully with GEO & SEO metadata!');
           setEditingArticle(null);
           loadAllData();
         } else {
@@ -921,12 +1011,17 @@ export default function AdminDashboardPage() {
 
     const insertAffCta = (link: any, positionLabel: string) => {
       const artId = editingArticle?.id || 1;
-      const labelText = positionLabel === 'top_cta' ? 'Top Partner Deal' : positionLabel === 'middle_comparison' ? 'Comparison Offer' : 'Footer Special Promo';
+      const labelText =
+        positionLabel === 'top_cta'
+          ? 'Top Partner Deal'
+          : positionLabel === 'middle_comparison'
+          ? 'Comparison Offer'
+          : 'Footer Special Promo';
       const ctaSnippet = `
-<div class="my-8 flex flex-col items-center justify-center p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center">
-  <p class="font-bold text-amber-400 text-lg mb-2">🔥 ${labelText} (${link.name}):</p>
-  <p class="text-xs text-slate-400 mb-4">Commission: ${link.commission || 'Exclusive'} • Cookie: ${link.cookie || '30 Days'}</p>
-  <a href="/api/v1/public/tracking/redirect?article_id=${artId}&affiliate_link_id=${link.id}" data-affiliate-id="${link.id}" data-article-id="${artId}" class="affiliate-btn inline-flex items-center justify-center px-8 py-4 font-semibold text-slate-950 transition-all duration-200 bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 rounded-full hover:scale-105 shadow-lg shadow-amber-500/20" rel="nofollow sponsored" target="_blank">
+<div class="my-8 flex flex-col items-center justify-center p-6 bg-[#0056B3]/10 border border-[#0056B3]/30 rounded-2xl text-center">
+  <p class="font-bold text-[#0056B3] text-lg mb-2">🔥 ${labelText} (${link.name}):</p>
+  <p class="text-xs text-slate-500 mb-4">Commission: ${link.commission || 'Exclusive'} • Cookie: ${link.cookie || '30 Days'}</p>
+  <a href="/api/v1/public/tracking/redirect?article_id=${artId}&affiliate_link_id=${link.id}" data-affiliate-id="${link.id}" data-article-id="${artId}" class="affiliate-btn inline-flex items-center justify-center px-8 py-3.5 font-bold text-white transition-all duration-200 bg-[#FF6B6B] hover:bg-[#ff5252] rounded-full hover:scale-105 shadow-md shadow-rose-500/20" rel="nofollow sponsored" target="_blank">
     👉 Claim Offer On ${link.name}
   </a>
 </div>
@@ -935,70 +1030,264 @@ export default function AdminDashboardPage() {
     };
 
     return (
-      <div className="space-y-6 max-w-5xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
+      <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
         <div className="flex items-center gap-4 text-slate-400">
-          <button onClick={() => setEditingArticle(null)} className="hover:text-white flex items-center gap-1 transition-colors">
-            Back to List
+          <button
+            onClick={() => setEditingArticle(null)}
+            className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
+          >
+            ← Back to Articles List
           </button>
           <ChevronRight size={14} />
-          <span className="text-amber-400 font-medium">{editingArticle?.id ? 'Edit Article V4.0' : 'Create Article V4.0'}</span>
+          <span className="text-amber-400 font-bold text-xs">
+            {editingArticle?.id ? 'Edit Article (SEO & GEO Studio V5.1)' : 'Create Article (SEO & GEO Studio V5.1)'}
+          </span>
         </div>
 
         <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Column (Span 2) */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
+            {/* Core Info */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                  <FileText size={16} className="text-amber-400" /> Basic Information & Main Content
+                </h3>
+                <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2.5 py-0.5 rounded font-bold border border-amber-500/20">
+                  Auto-Slug Active
+                </span>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">Article Title *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Article Title (H1) *</label>
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500 text-lg shadow-inner"
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 text-base shadow-inner font-bold"
                   placeholder="Enter article title..."
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">Excerpt (Homepage Sapo Summary)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Excerpt (Homepage Sapo Summary)</label>
                 <textarea
                   rows={2}
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-300 text-sm focus:outline-none focus:border-amber-500 shadow-inner resize-none"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300 text-xs focus:outline-none focus:border-amber-500 shadow-inner resize-none"
                   placeholder="Short introduction for homepage cards..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">Article Content (Rich Text / HTML) *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Thumbnail Image URL</label>
+                <input
+                  type="url"
+                  value={thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+                  placeholder="https://images.unsplash.com/photo-..."
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-slate-300">Article Content (Rich Text / HTML) *</label>
+                  <div className="flex space-x-1.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setContent((prev: string) => prev + ' **In Đậm** ')}
+                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
+                    >
+                      Bold
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setContent((prev: string) => prev + ' *In Nghiêng* ')}
+                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
+                    >
+                      Italic
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setContent((prev: string) => prev + '\n\n## Tiêu đề phụ (H2 chuẩn GEO)\n')}
+                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
+                    >
+                      + H2
+                    </button>
+                  </div>
+                </div>
                 <textarea
-                  rows={14}
+                  rows={12}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-slate-300 font-mono text-sm focus:outline-none focus:border-amber-500 shadow-inner resize-none leading-relaxed"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-amber-500 shadow-inner leading-relaxed"
                   placeholder="Write article content here..."
                   required
                 />
               </div>
             </div>
+
+            {/* GEO Hub Card */}
+            <div className="bg-slate-900/60 border-l-4 border-l-purple-500 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-purple-400" />
+                  <h3 className="text-white font-bold text-sm">GEO (Generative Engine Optimization) Hub</h3>
+                </div>
+                <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded font-bold border border-purple-500/30">
+                  AI-Ready v5.1
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-purple-300">
+                    <span>Key Takeaways (LLMs Summary)</span>
+                    <button
+                      type="button"
+                      onClick={handleAiTakeawaysGenerate}
+                      className="text-[10px] text-cyan-400 hover:underline font-semibold"
+                    >
+                      ⚡ AI Gợi ý
+                    </button>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={keyTakeawaysText}
+                    onChange={(e) => setKeyTakeawaysText(e.target.value)}
+                    placeholder="- Điểm chính 1&#10;- Điểm chính 2"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <span className="text-xs font-bold text-purple-300 block">Entities & Citations</span>
+                  <textarea
+                    rows={4}
+                    value={entitiesText}
+                    onChange={(e) => setEntitiesText(e.target.value)}
+                    placeholder="Phân cách bằng dấu phẩy: OpenAI, GPT-4o, NVIDIA..."
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              {/* FAQ Schema Row Builder */}
+              <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300">Trình tạo FAQ Schema JSON-LD</span>
+                  <button
+                    type="button"
+                    onClick={addFaqRow}
+                    className="text-[10px] bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 px-2.5 py-1 rounded font-bold border border-purple-500/30"
+                  >
+                    + Thêm Câu Hỏi
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {faqRows.map((row, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={row.question}
+                        onChange={(e) => updateFaqRow(idx, 'question', e.target.value)}
+                        placeholder="Câu hỏi (Question)..."
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
+                      />
+                      <input
+                        type="text"
+                        value={row.answer}
+                        onChange={(e) => updateFaqRow(idx, 'answer', e.target.value)}
+                        placeholder="Câu trả lời (Answer)..."
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFaqRow(idx)}
+                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SEO Metadata */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                  <Search size={16} className="text-emerald-400" /> Traditional SEO Metadata
+                </h3>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded font-bold border border-emerald-500/20">
+                  SEO Score: 95/100
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Focus Keyword *</label>
+                  <input
+                    type="text"
+                    value={focusKeyword}
+                    onChange={(e) => setFocusKeyword(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    placeholder="công nghệ AI 2026..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">URL Slug *</label>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Meta Title</label>
+                <input
+                  type="text"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Meta Description</label>
+                <textarea
+                  rows={2}
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
           </div>
 
+          {/* Right Column (Span 1) */}
           <div className="space-y-6">
             {/* Category & Status */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
               <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
                 <Tag size={16} className="text-amber-400" /> Multi-Level Category Assignment
               </h3>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Primary Category (Level 1)</label>
+                <label className="block text-xs text-slate-400 mb-1">Primary Category (Level 1)</label>
                 <select
                   value={categoryId}
                   onChange={(e) => {
                     setCategoryId(e.target.value);
                     setSubCategoryId('');
                   }}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
                 >
                   <option value="">-- Select Category --</option>
                   {categoriesList.map((cat) => (
@@ -1011,11 +1300,11 @@ export default function AdminDashboardPage() {
 
               {selectedCategoryObj && selectedCategoryObj.subCategories?.length > 0 && (
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Sub-Category (Level 2)</label>
+                  <label className="block text-xs text-slate-400 mb-1">Sub-Category (Level 2)</label>
                   <select
                     value={subCategoryId}
                     onChange={(e) => setSubCategoryId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:border-amber-500 focus:outline-none"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
                   >
                     <option value="">-- Select Sub-Category --</option>
                     {selectedCategoryObj.subCategories.map((sub: any) => (
@@ -1029,11 +1318,11 @@ export default function AdminDashboardPage() {
 
               <div className="pt-2 border-t border-slate-800 space-y-3">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Publishing Status</label>
+                  <label className="block text-xs text-slate-400 mb-1">Publishing Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs"
                   >
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>
@@ -1046,23 +1335,26 @@ export default function AdminDashboardPage() {
                     id="isFeatured"
                     checked={isFeatured}
                     onChange={(e) => setIsFeatured(e.target.checked)}
-                    className="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-amber-400"
+                    className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-amber-400 cursor-pointer"
                   />
-                  <label htmlFor="isFeatured" className="text-sm font-medium text-amber-400 cursor-pointer flex items-center gap-1">
-                    <Star size={14} /> Mark as "Weekly Hot / Featured"
+                  <label
+                    htmlFor="isFeatured"
+                    className="text-xs font-bold text-amber-400 cursor-pointer flex items-center gap-1"
+                  >
+                    <Star size={14} /> Mark as "Weekly Hot"
                   </label>
                 </div>
               </div>
             </div>
 
             {/* Multi-Affiliate Link Placement */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4 relative overflow-hidden">
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-yellow-600"></div>
               <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
                 <LinkIcon size={16} className="text-amber-400" /> Multi-Position Affiliate Placement
               </h3>
 
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                 {affiliateLinksList.map((link) => (
                   <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
                     <p className="text-xs font-bold text-white truncate">{link.name}</p>
@@ -1094,8 +1386,8 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
-            <LuxuryButton type="submit" className="w-full py-3 text-base">
-              Save & Publish Article
+            <LuxuryButton type="submit" className="w-full py-3 text-sm">
+              Save & Publish Article (SEO & GEO)
             </LuxuryButton>
           </div>
         </form>

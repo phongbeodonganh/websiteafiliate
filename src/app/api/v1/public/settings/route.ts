@@ -9,18 +9,18 @@ export async function GET() {
 
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
-        site_title: 'NEXUS FINANCE GLOBAL',
-        metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
-        focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
-        canonicalUrl: 'https://nexusfinance.global',
+        site_title: 'AI AFFILIATE HUB',
+        metaDescription: 'Discover top AI tool categories, real-world AI use-case case studies, high-paying affiliate programs, and revenue automation strategies.',
+        focusKeywords: 'ai use-cases, ai case studies, ai affiliate programs, ai content copywriting, ai coding tools',
+        canonicalUrl: 'https://aiaffiliatehub.com',
         hreflang: 'en-US',
         geoTarget: 'GLOBAL',
         primary_color: '#0f172a',
-        accent_color: '#f59e0b',
+        accent_color: '#3b82f6',
         theme_mode: 'dark',
         font_family: 'Inter',
-        banner_text: '🔥 HOT: Free Institutional Crypto Trading Signals & Exclusive 30% Fee Discounts!',
-        footer_text: '© 2026 NEXUS FINANCE GLOBAL. All rights reserved. Professional Financial Intelligence.',
+        banner_text: '🔥 HOT: Explore Top High-Paying AI Affiliate Programs & Up To 30% Recurring Commissions!',
+        footer_text: '© 2026 AI AFFILIATE HUB. All rights reserved. The Premier AI Affiliate Platform.',
       });
     }
 

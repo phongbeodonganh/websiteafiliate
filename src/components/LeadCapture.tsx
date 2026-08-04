@@ -38,29 +38,29 @@ export default function LeadCapture() {
   };
 
   return (
-    <section className="my-16 relative rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-amber-950/40 via-[#0a0a0c] to-slate-900 border border-amber-500/30 p-8 lg:p-14 shadow-2xl backdrop-blur-xl">
-      {/* Decorative Glow */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <section className="my-16 relative rounded-[2.5rem] overflow-hidden bg-white border border-slate-100 p-8 lg:p-14 shadow-xl shadow-slate-200/50">
+      {/* Soft Glow */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50/60 rounded-full blur-[100px] pointer-events-none"></div>
 
       <div className="max-w-3xl mx-auto text-center space-y-6 relative z-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-widest">
-          <Sparkles size={14} /> VIP Insider Research Newsletter
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#0056B3] text-xs font-semibold uppercase tracking-widest">
+          <Sparkles size={14} /> VIP AI Insider Research Newsletter
         </div>
 
-        <h2 className="text-3xl md:text-5xl font-extrabold text-white leading-tight">
-          Get Institutional Crypto & Cloud Strategy <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-200 to-yellow-500">Delivered Weekly</span>
+        <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight">
+          Get Cutting-Edge AI Tools & Automation Case Studies <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0056B3] via-indigo-600 to-[#4F46E5]">Delivered Weekly</span>
         </h2>
 
-        <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-          Join 25,000+ investors receiving zero-noise market analytics, cold storage guides, and exclusive verified partner discounts directly to their inbox.
+        <p className="text-slate-600 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+          Join 25,000+ creators, marketers, and developers receiving zero-noise AI tool reviews, prompt frameworks, and exclusive partner discounts directly to their inbox.
         </p>
 
         {message ? (
           <div
             className={`p-4 rounded-2xl border text-sm font-medium flex items-center justify-center gap-2 ${
               message.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-red-500/10 border-red-500/30 text-red-400'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-red-50 border-red-200 text-red-700'
             }`}
           >
             <CheckCircle2 size={18} /> {message.text}
@@ -68,20 +68,21 @@ export default function LeadCapture() {
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <div className="relative flex-1">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your work email address..."
                 required
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-full pl-12 pr-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 shadow-inner"
+                className="w-full bg-slate-50 border border-slate-200 rounded-full pl-12 pr-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0056B3] focus:bg-white shadow-inner"
               />
             </div>
+            {/* Coral Orange (#FF6B6B) CTA Button */}
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 text-slate-950 font-bold text-sm hover:scale-105 shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              className="px-8 py-3.5 rounded-full bg-[#FF6B6B] hover:bg-[#ff5252] text-white font-bold text-sm hover:scale-105 shadow-md shadow-rose-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
             >
               {loading ? 'Joining...' : 'Join Insider List'}
               <ArrowRight size={16} />
@@ -90,7 +91,7 @@ export default function LeadCapture() {
         )}
 
         <div className="flex items-center justify-center gap-2 text-xs text-slate-500 font-medium pt-2">
-          <ShieldCheck size={14} className="text-amber-400" />
+          <ShieldCheck size={14} className="text-[#20C997]" />
           <span>No Spam. Unsubscribe at any time. Your email is 100% confidential.</span>
         </div>
       </div>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechPulse - Tin Tức Công Nghệ Hàng Đầu (Bento Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#07080D',
+                            card: '#121520',
+                            border: '#1E2336',
+                            cyan: '#06B6D4',
+                            violet: '#8B5CF6',
+                            rose: '#F43F5E'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #07080D; color: #F1F5F9; }
+        .glass-panel { background: rgba(18, 21, 32, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glow-effect:hover { box-shadow: 0 0 25px rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.3); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white">
+
+    <header class="sticky top-4 z-50 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+        <div class="glass-panel rounded-2xl px-6 h-16 flex items-center justify-between shadow-2xl">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-cyan-500 to-violet-600 text-white p-2 rounded-xl shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-microchip text-base"></i>
+                </div>
+                <span class="text-xl font-black tracking-tight bg-gradient-to-r from-cyan-400 via-violet-400 to-rose-400 bg-clip-text text-transparent">
+                    TechPulse<span class="text-cyan-400 text-xs ml-1 uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">Bento</span>
+                </span>
+            </div>
+
+            <!-- Navigation Links (Desktop) -->
+            <nav class="hidden md:flex items-center space-x-8 font-medium text-sm text-slate-300">
+                <a href="#" class="text-cyan-400 font-semibold transition">Trang Chủ</a>
+                <a href="#" class="hover:text-cyan-400 transition">AI & Dữ Liệu</a>
+                <a href="#" class="hover:text-cyan-400 transition">Phần Cứng</a>
+                <a href="#" class="hover:text-cyan-400 transition">Bảo Mật</a>
+                <a href="#" class="hover:text-cyan-400 transition">Startup</a>
+            </nav>
+
+            <!-- Actions -->
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden sm:block">
+                    <input type="text" placeholder="Tìm kiếm bài viết..." class="bg-slate-900/60 border border-slate-800 rounded-xl py-1.5 pl-9 pr-4 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 transition w-44 lg:w-56">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                </div>
+
+                <button id="themeToggle" class="p-2 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 hover:border-cyan-500 transition" aria-label="Toggle Theme">
+                    <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
+                </button>
+
+                <button id="mobileMenuBtn" class="md:hidden p-2 rounded-xl bg-slate-900/60 text-slate-300 border border-slate-800">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobileMenu" class="hidden md:hidden mt-2 p-4 glass-panel rounded-2xl space-y-2">
+            <a href="#" class="block py-2 text-cyan-400 font-medium">Trang Chủ</a>
+            <a href="#" class="block py-2 text-slate-300">AI & Dữ Liệu</a>
+            <a href="#" class="block py-2 text-slate-300">Phần Cứng</a>
+            <a href="#" class="block py-2 text-slate-300">Bảo Mật</a>
+            <a href="#" class="block py-2 text-slate-300">Startup</a>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+        
+        <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyan-500 bg-gradient-to-r from-cyan-950/30 via-transparent to-transparent">
+            <div class="flex items-center space-x-3">
+                <span class="bg-cyan-500 text-slate-950 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-lg animate-pulse">Tin Nóng</span>
+                <p class="text-xs sm:text-sm font-medium text-slate-200">Apple chính thức công bố chip M4 Max thế hệ mới với hiệu suất xử lý AI tăng gấp 3 lần.</p>
+            </div>
+            <a href="#" class="hidden sm:inline-flex items-center space-x-1 text-xs font-bold text-cyan-400 hover:underline">
+                <span>Chi tiết</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </a>
+        </div>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Main Bento Box (Span 7) -->
+            <div class="lg:col-span-7 glass-panel rounded-3xl p-6 sm:p-8 flex flex-col justify-between glow-effect transition relative overflow-hidden group min-h-[440px]">
+                <div class="absolute inset-0 z-0 opacity-45 group-hover:scale-105 transition duration-700">
+                    <img src="https://placehold.co/800x500/121520/06b6d4?text=AI+Future+Technology" alt="AI Feature" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent"></div>
+                </div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <span class="bg-violet-500/20 text-violet-300 border border-violet-500/30 text-xs font-semibold px-3 py-1 rounded-xl backdrop-blur-md">Trí Tuệ Nhân Tạo</span>
+                    <span class="text-xs text-slate-400 flex items-center"><i class="fa-regular fa-clock mr-1 text-cyan-400"></i> 4 phút trước</span>
+                </div>
+                <div class="relative z-10 mt-auto pt-16">
+                    <h1 class="text-2xl sm:text-3xl font-black text-white mb-3 group-hover:text-cyan-300 transition leading-tight">
+                        Cuộc cách mạng Mô hình Ngôn ngữ lớn (LLM) năm 2026: Khi AI tự lập trình và tối ưu hóa hệ thống
+                    </h1>
+                    <p class="text-slate-300 text-xs sm:text-sm line-clamp-2 mb-6 font-normal">
+                        Khám phá cách các agent AI tự trị đang thay đổi hoàn toàn cách thức phát triển phần mềm và kiến trúc hạ tầng đám mây hiện đại.
+                    </p>
+                    <div class="flex items-center space-x-3 pt-4 border-t border-white/10">
+                        <img src="https://placehold.co/40x40/06b6d4/ffffff?text=AN" alt="Author" class="w-9 h-9 rounded-xl border border-cyan-500/30">
+                        <div>
+                            <p class="text-xs font-bold text-white">Alexandre Nguyen</p>
+                            <p class="text-[10px] text-slate-400">Senior Tech Editor</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secondary Bento Cards (Span 5) -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <!-- Sub Bento Item 1 -->
+                <div class="glass-panel rounded-3xl p-6 glow-effect transition flex flex-col justify-between flex-grow group cursor-pointer">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold px-2.5 py-1 rounded-xl">Bảo Mật</span>
+                            <span class="text-xs text-slate-400">12 phút trước</span>
+                        </div>
+                        <h3 class="font-bold text-base sm:text-lg mb-2 text-slate-100 group-hover:text-rose-400 transition">
+                            Cảnh báo lỗ hổng zero-day mới trên các hệ thống đám mây lớn
+                        </h3>
+                        <p class="text-xs text-slate-400 line-clamp-2">
+                            Các chuyên gia an ninh mạng khuyến cáo cập nhật bản vá khẩn cấp ngay lập tức để tránh nguy cơ rò rỉ dữ liệu.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+                        <span>Bởi Hoàng Nam</span>
+                        <span><i class="fa-regular fa-comment mr-1 text-rose-400"></i> 24</span>
+                    </div>
+                </div>
+
+                <!-- Sub Bento Item 2 -->
+                <div class="glass-panel rounded-3xl p-6 glow-effect transition flex flex-col justify-between flex-grow group cursor-pointer">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold px-2.5 py-1 rounded-xl">Phần Cứng</span>
+                            <span class="text-xs text-slate-400">45 phút trước</span>
+                        </div>
+                        <h3 class="font-bold text-base sm:text-lg mb-2 text-slate-100 group-hover:text-cyan-400 transition">
+                            Đánh giá nhanh kính thực tế hỗn hợp thế hệ tiếp theo
+                        </h3>
+                        <p class="text-xs text-slate-400 line-clamp-2">
+                            Trọng lượng nhẹ hơn 40% và thời lượng pin được cải thiện đáng kể mở ra kỷ nguyên mới cho không gian làm việc số.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+                        <span>Bởi Minh Thư</span>
+                        <span><i class="fa-regular fa-comment mr-1 text-cyan-400"></i> 18</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Latest News Feed (Span 8) -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="glass-panel rounded-2xl p-4 flex items-center justify-between">
+                    <h2 class="text-lg font-bold tracking-tight flex items-center space-x-3 text-white">
+                        <span class="w-2 h-5 bg-cyan-400 rounded-full inline-block shadow-lg shadow-cyan-400/50"></span>
+                        <span>Bài Viết Mới Nhất</span>
+                    </h2>
+                    <div class="flex space-x-2 text-xs font-semibold">
+                        <button class="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 shadow-md">Tất cả</button>
+                        <button class="px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 border border-slate-800 hover:text-white">Phổ biến</button>
+                    </div>
+                </div>
+
+                <!-- Feed Item 1 -->
+                <article class="glass-panel rounded-3xl p-5 sm:p-6 glow-effect transition flex flex-col sm:flex-row gap-6 items-center">
+                    <img src="https://placehold.co/240x160/121520/8b5cf6?text=Quantum" alt="Thumbnail" class="w-full sm:w-48 h-32 object-cover rounded-2xl flex-shrink-0 border border-slate-800">
+                    <div class="flex flex-col justify-between flex-grow w-full">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-semibold px-2.5 py-0.5 rounded-lg">Điện Toán Lượng Tử</span>
+                                <span class="text-xs text-slate-400">2 giờ trước</span>
+                            </div>
+                            <h3 class="font-bold text-base sm:text-lg text-slate-100 hover:text-cyan-400 transition mb-1">
+                                IBM đạt cột mốc mới với bộ vi xử lý lượng tử chịu lỗi 1.000 qubit
+                            </h3>
+                            <p class="text-xs text-slate-400 line-clamp-2">
+                                Bước đột phá trong việc sửa lỗi lượng tử giúp rút ngắn khoảng cách thương mại hóa máy tính lượng tử trong thực tế.
+                            </p>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs text-slate-400">
+                            <span class="flex items-center space-x-2">
+                                <img src="https://placehold.co/20x20/8b5cf6/ffffff?text=TT" alt="Avatar" class="w-5 h-5 rounded-md">
+                                <span class="text-slate-300">Thanh Tùng</span>
+                            </span>
+                            <div class="flex items-center space-x-3">
+                                <span class="hover:text-cyan-400 cursor-pointer"><i class="fa-regular fa-bookmark"></i></span>
+                                <span class="hover:text-cyan-400 cursor-pointer"><i class="fa-solid fa-share-nodes"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Feed Item 2 -->
+                <article class="glass-panel rounded-3xl p-5 sm:p-6 glow-effect transition flex flex-col sm:flex-row gap-6 items-center">
+                    <img src="https://placehold.co/240x160/121520/10b981?text=EV+Tech" alt="Thumbnail" class="w-full sm:w-48 h-32 object-cover rounded-2xl flex-shrink-0 border border-slate-800">
+                    <div class="flex flex-col justify-between flex-grow w-full">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold px-2.5 py-0.5 rounded-lg">Xe Điện & Pin</span>
+                                <span class="text-xs text-slate-400">3 giờ trước</span>
+                            </div>
+                            <h3 class="font-bold text-base sm:text-lg text-slate-100 hover:text-cyan-400 transition mb-1">
+                                Công nghệ pin thể rắn sắp đưa vào sản xuất hàng loạt vào cuối năm nay
+                            </h3>
+                            <p class="text-xs text-slate-400 line-clamp-2">
+                                Tốc độ sạc đầy trong 10 phút và tầm hoạt động vượt 1.000 km trên mỗi lần sạc hứa hẹn thay đổi hoàn toàn thị trường xe điện.
+                            </p>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs text-slate-400">
+                            <span class="flex items-center space-x-2">
+                                <img src="https://placehold.co/20x20/10b981/ffffff?text=GH" alt="Avatar" class="w-5 h-5 rounded-md">
+                                <span class="text-slate-300">Gia Hân</span>
+                            </span>
+                            <div class="flex items-center space-x-3">
+                                <span class="hover:text-cyan-400 cursor-pointer"><i class="fa-regular fa-bookmark"></i></span>
+                                <span class="hover:text-cyan-400 cursor-pointer"><i class="fa-solid fa-share-nodes"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Feed Item 3 -->
+                <article class="glass-panel rounded-3xl p-5 sm:p-6 glow-effect transition flex flex-col sm:flex-row gap-6 items-center">
+                    <img src="https://placehold.co/240x160/121520/f43f5e?text=SpaceTech" alt="Thumbnail" class="w-full sm:w-48 h-32 object-cover rounded-2xl flex-shrink-0 border border-slate-800">
+                    <div class="flex flex-col justify-between flex-grow w-full">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-2">
+                                <span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold px-2.5 py-0.5 rounded-lg">Không Gian</span>
+                                <span class="text-xs text-slate-400">5 giờ trước</span>
+                            </div>
+                            <h3 class="font-bold text-base sm:text-lg text-slate-100 hover:text-cyan-400 transition mb-1">
+                                Kính viễn vọng không gian James Webb phát hiện dấu hiệu khí quyển ngoại hành tinh
+                            </h3>
+                            <p class="text-xs text-slate-400 line-clamp-2">
+                                Những dữ liệu phân tích quang phổ mới nhất cung cấp manh mối quan trọng về khả năng tồn tại hơi nước ngoài hệ mặt trời.
+                            </p>
+                        </div>
+                        <div class="flex items-center justify-between mt-4 pt-3 border-t border-white/5 text-xs text-slate-400">
+                            <span class="flex items-center space-x-2">
+                                <img src="https://placehold.co/20x20/f43f5e/ffffff?text=QH" alt="Avatar" class="w-5 h-5 rounded-md">
+                                <span class="text-slate-300">Quốc Huy</span>
+                            </span>
+                            <div class="flex items-center space-x-3">
+                                <span class="hover:text-cyan-400 cursor-pointer"><i class="fa-regular fa-bookmark"></i></span>
+                                <span class="hover:text-cyan-400 cursor-pointer"><i class="fa-solid fa-share-nodes"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Sidebar (Span 4) -->
+            <aside class="lg:col-span-4 space-y-6">
+                <!-- Trending Widget -->
+                <div class="glass-panel rounded-3xl p-6">
+                    <h3 class="font-bold text-base mb-5 flex items-center space-x-2 text-white">
+                        <i class="fa-solid fa-fire text-amber-500 animate-bounce"></i>
+                        <span>Đọc Nhiều Nhất</span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-4 group cursor-pointer">
+                            <span class="text-xl font-black text-slate-600 group-hover:text-cyan-400 transition">01</span>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-cyan-400 transition line-clamp-2">
+                                    Top 5 ngôn ngữ lập trình thống trị xu hướng phát triển ứng dụng AI
+                                </h4>
+                                <span class="text-[11px] text-slate-400">1.2k lượt đọc</span>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4 group cursor-pointer">
+                            <span class="text-xl font-black text-slate-600 group-hover:text-cyan-400 transition">02</span>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-cyan-400 transition line-clamp-2">
+                                    So sánh chi tiết hiệu năng giữa các dòng card đồ họa chuyên dụng cho AI
+                                </h4>
+                                <span class="text-[11px] text-slate-400">980 lượt đọc</span>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4 group cursor-pointer">
+                            <span class="text-xl font-black text-slate-600 group-hover:text-cyan-400 transition">03</span>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-cyan-400 transition line-clamp-2">
+                                    Bảo mật dữ liệu cá nhân trong kỷ nguyên dữ liệu lớn lên ngôi
+                                </h4>
+                                <span class="text-[11px] text-slate-400">850 lượt đọc</span>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4 group cursor-pointer">
+                            <span class="text-xl font-black text-slate-600 group-hover:text-cyan-400 transition">04</span>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-cyan-400 transition line-clamp-2">
+                                    Xu hướng thiết kế UI/UX tối giản tích hợp trợ lý ảo thông minh
+                                </h4>
+                                <span class="text-[11px] text-slate-400">720 lượt đọc</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Newsletter Card -->
+                <div class="glass-panel rounded-3xl p-6 relative overflow-hidden bg-gradient-to-br from-cyan-950/40 via-violet-950/30 to-slate-900/40">
+                    <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <div class="bg-cyan-500/20 text-cyan-400 w-10 h-10 rounded-2xl flex items-center justify-center mb-4 border border-cyan-500/30">
+                            <i class="fa-solid fa-paper-plane text-sm"></i>
+                        </div>
+                        <h3 class="font-bold text-base mb-2 text-white">Đăng Ký Nhận Bản Tin</h3>
+                        <p class="text-xs text-slate-400 mb-4">Nhận tổng hợp bản tin công nghệ nóng hổi nhất mỗi tuần vào hộp thư của bạn.</p>
+                        <form onsubmit="event.preventDefault(); showNotification('Đăng ký nhận bản tin thành công!');" class="space-y-3">
+                            <input type="email" placeholder="Địa chỉ email của bạn..." required class="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
+                            <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs shadow-lg hover:opacity-90 transition">
+                                Đăng Ký Ngay
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    <!-- Notification Toast Popup -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-panel bg-slate-900/90 text-white px-5 py-3 rounded-2xl shadow-2xl border border-cyan-500/30 flex items-center space-x-3 text-xs">
+        <i class="fa-solid fa-circle-check text-cyan-400 text-base"></i>
+        <span id="toastMsg">Thành công!</span>
+    </div>
+
+    <footer class="glass-panel border-t border-slate-800/80 mt-16 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div class="space-y-4 md:col-span-1">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-tr from-cyan-500 to-violet-600 text-white p-2 rounded-xl">
+                        <i class="fa-solid fa-microchip text-xs"></i>
+                    </div>
+                    <span class="text-lg font-black tracking-tight text-white">
+                        TechPulse
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400">
+                    Cổng thông tin hàng đầu về xu hướng công nghệ, trí tuệ nhân tạo, lập trình và đổi mới sáng tạo.
+                </p>
+                <div class="flex space-x-3 text-slate-400 text-sm">
+                    <a href="#" class="hover:text-cyan-400 transition"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" class="hover:text-cyan-400 transition"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#" class="hover:text-cyan-400 transition"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="#" class="hover:text-cyan-400 transition"><i class="fa-brands fa-github"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold text-xs mb-4 text-white uppercase tracking-wider">Chuyên Mục</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a href="#" class="hover:text-cyan-400 transition">Trí Tuệ Nhân Tạo (AI)</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Phần Cứng & Thiết Bị</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Bảo Mật & An Ninh Mạng</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Cloud & DevOps</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-xs mb-4 text-white uppercase tracking-wider">Tài Nguyên</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a href="#" class="hover:text-cyan-400 transition">Báo cáo nghiên cứu</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Podcast Công Nghệ</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Sự Kiện & Webinar</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">API Nhà Phát Triển</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-xs mb-4 text-white uppercase tracking-wider">Về Chúng Tôi</h4>
+                <ul class="space-y-2 text-xs text-slate-400">
+                    <li><a href="#" class="hover:text-cyan-400 transition">Giới thiệu TechPulse</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Quy tắc biên tập</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Tuyển dụng</a></li>
+                    <li><a href="#" class="hover:text-cyan-400 transition">Liên hệ quảng cáo</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
+            <p>&copy; 2026 TechPulse Media. Bảo lưu mọi quyền.</p>
+            <div class="flex space-x-6 mt-4 sm:mt-0">
+                <a href="#" class="hover:underline">Điều khoản sử dụng</a>
+                <a href="#" class="hover:underline">Chính sách bảo mật</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        themeToggleBtn.addEventListener('click', () => {
+            if (themeIcon.classList.contains('fa-sun')) {
+                themeIcon.classList.remove('fa-sun', 'text-amber-400');
+                themeIcon.classList.add('fa-moon', 'text-cyan-400');
+                document.body.style.backgroundColor = '#f8fafc';
+                document.body.style.color = '#0f172a';
+            } else {
+                themeIcon.classList.remove('fa-moon', 'text-cyan-400');
+                themeIcon.classList.add('fa-sun', 'text-amber-400');
+                document.body.style.backgroundColor = '#07080D';
+                document.body.style.color = '#F1F5F9';
+            }
+        });
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Notification Toast Handler (No alert() used)
+        function showNotification(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            toastMsg.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

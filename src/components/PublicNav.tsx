@@ -105,18 +105,17 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
     router.push('/');
   };
 
-  const accentColor = siteSettings?.accentColor || '#f59e0b';
+  const accentColor = siteSettings?.accentColor || '#0056B3';
   const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'NEXUS FINANCE';
+  const siteTitle = siteSettings?.siteTitle || 'AI AFFILIATE HUB';
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-40 border-b border-white/10 bg-[#0a0a0c]/90 backdrop-blur-xl transition-all duration-300 shadow-2xl">
+    <nav className="fixed top-0 left-0 w-full z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all duration-300 shadow-sm">
       {/* Dynamic Announcement Banner */}
       {bannerText && (
         <div
-          className="w-full text-center py-1.5 px-4 text-xs font-bold text-slate-950 truncate shadow-inner flex items-center justify-center gap-2"
-          style={{ backgroundColor: accentColor }}
+          className="w-full text-center py-1.5 px-4 text-xs font-semibold text-white truncate shadow-inner flex items-center justify-center gap-2 bg-gradient-to-r from-[#0056B3] via-indigo-600 to-[#4F46E5]"
         >
           <Sparkles size={14} className="shrink-0" />
           <span>{bannerText}</span>
@@ -125,30 +124,29 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
         {/* Brand Logo or Custom Image Logo */}
-        <Link href="/" className="text-2xl font-bold tracking-tighter text-white flex items-center gap-2.5 shrink-0">
+        <Link href="/" className="text-2xl font-bold tracking-tighter text-slate-900 flex items-center gap-2.5 shrink-0">
           {logoUrl ? (
             <img src={logoUrl} alt={siteTitle} className="h-9 object-contain" />
           ) : (
             <>
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-950 font-extrabold text-lg shadow-lg"
-                style={{ backgroundColor: accentColor }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-md bg-[#0056B3]"
               >
-                {siteTitle[0] || 'N'}
+                {siteTitle[0] || 'A'}
               </div>
-              <span className="font-extrabold tracking-tight">
-                {siteTitle}
+              <span className="font-extrabold tracking-tight text-slate-900">
+                AI<span className="text-[#0056B3] font-medium">AFFILIATE HUB</span>
               </span>
             </>
           )}
         </Link>
 
         {/* Main Desktop Navigation Items */}
-        <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-300">
+        <div className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
           <Link
             href="/"
-            className={`transition-colors hover:text-amber-400 ${
-              !currentTab && !currentCat ? 'text-amber-400 font-bold' : ''
+            className={`transition-colors hover:text-[#0056B3] ${
+              !currentTab && !currentCat ? 'text-[#0056B3] font-bold' : ''
             }`}
           >
             Home
@@ -158,25 +156,25 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer ${
-                currentCat || currentSubCat ? 'text-amber-400 font-bold bg-amber-500/10 border border-amber-500/20' : ''
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-lg hover:bg-slate-100/80 transition-colors cursor-pointer ${
+                currentCat || currentSubCat ? 'text-[#0056B3] font-bold bg-blue-50 border border-blue-100' : ''
               }`}
             >
-              <Layers size={16} className="text-amber-400" />
+              <Layers size={16} className="text-[#0056B3]" />
               <span>Categories</span>
               <ChevronDown
                 size={14}
-                className={`transition-transform duration-300 ${dropdownOpen ? 'rotate-180 text-amber-400' : 'text-slate-400'}`}
+                className={`transition-transform duration-300 ${dropdownOpen ? 'rotate-180 text-[#0056B3]' : 'text-slate-400'}`}
               />
             </button>
 
             {/* Dropdown Menu Container */}
             {dropdownOpen && (
-              <div className="absolute top-full left-0 mt-3 w-80 bg-[#0c0c0e] border border-slate-800 rounded-2xl p-4 shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest px-3 mb-2 flex items-center justify-between">
+              <div className="absolute top-full left-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl p-4 shadow-xl backdrop-blur-2xl animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 mb-2 flex items-center justify-between">
                   <span>Browse Topics</span>
                   {currentCat && (
-                    <button onClick={() => handleSelectCategory('')} className="text-amber-400 hover:underline">
+                    <button onClick={() => handleSelectCategory('')} className="text-[#0056B3] hover:underline">
                       Reset Category
                     </button>
                   )}
@@ -190,27 +188,27 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
                         onClick={() => handleSelectCategory(cat.slug)}
                         className={`w-full text-left font-semibold text-sm px-3 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
                           currentCat === cat.slug && !currentSubCat
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            : 'text-white hover:bg-white/5'
+                            ? 'bg-blue-50 text-[#0056B3] border border-blue-100'
+                            : 'text-slate-800 hover:bg-slate-100'
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          <Tag size={14} className="text-amber-400" /> {cat.name}
+                          <Tag size={14} className="text-[#0056B3]" /> {cat.name}
                         </span>
-                        <ArrowRight size={12} className="text-slate-600" />
+                        <ArrowRight size={12} className="text-slate-400" />
                       </button>
 
                       {/* Level 2 Sub-Categories */}
                       {cat.subCategories && cat.subCategories.length > 0 && (
-                        <div className="pl-6 space-y-1 border-l-2 border-slate-800 ml-3 py-1">
+                        <div className="pl-6 space-y-1 border-l-2 border-slate-100 ml-3 py-1">
                           {cat.subCategories.map((sub) => (
                             <button
                               key={sub.id}
                               onClick={() => handleSelectCategory(cat.slug, sub.slug)}
                               className={`w-full text-left text-xs px-3 py-1 rounded-md transition-colors block ${
                                 currentSubCat === sub.slug
-                                  ? 'bg-amber-400/10 text-amber-400 font-bold border border-amber-500/20'
-                                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                  ? 'bg-blue-50 text-[#0056B3] font-bold border border-blue-100'
+                                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                               }`}
                             >
                               • {sub.name}
@@ -227,17 +225,17 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
           <Link
             href="/?tab=hot"
-            className={`flex items-center gap-1 transition-colors hover:text-amber-400 ${
-              currentTab === 'hot' ? 'text-amber-400 font-bold' : ''
+            className={`flex items-center gap-1 transition-colors hover:text-[#0056B3] ${
+              currentTab === 'hot' ? 'text-[#0056B3] font-bold' : ''
             }`}
           >
-            <Flame size={15} className="text-amber-400" /> Hot Weekly
+            <Flame size={15} className="text-rose-500" /> Hot Weekly
           </Link>
 
           <Link
             href="/?tab=popular"
-            className={`transition-colors hover:text-amber-400 ${
-              currentTab === 'popular' ? 'text-amber-400 font-bold' : ''
+            className={`transition-colors hover:text-[#0056B3] ${
+              currentTab === 'popular' ? 'text-[#0056B3] font-bold' : ''
             }`}
           >
             Most Popular
@@ -245,8 +243,8 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
           <Link
             href="/?tab=latest"
-            className={`transition-colors hover:text-amber-400 ${
-              currentTab === 'latest' ? 'text-amber-400 font-bold' : ''
+            className={`transition-colors hover:text-[#0056B3] ${
+              currentTab === 'latest' ? 'text-[#0056B3] font-bold' : ''
             }`}
           >
             Latest Insights
@@ -261,8 +259,8 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search crypto, news..."
-              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-full pl-10 pr-9 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
+              placeholder="Search AI tools, prompt guides..."
+              className="w-full bg-slate-100/80 border border-slate-200 rounded-full pl-10 pr-9 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0056B3] focus:bg-white transition-colors shadow-inner"
             />
             {searchQuery && (
               <button
@@ -273,7 +271,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
                   params.delete('q');
                   router.push(`/?${params.toString()}`);
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
               >
                 <X size={14} />
               </button>
@@ -282,7 +280,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
           <Link
             href="/admin/login"
-            className="hidden sm:flex px-4 py-2 text-xs font-semibold rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all duration-300 items-center gap-1.5 shrink-0"
+            className="hidden sm:flex px-4 py-2 text-xs font-semibold rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-all duration-300 items-center gap-1.5 shrink-0"
           >
             <User size={14} /> CMS Portal
           </Link>
@@ -291,27 +289,27 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
       {/* Active Filter Indicators Bar */}
       {(currentCat || currentSubCat || currentQuery || currentTab !== 'latest') && (
-        <div className="bg-slate-950/80 border-t border-slate-800/60 py-2 px-6">
+        <div className="bg-slate-50/90 border-t border-slate-200/80 py-2 px-6">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between text-xs gap-2">
-            <div className="flex items-center gap-2 text-slate-400">
-              <Filter size={13} className="text-amber-400" /> Active Filters:
+            <div className="flex items-center gap-2 text-slate-600">
+              <Filter size={13} className="text-[#0056B3]" /> Active Filters:
               {currentTab && currentTab !== 'latest' && (
-                <span className="bg-amber-500/10 text-amber-400 font-semibold px-2 py-0.5 rounded border border-amber-500/20 uppercase">
+                <span className="bg-blue-100/70 text-[#0056B3] font-semibold px-2 py-0.5 rounded border border-blue-200 uppercase">
                   Tab: {currentTab}
                 </span>
               )}
               {currentCat && (
-                <span className="bg-cyan-500/10 text-cyan-400 font-semibold px-2 py-0.5 rounded border border-cyan-500/20">
+                <span className="bg-emerald-100/80 text-emerald-800 font-semibold px-2 py-0.5 rounded border border-emerald-200">
                   Category: {currentCat}
                 </span>
               )}
               {currentSubCat && (
-                <span className="bg-purple-500/10 text-purple-400 font-semibold px-2 py-0.5 rounded border border-purple-500/20">
+                <span className="bg-indigo-100/80 text-indigo-800 font-semibold px-2 py-0.5 rounded border border-indigo-200">
                   Sub-Category: {currentSubCat}
                 </span>
               )}
               {currentQuery && (
-                <span className="bg-emerald-500/10 text-emerald-400 font-semibold px-2 py-0.5 rounded border border-emerald-500/20">
+                <span className="bg-slate-200 text-slate-800 font-semibold px-2 py-0.5 rounded border border-slate-300">
                   Keyword: "{currentQuery}"
                 </span>
               )}
@@ -319,7 +317,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
             <button
               onClick={clearAllFilters}
-              className="text-amber-400 hover:underline text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+              className="text-[#0056B3] hover:underline text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
             >
               <X size={12} /> Clear All Filters
             </button>

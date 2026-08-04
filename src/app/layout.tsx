@@ -7,9 +7,9 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     await connectToDatabase();
     const sysSettings = await SettingModel.findOne();
-    const siteTitle = sysSettings?.site_title || "NEXUS FINANCE GLOBAL";
-    const desc = sysSettings?.metaDescription || "Empowering global investors with institutional crypto research & affiliate deals.";
-    const ogImg = sysSettings?.ogImageUrl || "https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1200&auto=format&fit=crop";
+    const siteTitle = sysSettings?.site_title || "AI AFFILIATE HUB";
+    const desc = sysSettings?.metaDescription || "Discover high-paying AI affiliate programs, comprehensive AI tool reviews, and expert monetization strategies.";
+    const ogImg = sysSettings?.ogImageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
 
     return {
       title: {
@@ -17,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
         template: `%s | ${siteTitle}`,
       },
       description: desc,
-      keywords: sysSettings?.focusKeywords ? sysSettings.focusKeywords.split(',').map((k) => k.trim()) : ["crypto", "finance", "affiliate"],
+      keywords: sysSettings?.focusKeywords ? sysSettings.focusKeywords.split(',').map((k) => k.trim()) : ["ai affiliate", "ai tools", "jasper ai", "elevenlabs"],
       alternates: {
         canonical: sysSettings?.canonicalUrl || "/",
         languages: {
@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
       openGraph: {
         title: siteTitle,
         description: desc,
-        url: sysSettings?.canonicalUrl || "https://nexusfinance.global",
+        url: sysSettings?.canonicalUrl || "https://aiaffiliatehub.com",
         siteName: siteTitle,
         locale: sysSettings?.hreflang || "en_US",
         type: "website",
@@ -37,8 +37,8 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   } catch (error) {
     return {
-      title: "NEXUS FINANCE GLOBAL",
-      description: "Institutional Financial Intelligence & Affiliate Deals",
+      title: "AI AFFILIATE HUB",
+      description: "Leading AI Tool Reviews & Affiliate Programs Hub",
     };
   }
 }
@@ -86,7 +86,7 @@ export default async function RootLayout({
           />
         )}
       </head>
-      <body className="min-h-full flex flex-col bg-[#060608] text-slate-300 font-sans selection:bg-amber-500/30">
+      <body className="min-h-full flex flex-col bg-[#F8F9FA] text-slate-700 font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B]">
         {children}
       </body>
     </html>

@@ -42,6 +42,11 @@ export async function GET(req: Request) {
         metaTitle: doc.meta_title,
         metaDescription: doc.meta_description,
         thumbnailUrl: doc.thumbnail_url,
+        focusKeyword: doc.focus_keyword,
+        keyTakeaways: doc.key_takeaways || [],
+        entities: doc.entities || [],
+        faqSchema: doc.faq_schema || [],
+        affiliatePlacements: doc.affiliate_placements || [],
         createdAt: doc.created_at,
         updatedAt: doc.updated_at,
       };
@@ -57,7 +62,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST /api/v1/cms/articles - Create article
+// POST /api/v1/cms/articles - Create article with GEO and Affiliate placements
 export async function POST(req: Request) {
   const user = getAuthUser(req);
   if (!user) {
@@ -79,6 +84,11 @@ export async function POST(req: Request) {
       metaTitle,
       metaDescription,
       thumbnailUrl,
+      focusKeyword,
+      keyTakeaways,
+      entities,
+      faqSchema,
+      affiliatePlacements,
     } = body;
 
     if (!title || !content) {
@@ -106,6 +116,11 @@ export async function POST(req: Request) {
       meta_title: metaTitle || title,
       meta_description: metaDescription || '',
       thumbnail_url: thumbnailUrl || '',
+      focus_keyword: focusKeyword || '',
+      key_takeaways: Array.isArray(keyTakeaways) ? keyTakeaways : [],
+      entities: Array.isArray(entities) ? entities : [],
+      faq_schema: Array.isArray(faqSchema) ? faqSchema : [],
+      affiliate_placements: Array.isArray(affiliatePlacements) ? affiliatePlacements : [],
     });
 
     return NextResponse.json(
