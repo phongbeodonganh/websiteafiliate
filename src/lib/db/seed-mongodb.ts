@@ -253,10 +253,14 @@ export async function seedMongoDB() {
   });
 
   console.log('Successfully seeded MongoDB Atlas!');
-  process.exit(0);
 }
 
-seedMongoDB().catch((err) => {
-  console.error('Failed to seed MongoDB Atlas:', err);
-  process.exit(1);
-});
+if (typeof require !== 'undefined' && require.main === module) {
+  seedMongoDB()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Failed to seed MongoDB Atlas:', err);
+      process.exit(1);
+    });
+}
+

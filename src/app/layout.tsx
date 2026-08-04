@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { db } from "@/lib/db";
-import { settings } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { connectToDatabase } from "@/lib/db/mongodb";
+import { SettingModel } from "@/lib/db/models";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const sysSettings = await db.select().from(settings).where(eq(settings.id, 1)).get();
-    const siteTitle = sysSettings?.siteTitle || "NEXUS FINANCE GLOBAL";
+    await connectToDatabase();
+    const sysSettings = await SettingModel.findOne();
+    const siteTitle = sysSettings?.site_title || "NEXUS FINANCE GLOBAL";
     const desc = sysSettings?.metaDescription || "Empowering global investors with institutional crypto research & affiliate deals.";
     const ogImg = sysSettings?.ogImageUrl || "https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1200&auto=format&fit=crop";
 
@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
         type: "website",
         images: [{ url: ogImg, width: 1200, height: 630, alt: siteTitle }],
       },
-      icons: sysSettings?.faviconUrl ? [{ rel: "icon", url: sysSettings.faviconUrl }] : undefined,
+      icons: sysSettings?.favicon_url ? [{ rel: "icon", url: sysSettings.favicon_url }] : undefined,
     };
   } catch (error) {
     return {
@@ -50,16 +50,17 @@ export default async function RootLayout({
 }>) {
   let sysSettings;
   try {
-    sysSettings = await db.select().from(settings).where(eq(settings.id, 1)).get();
+    await connectToDatabase();
+    sysSettings = await SettingModel.findOne();
   } catch (e) { }
 
-  const geoRegion = sysSettings?.geoRegionName || "US-NY";
-  const geoPlace = sysSettings?.geoPlacename || "New York";
-  const lat = sysSettings?.geoLatitude ?? 40.7128;
-  const lng = sysSettings?.geoLongitude ?? -74.0060;
-  const primaryColor = sysSettings?.primaryColor || "#0f172a";
-  const accentColor = sysSettings?.accentColor || "#f59e0b";
-  const customCss = sysSettings?.customCss || "";
+  const geoRegion = sysSettings?.geo_region_name || "US-NY";
+  const geoPlace = sysSettings?.geo_placename || "New York";
+  const lat = sysSettings?.geo_latitude ?? 40.7128;
+  const lng = sysSettings?.geo_longitude ?? -74.0060;
+  const primaryColor = sysSettings?.primary_color || "#0f172a";
+  const accentColor = sysSettings?.accent_color || "#f59e0b";
+  const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
 
   return (
