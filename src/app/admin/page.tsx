@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { sanitizeArticleContent } from '@/lib/sanitize';
 import {
   LayoutDashboard,
   FileText,
@@ -1434,7 +1435,7 @@ export default function AdminDashboardPage() {
 
         <div
           className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif"
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(article.content) }}
         />
       </article>
     </div>

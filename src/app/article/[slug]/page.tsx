@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { Eye, Calendar, User, ArrowLeft, ShieldCheck, Tag, ChevronRight } from 'lucide-react';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
+import { sanitizeArticleContent } from '@/lib/sanitize';
 import type { Metadata } from 'next';
 
 export const revalidate = 0;
@@ -237,7 +238,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           {/* Content HTML in Charcoal text */}
           <div
             className="prose prose-slate prose-lg max-w-none text-slate-700 leading-relaxed font-serif prose-headings:text-slate-900 prose-headings:font-sans prose-a:text-[#0056B3] hover:prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: doc.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }}
           />
 
           {/* FAQ Accordion Block */}

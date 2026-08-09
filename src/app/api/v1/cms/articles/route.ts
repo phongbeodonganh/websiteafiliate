@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
+import { sanitizeArticleContent } from '@/lib/sanitize';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
       title,
       slug: finalSlug,
       excerpt: excerpt || '',
-      content,
+      content: sanitizeArticleContent(content),
       status: status || 'draft',
       is_featured: Boolean(isFeatured),
       revenue: revenue ? Number(revenue) : 0,

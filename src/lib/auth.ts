@@ -1,7 +1,11 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'affiliate_secret_key_v3_super_secure';
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set. Provide it via the JWT_SECRET environment variable.');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export interface AuthPayload {
   userId: string | number;
