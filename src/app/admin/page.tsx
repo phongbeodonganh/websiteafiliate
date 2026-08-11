@@ -889,6 +889,15 @@ export default function AdminDashboardPage() {
         ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
         : [{ question: '', answer: '' }]
     );
+    const [affiliatePlacements, setAffiliatePlacements] = useState<Array<{ affiliate_link_id: string; position_label: string }>>(
+      (() => {
+        const raw = editingArticle?.affiliatePlacements || editingArticle?.affiliate_placements || [];
+        return raw.map((p: any) => ({
+          affiliate_link_id: p.affiliate_link_id?._id || p.affiliate_link_id,
+          position_label: p.position_label,
+        }));
+      })()
+    );
 
     const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId) || c.id === categoryId);
 
@@ -979,6 +988,7 @@ export default function AdminDashboardPage() {
         keyTakeaways: takeawaysList,
         entities: entitiesList,
         faqSchema: validFaq,
+        affiliatePlacements,
       };
 
       try {
@@ -1010,24 +1020,19 @@ export default function AdminDashboardPage() {
       }
     };
 
-    const insertAffCta = (link: any, positionLabel: string) => {
-      const artId = editingArticle?.id || 1;
-      const labelText =
-        positionLabel === 'top_cta'
-          ? 'Top Partner Deal'
-          : positionLabel === 'middle_comparison'
-          ? 'Comparison Offer'
-          : 'Footer Special Promo';
-      const ctaSnippet = `
-<div class="my-8 flex flex-col items-center justify-center p-6 bg-[#0056B3]/10 border border-[#0056B3]/30 rounded-2xl text-center">
-  <p class="font-bold text-[#0056B3] text-lg mb-2">🔥 ${labelText} (${link.name}):</p>
-  <p class="text-xs text-slate-500 mb-4">Commission: ${link.commission || 'Exclusive'} • Cookie: ${link.cookie || '30 Days'}</p>
-  <a href="/api/v1/public/tracking/redirect?article_id=${artId}&affiliate_link_id=${link.id}" data-affiliate-id="${link.id}" data-article-id="${artId}" class="affiliate-btn inline-flex items-center justify-center px-8 py-3.5 font-bold text-white transition-all duration-200 bg-[#FF6B6B] hover:bg-[#ff5252] rounded-full hover:scale-105 shadow-md shadow-rose-500/20" rel="nofollow sponsored" target="_blank">
-    👉 Claim Offer On ${link.name}
-  </a>
-</div>
-`;
-      setContent((prev: string) => prev + ctaSnippet);
+    const togglePlacement = (affiliateLinkId: string, positionLabel: string) => {
+      const exists = affiliatePlacements.some(
+        (p) => p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel
+      );
+      if (exists) {
+        setAffiliatePlacements(
+          affiliatePlacements.filter(
+            (p) => !(p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel)
+          )
+        );
+      } else {
+        setAffiliatePlacements([...affiliatePlacements, { affiliate_link_id: affiliateLinkId, position_label: positionLabel }]);
+      }
     };
 
     return (
@@ -1356,34 +1361,58 @@ export default function AdminDashboardPage() {
               </h3>
 
               <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                {affiliateLinksList.map((link) => (
+                {affiliateLinksList.map((link) => {
+                  const topActive = affiliatePlacements.some(
+                    (p) => p.affiliate_link_id === link.id && p.position_label === 'top_cta'
+                  );
+                  const middleActive = affiliatePlacements.some(
+                    (p) => p.affiliate_link_id === link.id && p.position_label === 'middle_comparison'
+                  );
+                  const footerActive = affiliatePlacements.some(
+                    (p) => p.affiliate_link_id === link.id && p.position_label === 'footer_banner'
+                  );
+
+                  return (
                   <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
                     <p className="text-xs font-bold text-white truncate">{link.name}</p>
                     <div className="flex gap-1.5">
                       <button
                         type="button"
-                        onClick={() => insertAffCta(link, 'top_cta')}
-                        className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-semibold py-1 rounded"
+                        onClick={() => togglePlacement(link.id, 'top_cta')}
+                        className={`flex-1 border text-[10px] font-semibold py-1 rounded ${
+                          topActive
+                            ? 'bg-amber-500/30 text-amber-300 border-amber-400'
+                            : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
+                        }`}
                       >
                         + Top CTA
                       </button>
                       <button
                         type="button"
-                        onClick={() => insertAffCta(link, 'middle_comparison')}
-                        className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[10px] font-semibold py-1 rounded"
+                        onClick={() => togglePlacement(link.id, 'middle_comparison')}
+                        className={`flex-1 border text-[10px] font-semibold py-1 rounded ${
+                          middleActive
+                            ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400'
+                            : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                        }`}
                       >
                         + Middle
                       </button>
                       <button
                         type="button"
-                        onClick={() => insertAffCta(link, 'footer_banner')}
-                        className="flex-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-semibold py-1 rounded"
+                        onClick={() => togglePlacement(link.id, 'footer_banner')}
+                        className={`flex-1 border text-[10px] font-semibold py-1 rounded ${
+                          footerActive
+                            ? 'bg-purple-500/30 text-purple-300 border-purple-400'
+                            : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/30'
+                        }`}
                       >
                         + Footer
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

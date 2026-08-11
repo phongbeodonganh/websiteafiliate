@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AffiliateTracker from '@/components/AffiliateTracker';
+import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Eye, Calendar, User, ArrowLeft, ShieldCheck, Tag, ChevronRight } from 'lucide-react';
@@ -65,7 +66,8 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
   const article = await ArticleModel.findOne({ slug, status: 'published' })
     .populate('author_id', 'name username avatar')
-    .populate('category_id', 'name slug');
+    .populate('category_id', 'name slug')
+    .populate('affiliate_placements.affiliate_link_id', 'name commission cookie');
 
   if (!article) {
     notFound();
@@ -76,6 +78,22 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   await article.save();
 
   const doc = article.toObject();
+  const articleId = doc._id.toString();
+
+  const placements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : [])
+    .filter((p: any) => p.affiliate_link_id && p.affiliate_link_id._id)
+    .map((p: any) => ({
+      positionLabel: p.position_label as string,
+      link: {
+        id: p.affiliate_link_id._id.toString(),
+        name: p.affiliate_link_id.name,
+        commission: p.affiliate_link_id.commission,
+        cookie: p.affiliate_link_id.cookie,
+      },
+    }));
+
+  const topPlacements = placements.filter((p) => p.positionLabel === 'top_cta');
+  const otherPlacements = placements.filter((p) => p.positionLabel !== 'top_cta');
 
   // Related articles
   const rawRelated = await ArticleModel.find({
@@ -235,11 +253,21 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             </div>
           )}
 
+          {/* Top Affiliate CTA Placements */}
+          {topPlacements.map((p, idx) => (
+            <AffiliateCtaBlock key={`top-${idx}`} articleId={articleId} link={p.link} positionLabel={p.positionLabel} />
+          ))}
+
           {/* Content HTML in Charcoal text */}
           <div
             className="prose prose-slate prose-lg max-w-none text-slate-700 leading-relaxed font-serif prose-headings:text-slate-900 prose-headings:font-sans prose-a:text-[#0056B3] hover:prose-a:underline"
             dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }}
           />
+
+          {/* Remaining Affiliate CTA Placements (middle / footer) */}
+          {otherPlacements.map((p, idx) => (
+            <AffiliateCtaBlock key={`other-${idx}`} articleId={articleId} link={p.link} positionLabel={p.positionLabel} />
+          ))}
 
           {/* FAQ Accordion Block */}
           {Array.isArray(doc.faq_schema) && doc.faq_schema.length > 0 && (

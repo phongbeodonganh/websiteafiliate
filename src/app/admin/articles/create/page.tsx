@@ -687,7 +687,10 @@ export default function CreateArticleStudioPage() {
                       (p) => p.affiliate_link_id === aff.id && p.position_label === 'top_cta'
                     );
                     const middleActive = activePlacements.some(
-                      (p) => p.affiliate_link_id === aff.id && p.position_label === 'middle'
+                      (p) => p.affiliate_link_id === aff.id && p.position_label === 'middle_comparison'
+                    );
+                    const footerActive = activePlacements.some(
+                      (p) => p.affiliate_link_id === aff.id && p.position_label === 'footer_banner'
                     );
 
                     return (
@@ -715,7 +718,7 @@ export default function CreateArticleStudioPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => togglePlacement(aff.id, 'middle')}
+                            onClick={() => togglePlacement(aff.id, 'middle_comparison')}
                             className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition ${
                               middleActive
                                 ? 'bg-blue-50 text-[#0056B3] border-blue-200'
@@ -723,6 +726,17 @@ export default function CreateArticleStudioPage() {
                             }`}
                           >
                             + Middle
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => togglePlacement(aff.id, 'footer_banner')}
+                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition ${
+                              footerActive
+                                ? 'bg-blue-50 text-[#0056B3] border-blue-200'
+                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            + Footer
                           </button>
                         </div>
                       </div>

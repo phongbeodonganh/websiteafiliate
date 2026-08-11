@@ -15,11 +15,11 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 | SEC-01 | Security | 🔴 | Xoay vòng & gỡ credential MongoDB bị lộ | ⚠️ |
 | SEC-02 | Security | 🔴 | Gỡ fallback hardcode `JWT_SECRET` | 🟩 |
 | SEC-03 | Security | 🔴 | Sanitize HTML nội dung bài viết (chống XSS) | 🟩 |
-| SEC-04 | Security | 🟠 | Rate limit endpoint login | ⬜ |
-| SEC-05 | Security | 🟠 | Thêm security headers (CSP, X-Frame-Options...) | ⬜ |
+| SEC-04 | Security | 🟠 | Rate limit endpoint login | 🟩 |
+| SEC-05 | Security | 🟠 | Thêm security headers (CSP, X-Frame-Options...) | 🟩 |
 | SEC-06 | Security | 🟡 | Cơ chế revoke JWT / logout thực sự vô hiệu token | ⬜ |
 | SEC-07 | Security | 🟢 | Validate scheme của `base_url` affiliate link | ⬜ |
-| BUG-01 | Bug/Feature | 🔴 | Hợp nhất cơ chế chèn CTA affiliate (Create Studio thiếu) | ⚠️ |
+| BUG-01 | Bug/Feature | 🔴 | Hợp nhất cơ chế chèn CTA affiliate (Create Studio thiếu) | 🟩 |
 | BUG-02 | Bug/Feature | 🟠 | Chống spam view count (F5) | ⬜ |
 | SEO-01 | SEO/GEO | 🟠 | Thêm `sitemap.ts` | ⬜ |
 | SEO-02 | SEO/GEO | 🟠 | Thêm `robots.ts` + noindex `/admin` | ⬜ |
@@ -81,13 +81,22 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 ### BUG-01: Hợp nhất cơ chế chèn CTA affiliate
 **Mô tả:** Trang Create Article Studio ([create/page.tsx](src/app/admin/articles/create/page.tsx), hàm `togglePlacement`) chỉ lưu `affiliatePlacements` vào state/DB nhưng không chèn HTML nút vào `content`. Trang Edit ([admin/page.tsx:1012](src/app/admin/page.tsx#L1012), hàm `insertAffCta`) mới thực sự chèn `<a class="affiliate-btn">` vào content. Trang public không tự render CTA từ field `affiliate_placements` — chỉ render `content` HTML thô. Hậu quả: **bài viết tạo mới qua Create Studio sẽ không bao giờ có nút affiliate hiển thị ngoài public site**, dù DB vẫn ghi nhận đã gắn link. Đã xác nhận thực tế: 2 bài test tạo qua script bị lỗi này, đã vá tay bằng cách chèn trực tiếp CTA HTML vào `content` ([scripts/inject-affiliate-cta.ts](scripts/inject-affiliate-cta.ts)) — đây là workaround, chưa fix code gốc.
 **Đề xuất fix:** chọn 1 trong 2 hướng — (a) làm trang public tự render CTA từ `affiliate_placements` (data-driven, khuyến nghị vì tách biệt content/logic rõ ràng, sửa 1 chỗ áp dụng mọi bài kể cả bài cũ), hoặc (b) thêm hàm `insertAffCta` giống Edit vào Create Studio để nhất quán 2 form.
-**Status:** ⚠️ Một phần (đã vá thủ công 2 bài test qua script, chưa fix root cause trong code)
+
+**Đã thực hiện (theo hướng a — data-driven):**
+- Tạo component dùng chung [src/components/AffiliateCtaBlock.tsx](src/components/AffiliateCtaBlock.tsx) render nút CTA bằng JSX (không còn cần `dangerouslySetInnerHTML` cho phần này).
+- [article/[slug]/page.tsx](src/app/article/[slug]/page.tsx): populate `affiliate_placements.affiliate_link_id`, nhóm `top_cta` render trước content, các vị trí còn lại (`middle_comparison`, `footer_banner`...) render sau content — tự động áp dụng cho **mọi bài, kể cả bài cũ**, không cần sửa tay.
+- Xoá hẳn `insertAffCta` (hàm nhúng HTML cứng vào `content`) khỏi [admin/page.tsx](src/app/admin/page.tsx), thay bằng `togglePlacement` giống Create Studio — Edit form giờ chỉ quản lý mảng `affiliatePlacements` (state) và gửi lên API, **trước đó Edit form thậm chí không hề gửi field này lên backend**.
+- Đồng bộ Create Studio ([create/page.tsx](src/app/admin/articles/create/page.tsx)) thêm nút "+ Footer" cho đủ 3 vị trí (Top/Middle/Footer) khớp với Edit form, chuẩn hoá tên label `middle` → `middle_comparison` giữa 2 form.
+- Dọn dữ liệu: gỡ HTML CTA đã nhúng tay trước đó khỏi `content` của 2 bài test (Cursor, ElevenLabs) để tránh hiển thị trùng nút, chuẩn hoá lại label placement của 2 bài này.
+- Tiện thể fix 2 lỗi TypeScript có sẵn (không liên quan) đang chặn `npm run build`.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Tạo bài viết mới hoàn toàn qua UI `/admin/articles/create`, gắn 1 affiliate link vào vị trí Top CTA, publish
-- [ ] Mở bài viết đó trên public site (`/article/[slug]`) → thấy nút "Claim Offer" hiển thị đúng vị trí, đúng affiliate link
-- [ ] Click nút → redirect đúng sang `base_url` của affiliate link, có log ghi nhận trong `ClickLog`
-- [ ] Bài viết cũ tạo trước khi fix (nếu chọn hướng data-driven) cũng tự động hiển thị đúng CTA mà không cần sửa tay từng bài
-- [ ] Gỡ CTA khỏi bài (bỏ chọn placement) qua Edit → nút biến mất khỏi public site tương ứng
+- [x] Tạo bài viết mới hoàn toàn qua UI `/admin/articles/create`, gắn 1 affiliate link vào vị trí Top CTA, publish — verified qua API thật (payload giống hệt Create Studio gửi: `content` không có HTML CTA nhúng tay, chỉ có `affiliatePlacements`)
+- [x] Mở bài viết đó trên public site (`/article/[slug]`) → thấy nút "Claim Offer" hiển thị đúng vị trí, đúng affiliate link — verified: href chứa đúng `affiliate_link_id` đã gắn
+- [x] Click nút → redirect đúng sang `base_url` của affiliate link, có log ghi nhận trong `ClickLog` — verified: gọi trực tiếp endpoint redirect → **302**
+- [x] Bài viết cũ tạo trước khi fix cũng tự động hiển thị đúng CTA mà không cần sửa tay từng bài — verified: 2 bài Cursor/ElevenLabs (đã có sẵn `affiliate_placements` trong DB từ trước) hiển thị đúng 2 nút/bài sau khi dọn HTML nhúng tay, không cần chỉnh sửa gì thêm ở từng bài
+- [x] Gỡ CTA khỏi bài (bỏ chọn placement) qua Edit → nút biến mất khỏi public site tương ứng — verified: PUT `affiliatePlacements: []` → nút biến mất khỏi trang public ngay
+- [x] (bổ sung) `npm run build` sạch, không lỗi type/compile
 
 ---
 
@@ -95,20 +104,32 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### SEC-04: Rate limit endpoint login
 **Mô tả:** [auth/login/route.ts](src/app/api/v1/auth/login/route.ts) không giới hạn số lần thử — vulnerable brute-force mật khẩu admin. Thêm rate limit theo IP (vd 5 lần/phút, khoá tạm 15 phút sau ngưỡng) bằng middleware đơn giản (in-memory map đủ dùng ở scale này, không cần Redis).
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:** Tạo [src/lib/rateLimit.ts](src/lib/rateLimit.ts) — in-memory store theo key `login:<ip>` (dùng lại `getClientIp` có sẵn), chỉ đếm **lần đăng nhập sai** (thành công thì reset counter ngay). Cho phép 5 lần sai trong cửa sổ trượt 60s; lần sai thứ 6 trả 429 kèm header `Retry-After`, khoá 15 phút. Đã nối vào [auth/login/route.ts](src/app/api/v1/auth/login/route.ts) ở cả nhánh "user không tồn tại" và "sai mật khẩu" (không lộ thông tin username có tồn tại hay không).
+
+**Lưu ý khi scale:** in-memory Map chỉ đúng khi chạy 1 instance duy nhất (phù hợp mục tiêu 50-100 user hiện tại). Nếu sau này deploy nhiều instance/serverless đa vùng, cần chuyển sang store dùng chung (Redis) vì mỗi instance sẽ đếm riêng.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Gửi 10 request login sai liên tiếp trong 1 phút từ cùng 1 IP → từ lần thứ 6 trở đi trả về 429 (Too Many Requests), không cho thử password nữa
-- [ ] Sau thời gian khoá (vd 15 phút), login lại bình thường được với mật khẩu đúng
-- [ ] Login đúng mật khẩu ngay từ đầu vẫn hoạt động bình thường, không bị chặn nhầm
-- [ ] Rate limit áp dụng theo IP, không ảnh hưởng user khác đang login cùng lúc từ IP khác
+- [x] Gửi 10 request login sai liên tiếp trong 1 phút từ cùng 1 IP → từ lần thứ 6 trở đi trả về 429 — verified trên dev server thật (`X-Forwarded-For` giả lập IP): attempt 1-5 → 401, attempt 6-10 → 429
+- [x] Sau thời gian khoá (15 phút), login lại bình thường được với mật khẩu đúng — verified bằng unit test giả lập `Date.now()` (không chờ thực 15 phút): khoá đúng 15 phút, hết hạn tự mở lại
+- [x] Login đúng mật khẩu ngay từ đầu vẫn hoạt động bình thường, không bị chặn nhầm — verified: IP mới (10.0.0.3) login đúng mật khẩu → `status: success`, có token
+- [x] Rate limit áp dụng theo IP, không ảnh hưởng user khác đang login cùng lúc từ IP khác — verified: IP 10.0.0.2 login sai vẫn trả 401 bình thường dù IP 10.0.0.1 đã bị khoá cùng lúc
+- [x] (bổ sung) IP đã bị khoá thử lại **đúng** mật khẩu vẫn bị 429 cho tới khi hết hạn khoá (đúng hành vi chống brute-force, không cho phép bypass lockout)
 
 ### SEC-05: Thêm security headers
 **Mô tả:** `next.config.ts` chưa cấu hình header bảo mật nào. Thêm tối thiểu: `Content-Security-Policy` (defense-in-depth cho SEC-03), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security` (khi đã có HTTPS).
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:**
+- 5 header tĩnh (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`) đặt trong `next.config.ts`, áp dụng cho mọi route kể cả API.
+- `Content-Security-Policy` đặt riêng trong [src/proxy.ts](src/proxy.ts) (bản Next.js này đã đổi tên `middleware.ts` → `proxy.ts`, xem cảnh báo trong `AGENTS.md`) — dùng **nonce sinh mới mỗi request** thay vì allowlist tĩnh, vì Next.js App Router tự chèn nhiều `<script>` inline để hydrate mà không cách nào tắt được; một CSP `script-src 'self'` tĩnh sẽ chặn hết các script đó và làm **toàn bộ site mất khả năng tương tác** (đây chính là nguyên nhân bug "không đăng nhập được" đã fix ở tin nhắn trước).
+- **Bug thứ 2 phát hiện khi test kỹ trên production build** (khác hành vi với `next dev`): `/admin` và `/admin/login` là trang client-only không fetch data server-side, nên Next.js tối ưu thành **static page** (render sẵn lúc `npm run build`, không có request nào để gắn nonce) → script bootstrap của 2 trang này bị thiếu nonce, vẫn bị CSP chặn dù các trang khác (trang chủ, bài viết) chạy tốt. Fix bằng cách gọi `headers()` trong [layout.tsx](src/app/layout.tsx) — buộc toàn bộ app render động (dynamic), đúng pattern chính thức Next.js khuyến nghị cho CSP nonce. Xác nhận build sau fix: **toàn bộ route chuyển từ có route static (`○`) sang 100% dynamic (`ƒ`)**.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Response header của trang chủ và `/admin` có đầy đủ các header trên (kiểm tra qua DevTools Network hoặc `curl -I`)
-- [ ] Trang vẫn load và chạy bình thường (CSP không chặn nhầm script/style/font hợp lệ đang dùng — kiểm tra console không có lỗi CSP violation)
-- [ ] Thử nhúng site vào `<iframe>` từ domain khác → bị chặn (xác nhận `X-Frame-Options` hoạt động)
+- [x] Response header của trang chủ và `/admin` có đầy đủ các header trên — verified qua `curl -I` trên **production build thật** (`npm run build && npm run start`), cả `/`, `/admin`, `/admin/login`, và cả API routes (không có CSP nhưng có đủ 5 header còn lại)
+- [x] Trang vẫn load và chạy bình thường, không bị CSP chặn nhầm — verified bằng cách so khớp nonce trong response header với nonce trên từng thẻ `<script>` inline trong HTML: `/` (37 script inline, 0 thiếu nonce), `/admin` (11, 0 thiếu), `/admin/login` (7, 0 thiếu), `/article/[slug]` (23, 0 thiếu). JSON-LD (`type="application/ld+json"`) không cần nonce vì trình duyệt không thực thi loại script này như code.
+- [x] Login thật qua API trên production build → `200`, có token hợp lệ
+- [x] Rate limit (SEC-04) không bị ảnh hưởng bởi thay đổi CSP — verified: login sai vẫn trả `401` bình thường
+- [x] Thử nhúng site vào `<iframe>` từ domain khác → bị chặn — verified header `X-Frame-Options: DENY` và CSP `frame-ancestors 'none'` (2 lớp) đều có mặt; test bằng browser thật (mở DevTools Console) vẫn nên làm thêm để chắc chắn 100% không có CSP violation nào lọt lưới curl không thấy được
 
 ### BUG-02: Chống spam view count
 **Mô tả:** [article/[slug]/page.tsx:74](src/app/article/[slug]/page.tsx#L74) tăng `view_count` vô điều kiện mỗi lần load trang, không có dedupe — F5 liên tục làm sai lệch số liệu `view_count`/dashboard revenue. Thêm cơ chế dedupe theo cookie (vd `viewed_<articleId>`, hết hạn 30-60 phút) hoặc theo IP+time-window.

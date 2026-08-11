@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
@@ -48,6 +49,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Reading a dynamic API here opts the whole app out of static prerendering,
+  // which is required for Next.js to pick up the per-request `x-nonce` header
+  // (set in src/proxy.ts) and stamp it onto its own inline bootstrap scripts —
+  // otherwise statically-optimized routes (e.g. /admin, /admin/login) ship
+  // those scripts with no nonce and the CSP in proxy.ts blocks them outright.
+  await headers();
+
   let sysSettings;
   try {
     await connectToDatabase();
