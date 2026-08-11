@@ -21,8 +21,8 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 | SEC-07 | Security | 🟢 | Validate scheme của `base_url` affiliate link | ⬜ |
 | BUG-01 | Bug/Feature | 🔴 | Hợp nhất cơ chế chèn CTA affiliate (Create Studio thiếu) | 🟩 |
 | BUG-02 | Bug/Feature | 🟠 | Chống spam view count (F5) | ⬜ |
-| SEO-01 | SEO/GEO | 🟠 | Thêm `sitemap.ts` | ⬜ |
-| SEO-02 | SEO/GEO | 🟠 | Thêm `robots.ts` + noindex `/admin` | ⬜ |
+| SEO-01 | SEO/GEO | 🟠 | Thêm `sitemap.ts` | 🟩 |
+| SEO-02 | SEO/GEO | 🟠 | Thêm `robots.ts` + noindex `/admin` | 🟩 |
 | SEO-03 | SEO/GEO | 🟡 | Chuyển ảnh sang `next/image` | ⬜ |
 | SEO-04 | SEO/GEO | 🟡 | Thêm schema `BreadcrumbList` | ⬜ |
 | SEO-05 | SEO/GEO | 🟢 | Canonical/noindex cho URL filter & phân trang | ⬜ |
@@ -141,21 +141,27 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### SEO-01: Thêm `sitemap.ts`
 **Mô tả:** Chưa có `src/app/sitemap.ts` — Google/Bing không có danh sách URL chuẩn để crawl toàn bộ site, chỉ dựa vào crawl link nội bộ (chậm, dễ sót). Thêm sitemap động liệt kê tất cả bài `status: 'published'` + trang chủ, tự cập nhật khi có bài mới.
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:** Tạo [src/app/sitemap.ts](src/app/sitemap.ts) theo file convention chuẩn của Next.js — trả về trang chủ (`priority: 1`, `changeFrequency: daily`) + toàn bộ bài `status: 'published'` (`priority: 0.8`, `changeFrequency: weekly`, `lastmod` lấy từ `updated_at`). Base URL lấy từ `SettingModel.canonicalUrl` (đồng bộ với cách layout.tsx/article page đang dùng), fallback nếu chưa cấu hình. Thêm `export const revalidate = 3600` để sitemap tự làm mới mỗi giờ thay vì chỉ sinh 1 lần lúc build (mặc định Next.js cache tĩnh nếu không set).
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Truy cập `/sitemap.xml` trả về XML hợp lệ, đúng chuẩn sitemap protocol
-- [ ] Chứa đầy đủ URL của tất cả bài viết có `status: published`, không chứa bài `draft`
-- [ ] Tạo 1 bài viết mới, publish → chạy lại (hoặc đợi revalidate) → URL bài mới xuất hiện trong sitemap
-- [ ] Mỗi entry có `lastmod` khớp với `updated_at` của bài viết
-- [ ] Submit thử vào Google Search Console (nếu có) không báo lỗi format
+- [x] Truy cập `/sitemap.xml` trả về XML hợp lệ, đúng chuẩn sitemap protocol — verified trên **production build thật** (`npm run build && npm run start`): `Content-Type: application/xml`, đúng cấu trúc `<urlset>/<url>/<loc>/<lastmod>/<changefreq>/<priority>`
+- [x] Chứa đầy đủ URL của tất cả bài viết có `status: published`, không chứa bài `draft` — verified: sitemap có đủ 5 bài published hiện có + trang chủ; tạo thêm 1 bài published + 1 bài draft để test thì query chỉ nhận đúng bài published, loại đúng bài draft
+- [x] Tạo 1 bài viết mới, publish → chạy lại (hoặc đợi revalidate) → URL bài mới xuất hiện trong sitemap — verified logic query (bài mới publish xuất hiện ngay khi cache revalidate, không cần rebuild lại toàn bộ site)
+- [x] Mỗi entry có `lastmod` khớp với `updated_at` của bài viết — verified: giá trị `lastmod` trong XML trùng khớp `updated_at` trong DB
+- [ ] Submit thử vào Google Search Console — chưa làm vì site chưa có domain/GSC property thật (cần làm sau khi go-live với domain chính thức)
 
 ### SEO-02: Thêm `robots.ts` + noindex `/admin`
 **Mô tả:** Chưa có `src/app/robots.ts`. Thêm robots.txt disallow `/admin`, `/api`, cho phép crawl phần còn lại; đồng thời thêm `metadata: { robots: { index: false } }` cho toàn bộ route `/admin/*` để phòng trường hợp bị index nhầm.
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:**
+- [src/app/robots.ts](src/app/robots.ts) — disallow `/admin`, `/api`, allow phần còn lại, kèm link `sitemap.xml` (lấy base URL từ `SettingModel.canonicalUrl`, đồng bộ với SEO-01), `revalidate = 3600`.
+- Toàn bộ trang `/admin/*` (dashboard, login, create/edit article) đều là client component (`'use client'`) nên không tự export `metadata` được — tạo [src/app/admin/layout.tsx](src/app/admin/layout.tsx) (server component) bọc chung, export `metadata.robots = { index: false, follow: false }`, tự áp dụng cho mọi route con nhờ Next.js layout nesting mà không phải sửa từng file.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Truy cập `/robots.txt` trả về nội dung disallow `/admin` và `/api`, allow các route public
-- [ ] View source `/admin/login` có `<meta name="robots" content="noindex">`
-- [ ] View source trang chủ/bài viết **không** có thẻ noindex (đảm bảo không noindex nhầm trang public)
+- [x] Truy cập `/robots.txt` trả về nội dung disallow `/admin` và `/api`, allow các route public — verified trên production build thật
+- [x] View source `/admin/login` có `<meta name="robots" content="noindex">` — verified: `<meta name="robots" content="noindex, nofollow"/>`, cũng verified tương tự trên `/admin` và `/admin/articles/create` (áp dụng đúng cho mọi route con qua layout)
+- [x] View source trang chủ/bài viết **không** có thẻ noindex — verified: cả `/` và `/article/[slug]` đều không có meta robots noindex
 
 ---
 
