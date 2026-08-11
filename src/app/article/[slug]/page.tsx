@@ -3,6 +3,7 @@ import Footer from '@/components/Footer';
 import AffiliateTracker from '@/components/AffiliateTracker';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Eye, Calendar, User, ArrowLeft, ShieldCheck, Tag, ChevronRight } from 'lucide-react';
 import { connectToDatabase } from '@/lib/db/mongodb';
@@ -212,8 +213,15 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
           {/* Thumbnail */}
           {doc.thumbnail_url && (
-            <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-slate-100 mb-8 shadow-md">
-              <img src={doc.thumbnail_url} alt={doc.title} className="w-full h-full object-cover" />
+            <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-slate-100 mb-8 shadow-md">
+              <Image
+                src={doc.thumbnail_url}
+                alt={doc.title}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 800px"
+                className="object-cover"
+              />
             </div>
           )}
 

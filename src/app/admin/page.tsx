@@ -889,6 +889,7 @@ export default function AdminDashboardPage() {
         ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
         : [{ question: '', answer: '' }]
     );
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     const [affiliatePlacements, setAffiliatePlacements] = useState<Array<{ affiliate_link_id: string; position_label: string }>>(
       (() => {
         const raw = editingArticle?.affiliatePlacements || editingArticle?.affiliate_placements || [];
@@ -1020,6 +1021,36 @@ export default function AdminDashboardPage() {
       }
     };
 
+    const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploadingThumbnail(true);
+      try {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/v1/cms/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        const json = await res.json();
+
+        if (res.ok && json.status === 'success') {
+          setThumbnailUrl(json.data.url);
+        } else {
+          alert(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
+        }
+      } catch {
+        alert('Đã có lỗi xảy ra khi tải ảnh lên!');
+      } finally {
+        setIsUploadingThumbnail(false);
+        e.target.value = '';
+      }
+    };
+
     const togglePlacement = (affiliateLinkId: string, positionLabel: string) => {
       const exists = affiliatePlacements.some(
         (p) => p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel
@@ -1088,13 +1119,34 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Thumbnail Image URL</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Thumbnail Image</label>
+                <div className="flex items-center gap-3 mb-2">
+                  {thumbnailUrl && (
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="w-14 h-14 rounded-lg object-cover border border-slate-800 shrink-0"
+                    />
+                  )}
+                  <label className="flex-1 cursor-pointer">
+                    <span className="w-full inline-flex items-center justify-center gap-2 bg-slate-950 border border-dashed border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-400 hover:bg-slate-900 hover:border-amber-500 transition">
+                      {isUploadingThumbnail ? 'Đang tải ảnh lên...' : 'Chọn ảnh từ máy (JPEG/PNG/WEBP/GIF, tối đa 5MB)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleThumbnailUpload}
+                      disabled={isUploadingThumbnail}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   value={thumbnailUrl}
                   onChange={(e) => setThumbnailUrl(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="...hoặc dán URL ảnh thủ công"
                 />
               </div>
 

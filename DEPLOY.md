@@ -85,9 +85,19 @@ Nội dung:
 JWT_SECRET="<dán-secret-vừa-sinh-ở-trên>"
 MONGODB_URI="mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/websiteafiliate?retryWrites=true&w=majority"
 NODE_ENV=production
+
+# Cloudflare R2 (giống hệt giá trị trong .env.local ở máy local — bucket dùng chung)
+R2_ACCOUNT_ID="7929e845b9844a3cdb2cab8314760931"
+R2_BUCKET_NAME="affiliate-storage"
+R2_ACCESS_KEY_ID="<copy từ .env.local local>"
+R2_SECRET_ACCESS_KEY="<copy từ .env.local local>"
+R2_ENDPOINT="https://7929e845b9844a3cdb2cab8314760931.r2.cloudflarestorage.com"
+R2_PUBLIC_URL="https://pub-953bb290427d4613aef7ab843d88f8a5.r2.dev"
 ```
 
 > Lưu ý: `JWT_SECRET` này **phải khác** secret đang dùng ở máy dev local — nếu trùng, ai có secret dev cũng ký được token hợp lệ trên production.
+>
+> Riêng khối R2 thì **dùng chung giá trị** với máy local (cùng 1 bucket Cloudflare, không phải sinh riêng) — chỉ copy nguyên từ `.env.local` ở máy Windows sang.
 
 ## 6. MongoDB Atlas — whitelist IP của VPS
 
@@ -154,7 +164,7 @@ sudo nano /etc/nginx/sites-available/websiteafiliate
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;   # thay bằng domain thật, hoặc IP nếu chưa có domain
+    server_name aidealsuk.com www.aidealsuk.com;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -178,16 +188,16 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 9. HTTPS bằng Certbot (bắt buộc nếu có domain)
+## 9. HTTPS bằng Certbot
+
+Domain `aidealsuk.com` đã trỏ sẵn A record về đúng IP VPS này (đã kiểm tra), nên chạy được ngay:
 
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d aidealsuk.com -d www.aidealsuk.com
 ```
 
 Certbot tự sửa file Nginx để redirect HTTP → HTTPS và tự gia hạn cert định kỳ.
-
-**Nếu chưa có domain:** truy cập tạm qua `http://103.90.225.161`, nhưng nên coi đây là môi trường test, không phải production thật — trang login gửi mật khẩu qua HTTP không mã hoá.
 
 ## 10. Firewall (ufw)
 
@@ -233,12 +243,14 @@ pm2 reload websiteafiliate
 
 ## Checklist trước khi coi là "go-live" thật
 
-Tham khảo [GO_LIVE_TASKLIST.md](GO_LIVE_TASKLIST.md) — các mục sau **ảnh hưởng trực tiếp bước deploy này**:
+Tham khảo [GO_LIVE_TASKLIST.md](GO_LIVE_TASKLIST.md) và [R2_IMAGE_STORAGE_TASKLIST.md](R2_IMAGE_STORAGE_TASKLIST.md) — các mục sau **ảnh hưởng trực tiếp bước deploy này**:
 
 - [ ] `JWT_SECRET` production khác hẳn secret local (bước 5)
 - [ ] Domain trỏ đúng IP, HTTPS hoạt động (bước 9)
 - [ ] IP VPS đã whitelist trên MongoDB Atlas (bước 6)
 - [ ] Đã đổi mật khẩu root + chuyển SSH key (bước 11)
 - [ ] `ufw` chỉ mở 22/80/443, không lộ port 3000 (bước 10)
+- [x] SEO-01/SEO-02 (`sitemap.ts`, `robots.ts`) — đã làm, tự hoạt động đúng sau khi deploy, không cần thêm thao tác gì
+- [x] SEO-03 (`next/image`) — đã làm, cần domain R2/Unsplash nằm trong `next.config.ts` remotePatterns (đã cấu hình sẵn)
 - [ ] SEC-01 (mật khẩu MongoDB Atlas bị lộ) — vẫn đang bị block, cần chủ sở hữu Atlas xử lý
-- [ ] SEO-01/SEO-02 (`sitemap.ts`, `robots.ts`) — chưa làm, nên hoàn thành trước khi chạy quảng cáo/SEO thật
+- [ ] R2-03 (custom domain cho ảnh R2) — đang tạm dùng `pub-*.r2.dev`, làm sau khi đổi nameserver `aidealsuk.com` sang Cloudflare (không bắt buộc để go-live, chỉ tối ưu thêm)

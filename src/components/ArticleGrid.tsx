@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Eye, ArrowUpRight, Star, Loader2, ChevronDown } from 'lucide-react';
 
 export interface ArticleItem {
@@ -95,13 +96,15 @@ export default function ArticleGrid({ initialArticles, initialPagination, curren
           >
             {/* 16:9 Aspect Ratio Thumbnail */}
             <div className="aspect-video bg-slate-100 relative overflow-hidden">
-              <img
+              <Image
                 src={
                   article.thumbnailUrl ||
                   'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'
                 }
                 alt={article.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-60"></div>
               <div className="absolute top-4 left-4 flex gap-2">

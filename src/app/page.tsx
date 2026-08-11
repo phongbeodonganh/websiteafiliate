@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Eye,
   Calendar,
@@ -413,10 +414,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               {/* Main Bento Box (Span 7) */}
               <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition relative overflow-hidden group min-h-[460px] border border-slate-100 shadow-xl shadow-slate-200/50">
                 <div className="absolute inset-0 z-0 opacity-90 group-hover:scale-105 transition duration-700">
-                  <img
+                  <Image
                     src={featuredArticle.thumbnailUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'}
                     alt={featuredArticle.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 60vw"
+                    className="object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent"></div>
                 </div>

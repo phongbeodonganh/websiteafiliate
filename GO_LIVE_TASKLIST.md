@@ -23,7 +23,7 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 | BUG-02 | Bug/Feature | 🟠 | Chống spam view count (F5) | ⬜ |
 | SEO-01 | SEO/GEO | 🟠 | Thêm `sitemap.ts` | 🟩 |
 | SEO-02 | SEO/GEO | 🟠 | Thêm `robots.ts` + noindex `/admin` | 🟩 |
-| SEO-03 | SEO/GEO | 🟡 | Chuyển ảnh sang `next/image` | ⬜ |
+| SEO-03 | SEO/GEO | 🟡 | Chuyển ảnh sang `next/image` | 🟩 |
 | SEO-04 | SEO/GEO | 🟡 | Thêm schema `BreadcrumbList` | ⬜ |
 | SEO-05 | SEO/GEO | 🟢 | Canonical/noindex cho URL filter & phân trang | ⬜ |
 | FE-01 | FE/UX | 🟠 | Sửa lỗi nút Back trình duyệt trong `/admin` | ⬜ |
@@ -178,11 +178,22 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### SEO-03: Chuyển ảnh sang `next/image`
 **Mô tả:** Toàn bộ ảnh dùng `<img>` thô (Header, PublicNav, article page, admin page) — không lazy-load, không tối ưu định dạng/kích thước, ảnh hưởng LCP đặc biệt trên mobile (spec ghi rõ traffic ads chủ yếu từ mobile). Chuyển các ảnh public-facing (thumbnail bài viết, ảnh trang chủ) sang `next/image`.
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:** Chuyển 3 chỗ ảnh public-facing chính sang `<Image>`:
+- [src/app/page.tsx](src/app/page.tsx) — ảnh hero/featured article trên trang chủ, dùng `fill` + `priority` (đây là LCP element, cần load ngay không lazy) + `sizes` khớp layout responsive
+- [src/components/ArticleGrid.tsx](src/components/ArticleGrid.tsx) — thumbnail từng thẻ bài viết trong grid, dùng `fill`, không set `priority` (đa số nằm dưới fold, để Next.js tự lazy-load)
+- [src/app/article/[slug]/page.tsx](src/app/article/[slug]/page.tsx) — ảnh thumbnail đầu bài viết, dùng `fill` + `priority` (nằm ngay đầu trang, ảnh hưởng LCP). Phải thêm `relative` vào container cha vì `fill` bắt buộc parent có `position` khác `static`.
+
+**Quyết định phạm vi:** Logo trong `Header.tsx`/`PublicNav.tsx` **cố ý không chuyển** — vì `logoUrl` là URL do admin tự nhập tuỳ ý qua Settings (không giới hạn domain), trong khi `next/image` bắt buộc domain phải nằm trong `remotePatterns` allowlist, đổi sẽ có rủi ro vỡ site nếu admin từng set logo từ domain lạ. Ảnh trong `admin/page.tsx` cũng không chuyển vì trang admin đã `noindex` (SEO-02), không ảnh hưởng SEO/Core Web Vitals được Google đánh giá.
+
+**Cấu hình đi kèm:** `next.config.ts` đã có `images.remotePatterns` cho phép `*.r2.dev` (ảnh upload qua R2, xem `R2_IMAGE_STORAGE_TASKLIST.md`) và `images.unsplash.com` (ảnh cũ) từ lúc làm R2-09.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Ảnh thumbnail bài viết và ảnh trang chủ render qua `<Image>` của Next.js (kiểm tra DOM có `srcset`, `loading="lazy"` cho ảnh dưới fold)
-- [ ] Chạy Lighthouse trên trang chủ và 1 trang bài viết, mobile — điểm Performance/LCP cải thiện rõ so với trước
-- [ ] Ảnh vẫn hiển thị đúng tỉ lệ, không bị vỡ layout (CLS ~0) trên cả desktop và mobile
+- [x] Ảnh thumbnail bài viết và ảnh trang chủ render qua `<Image>` của Next.js (kiểm tra DOM có `srcset`, `loading="lazy"` cho ảnh dưới fold) — verified trên production build thật: card trong grid có `loading="lazy"`, `decoding="async"`, `srcSet` nhiều kích thước; ảnh hero/thumbnail đầu bài (có `priority`) không có `loading="lazy"` (đúng thiết kế) nhưng có `<link rel="preload" as="image">` tương ứng
+- [x] Ảnh từ R2 hiển thị đúng qua `next/image` (không chỉ Unsplash) — verified: upload ảnh test lên R2, gắn vào bài viết, `/_next/image?url=...r2.dev...` trả về `200`, đúng `Content-Type: image/png`
+- [x] Toàn bộ thumbnail đang có trong DB nằm trong allowlist domain — verified bằng script quét toàn bộ `thumbnail_url` hiện có, không có domain nào ngoài `*.r2.dev`/`images.unsplash.com`
+- [ ] Chạy Lighthouse trên trang chủ và 1 trang bài viết, mobile — **chưa chạy được** (không có trình duyệt thật trong môi trường này để đo Lighthouse); cấu trúc HTML đã đúng chuẩn tối ưu (srcset/lazy/preload) nên kỳ vọng điểm cải thiện, nhưng cần bạn tự đo bằng Chrome DevTools hoặc PageSpeed Insights để xác nhận con số cụ thể
+- [ ] Kiểm tra layout không vỡ (CLS) trên trình duyệt thật — cần bạn tự xem qua trình duyệt, không mô phỏng được bằng curl
 
 ### FE-01: Sửa lỗi nút Back trình duyệt trong `/admin`
 **Mô tả:** `/admin` dùng `useState` cho điều hướng nội bộ (`activeTab`, `editingArticle`, `previewArticle` — [admin/page.tsx:99-106](src/app/admin/page.tsx#L99)) không đồng bộ URL. Bấm Back trình duyệt thoát hẳn khỏi `/admin` thay vì lùi lại 1 bước UI như user kỳ vọng. Đồng bộ state điều hướng vào query string qua `router.push`/`router.replace` (shallow).
