@@ -485,11 +485,212 @@
   transform: translateY(-1px);
 }
 
+.sectionViewAll {
+  align-items: center;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  justify-content: center;
+  margin-top: 22px;
+  min-height: 44px;
+  padding: 10px 18px;
+  text-decoration: none;
+  transition: transform 160ms ease;
+}
+
+.sectionViewAll:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
 .affiliateSection,
 .leadCapture,
 .categorySections {
   margin: 0 auto 36px;
   max-width: 1252px;
+}
+
+.collectionNavLabel {
+  align-items: center;
+  color: #ffffff;
+  display: flex;
+  font-size: 12px;
+  font-weight: 650;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.collectionShell {
+  margin: 0 auto;
+  max-width: 1252px;
+  padding-bottom: 48px;
+}
+
+.collectionHero {
+  border: 1px solid #d7d7d7;
+  border-top: 4px solid #111111;
+  margin-bottom: 28px;
+  padding: 42px 34px;
+}
+
+.collectionHero h1 {
+  font-size: clamp(38px, 6vw, 74px);
+  line-height: 0.95;
+  margin: 10px 0 20px;
+  text-transform: uppercase;
+}
+
+.collectionHero > p:last-child {
+  color: #555555;
+  font-size: 16px;
+  margin: 0;
+  max-width: 680px;
+}
+
+.collectionGrid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.collectionCard,
+.affiliateCard {
+  background: #ffffff;
+  border: 1px solid #d7d7d7;
+  display: flex;
+  flex-direction: column;
+  transition: transform 160ms ease;
+}
+
+.collectionCard:hover,
+.affiliateCard:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.collectionImage {
+  aspect-ratio: 16 / 9;
+  background: #eeeeee;
+  display: block;
+  overflow: hidden;
+}
+
+.collectionImage img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.collectionCardBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px;
+}
+
+.collectionCardBody .meta {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+}
+
+.collectionCardBody h2,
+.affiliateCard h2 {
+  font-size: 21px;
+  line-height: 1.12;
+  margin: 14px 0;
+}
+
+.collectionCardBody h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.collectionCardBody > p:not(.meta) {
+  color: #666666;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.collectionCardLink,
+.affiliateCard > a {
+  align-items: center;
+  border-top: 1px solid #d7d7d7;
+  color: #111111;
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 16px;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.affiliateCard {
+  min-height: 280px;
+  padding: 26px;
+}
+
+.affiliateCard > p {
+  align-items: center;
+  color: #555555;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.affiliateRank {
+  align-items: center;
+  align-self: flex-start;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 5px;
+  padding: 6px 9px;
+}
+
+.collectionMore {
+  align-items: center;
+  background: #111111;
+  border: 1px solid #111111;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  margin: 30px auto 0;
+  min-width: 150px;
+  padding: 14px 24px;
+  text-transform: uppercase;
+  transition: transform 160ms ease;
+}
+
+.collectionMore:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+}
+
+.collectionMore:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.collectionError,
+.collectionEmpty {
+  border: 1px solid #111111;
+  margin: 0 0 28px;
+  padding: 24px;
+}
+
+.spin {
+  animation: loading-spin 800ms linear infinite;
 }
 
 .footer {
@@ -684,6 +885,10 @@
   .footer {
     min-height: 88px;
   }
+
+  .collectionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
@@ -749,5 +954,13 @@
 
   .footer {
     padding: 22px 16px;
+  }
+
+  .collectionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .collectionHero {
+    padding: 30px 22px;
   }
 }

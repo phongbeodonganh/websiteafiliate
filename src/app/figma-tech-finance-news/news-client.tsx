@@ -73,6 +73,7 @@ async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
 export default function TechFinanceNewsClient() {
   const [latest, setLatest] = useState<Article[]>([]);
   const [popular, setPopular] = useState<Article[]>([]);
+  const [editorial, setEditorial] = useState<Article[]>([]);
   const [query, setQuery] = useState("");
   const [activeQuery, setActiveQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -82,18 +83,22 @@ export default function TechFinanceNewsClient() {
     const controller = new AbortController();
     const latestParams = new URLSearchParams({ limit: "8" });
     const popularParams = new URLSearchParams({ tab: "popular", limit: "2" });
+    const editorialParams = new URLSearchParams({ tab: "hot", limit: "3" });
     if (activeQuery) {
       latestParams.set("q", activeQuery);
       popularParams.set("q", activeQuery);
+      editorialParams.set("q", activeQuery);
     }
 
     Promise.all([
       fetchArticles(latestParams, controller.signal),
       fetchArticles(popularParams, controller.signal),
+      fetchArticles(editorialParams, controller.signal),
     ])
-      .then(([latestArticles, popularArticles]) => {
+      .then(([latestArticles, popularArticles, editorialArticles]) => {
         setLatest(latestArticles);
         setPopular(popularArticles);
+        setEditorial(editorialArticles);
       })
       .catch((loadError: unknown) => {
         if (loadError instanceof DOMException && loadError.name === "AbortError") return;
@@ -122,11 +127,9 @@ export default function TechFinanceNewsClient() {
 
   const featured = latest.find((article) => article.isFeatured) || latest[0];
   const latestArticles = latest.filter((article) => article.id !== featured?.id).slice(0, 5);
-  const editorialArticles = latest.filter(
-    (article) => article.id !== featured?.id && !popular.some((item) => item.id === article.id),
-  );
-  const editorialLead = editorialArticles[0] || latestArticles[0];
-  const miniArticles = editorialArticles.slice(1, 3);
+  const editorialArticles = editorial.filter((article) => article.id !== featured?.id);
+  const editorialLead = editorialArticles[0] || editorial[0];
+  const miniArticles = editorialArticles.filter((article) => article.id !== editorialLead?.id).slice(0, 2);
 
   return (
     <main className={styles.page}>
@@ -187,7 +190,7 @@ export default function TechFinanceNewsClient() {
                 </article>
               ))}
             </div>
-            <Link className={styles.blackButton} href={activeQuery ? `/?q=${encodeURIComponent(activeQuery)}` : "/"}>VIEW ALL LATEST ARTICLES</Link>
+            <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
           </aside>
 
           <section className={styles.hottest} aria-labelledby="hottest-title">
@@ -204,6 +207,7 @@ export default function TechFinanceNewsClient() {
                 <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
               </article>
             ))}
+            <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/hottest">VIEW ALL HOTTEST ARTICLES</Link>
           </section>
 
           <section className={styles.editorial} aria-labelledby="editorial-title">
@@ -230,12 +234,13 @@ export default function TechFinanceNewsClient() {
                 ))}
               </div>
             )}
+            <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/editorial-picks">VIEW ALL EDITORIAL PICKS</Link>
           </section>
         </div>
       )}
 
       <div className={styles.affiliateSection}>
-        <TopPicksWidget variant="editorial" />
+        <TopPicksWidget variant="editorial" viewAllHref="/figma-tech-finance-news/affiliates" />
       </div>
 
       <div className={styles.leadCapture}>

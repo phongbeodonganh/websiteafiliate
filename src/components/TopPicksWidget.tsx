@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Award, Clock, ExternalLink, ShieldCheck, Star, Zap } from 'lucide-react';
 
 interface TopPick {
@@ -13,9 +14,10 @@ interface TopPick {
 
 interface TopPicksWidgetProps {
   variant?: 'default' | 'editorial';
+  viewAllHref?: string;
 }
 
-export default function TopPicksWidget({ variant = 'default' }: TopPicksWidgetProps) {
+export default function TopPicksWidget({ variant = 'default', viewAllHref }: TopPicksWidgetProps) {
   const [picks, setPicks] = useState<TopPick[]>([]);
   const [loading, setLoading] = useState(true);
   const editorial = variant === 'editorial';
@@ -127,6 +129,16 @@ export default function TopPicksWidget({ variant = 'default' }: TopPicksWidgetPr
           </div>
         ))}
       </div>
+      {viewAllHref && (
+        <div className="mt-6 flex justify-center">
+          <Link
+            href={viewAllHref}
+            className="border border-black bg-black px-7 py-3 text-xs font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
+          >
+            View all affiliate deals
+          </Link>
+        </div>
+      )}
     </section>
   );
 }
