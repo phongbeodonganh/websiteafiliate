@@ -1,14 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { ArrowRight, Clock, Eye, Loader2, Search, ShieldCheck, Star } from 'lucide-react';
+import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
+import CategorySelector from '@/components/CategorySelector';
 import styles from './page.module.css';
 
 const fallbackImage =
   'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
 
-export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates';
+export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category';
 
 interface Article {
   id: string;
@@ -59,6 +61,11 @@ const collectionConfig: Record<CollectionKind, { title: string; eyebrow: string;
     eyebrow: 'Partner Directory',
     description: 'Our current collection of partner tools, offers and commission programs.',
   },
+  category: {
+    title: 'Category Articles',
+    eyebrow: 'Browse by Category',
+    description: 'All published stories from this category.',
+  },
 };
 
 function excerptFor(article: Article) {
@@ -66,20 +73,29 @@ function excerptFor(article: Article) {
   return text.length > 145 ? `${text.slice(0, 142)}...` : text;
 }
 
-export default function CollectionClient({ kind }: { kind: CollectionKind }) {
+export default function CollectionClient({ kind, categorySlug }: { kind: CollectionKind; categorySlug?: string }) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 9, totalPages: 0, hasMore: false });
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const config = collectionConfig[kind];
+  const [query, setQuery] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
+  const categoryLabel = categorySlug
+    ? categorySlug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+    : '';
+  const config = kind === 'category'
+    ? { ...collectionConfig.category, title: categoryLabel || collectionConfig.category.title }
+    : collectionConfig[kind];
 
   useEffect(() => {
     const controller = new AbortController();
     const params = new URLSearchParams({ page: '1', limit: '9' });
     if (kind === 'editorial') params.set('tab', 'hot');
     if (kind === 'hottest') params.set('tab', 'popular');
+    if (kind === 'category' && categorySlug) params.set('category_slug', categorySlug);
+    if (activeQuery) params.set('q', activeQuery);
     const endpoint = kind === 'affiliates' ? '/api/v1/public/affiliates' : '/api/v1/public/articles';
 
     fetch(`${endpoint}?${params.toString()}`, { signal: controller.signal })
@@ -102,7 +118,23 @@ export default function CollectionClient({ kind }: { kind: CollectionKind }) {
       });
 
     return () => controller.abort();
-  }, [kind]);
+  }, [activeQuery, categorySlug, kind]);
+
+  function search(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextQuery = query.trim();
+    if (nextQuery === activeQuery) return;
+    setError('');
+    setLoading(true);
+    setActiveQuery(nextQuery);
+  }
+
+  function clearSearch() {
+    setQuery('');
+    setError('');
+    if (activeQuery) setLoading(true);
+    setActiveQuery('');
+  }
 
   async function viewMore() {
     if (!pagination.hasMore || loadingMore) return;
@@ -110,6 +142,8 @@ export default function CollectionClient({ kind }: { kind: CollectionKind }) {
     const params = new URLSearchParams({ page: String(pagination.page + 1), limit: String(pagination.limit) });
     if (kind === 'editorial') params.set('tab', 'hot');
     if (kind === 'hottest') params.set('tab', 'popular');
+    if (kind === 'category' && categorySlug) params.set('category_slug', categorySlug);
+    if (activeQuery) params.set('q', activeQuery);
     const endpoint = kind === 'affiliates' ? '/api/v1/public/affiliates' : '/api/v1/public/articles';
 
     try {
@@ -130,10 +164,21 @@ export default function CollectionClient({ kind }: { kind: CollectionKind }) {
     <main className={styles.page}>
       <header className={styles.header}>
         <Link className={styles.logo} href="/figma-tech-finance-news">AIDEALSUK</Link>
-        <div className={styles.collectionNavLabel}><Search size={18} /> Explore our coverage</div>
+        <form className={styles.searchBox} role="search" onSubmit={search}>
+          <Search aria-hidden="true" className={styles.searchIcon} size={24} strokeWidth={1.7} />
+          <input
+            aria-label={`Search ${config.title}`}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={`Search ${config.title.toLowerCase()}`}
+            type="search"
+            value={query}
+          />
+          <button type="submit">Search</button>
+        </form>
         <nav className={styles.actions} aria-label="News collections">
-          <Link href="/figma-tech-finance-news/latest">Latest</Link>
-          <Link href="/figma-tech-finance-news/hottest">Hottest</Link>
+          <CategorySelector placement="header" />
+          <Link className={styles.collectionLink} href="/figma-tech-finance-news/latest">Latest</Link>
+          <Link className={styles.collectionLink} href="/figma-tech-finance-news/hottest">Hottest</Link>
         </nav>
       </header>
 
@@ -151,13 +196,22 @@ export default function CollectionClient({ kind }: { kind: CollectionKind }) {
           <p>{config.description}</p>
         </header>
 
-        {error && <p className={styles.collectionError}>{error}</p>}
-        {!loading && !error && articles.length === 0 && affiliates.length === 0 && (
-          <p className={styles.collectionEmpty}>No items are available yet.</p>
+        {activeQuery && !loading && (
+          <div className={styles.resultsBar}>
+            Results for “{activeQuery}”
+            <button type="button" onClick={clearSearch}>Clear</button>
+          </div>
         )}
 
-        {kind !== 'affiliates' && (
-          <div className={styles.collectionGrid}>
+        <div className={styles.collectionContent}>
+          <div className={styles.collectionMain}>
+            {error && <p className={styles.collectionError}>{error}</p>}
+            {!loading && !error && articles.length === 0 && affiliates.length === 0 && (
+              <p className={styles.collectionEmpty}>No items are available yet.</p>
+            )}
+
+            {kind !== 'affiliates' && (
+              <div className={styles.collectionGrid}>
             {articles.map((article) => (
               <article className={styles.collectionCard} key={article.id}>
                 <Link className={styles.collectionImage} href={`/article/${article.slug}`}>
@@ -171,11 +225,11 @@ export default function CollectionClient({ kind }: { kind: CollectionKind }) {
                 </div>
               </article>
             ))}
-          </div>
-        )}
+              </div>
+            )}
 
-        {kind === 'affiliates' && (
-          <div className={styles.collectionGrid}>
+            {kind === 'affiliates' && (
+              <div className={styles.collectionGrid}>
             {affiliates.map((affiliate, index) => (
               <article className={styles.affiliateCard} key={affiliate.id}>
                 <div className={styles.affiliateRank}><Star size={12} fill="currentColor" /> {affiliate.isTopPick ? 'TOP PICK' : `PARTNER ${index + 1}`}</div>
@@ -185,18 +239,25 @@ export default function CollectionClient({ kind }: { kind: CollectionKind }) {
                 <a href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored">View deal <ArrowRight size={15} /></a>
               </article>
             ))}
-          </div>
-        )}
+              </div>
+            )}
 
-        {pagination.hasMore && (
-          <button className={styles.collectionMore} type="button" disabled={loadingMore} onClick={() => void viewMore()}>
-            {loadingMore && <Loader2 size={16} className={styles.spin} />}
-            {loadingMore ? 'Loading' : 'View more'}
-          </button>
-        )}
+            {pagination.hasMore && (
+              <button className={styles.collectionMore} type="button" disabled={loadingMore} onClick={() => void viewMore()}>
+                {loadingMore && <Loader2 size={16} className={styles.spin} />}
+                {loadingMore ? 'Loading' : 'View more'}
+              </button>
+            )}
+          </div>
+
+          <VerticalAffiliateSidebar />
+        </div>
       </div>
 
-      <footer className={styles.footer}><Link className={styles.footerLogo} href="/figma-tech-finance-news">AIDEALSUK</Link></footer>
+      <footer className={styles.footer}>
+        <Link className={styles.footerLogo} href="/figma-tech-finance-news">AIDEALSUK</Link>
+        <CategorySelector placement="footer" />
+      </footer>
     </main>
   );
 }

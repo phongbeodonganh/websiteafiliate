@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import LeadCapture from "@/components/LeadCapture";
 import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
+import CategorySelector from "@/components/CategorySelector";
 import styles from "./page.module.css";
 
 const fallbackImage =
@@ -140,9 +141,10 @@ export default function TechFinanceNewsClient() {
           <input aria-label="Search articles" onChange={(event) => setQuery(event.target.value)} placeholder="Search articles" type="search" value={query} />
           <button type="submit">Search</button>
         </form>
-        <nav className={styles.actions} aria-label="Account links">
-          <Link href="/admin/login">Sign up</Link>
-          <Link href="/admin/login">Sign in</Link>
+        <nav className={styles.actions} aria-label="Site navigation">
+          <CategorySelector placement="header" />
+          <Link className={styles.authLink} href="/admin/login">Sign up</Link>
+          <Link className={styles.authLink} href="/admin/login">Sign in</Link>
         </nav>
       </header>
 
@@ -253,6 +255,7 @@ export default function TechFinanceNewsClient() {
 
       <footer className={styles.footer}>
         <Link className={styles.footerLogo} href="/">AIDEALSUK</Link>
+        <CategorySelector placement="footer" />
       </footer>
     </main>
   );

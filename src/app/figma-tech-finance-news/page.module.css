@@ -551,7 +551,18 @@
 .collectionGrid {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collectionContent {
+  align-items: start;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) 286px;
+}
+
+.collectionMain {
+  min-width: 0;
 }
 
 .collectionCard,
@@ -698,7 +709,8 @@
   background: #ffffff;
   border-top: 4px solid #111111;
   display: flex;
-  justify-content: center;
+  gap: 24px;
+  justify-content: space-between;
   margin: 0 auto;
   max-width: none;
   min-height: 96px;
@@ -889,19 +901,23 @@
   .collectionGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .collectionContent {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
   .page {
     --header-gap: 12px;
-    --header-height: 126px;
+    --header-height: 174px;
     padding-left: 10px;
     padding-right: 10px;
   }
 
   .header {
     gap: 12px;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     left: 0;
     padding: 14px;
     right: 0;
@@ -909,7 +925,12 @@
   }
 
   .actions {
-    display: none;
+    display: flex;
+  }
+
+  .authLink,
+  .collectionLink {
+    display: none !important;
   }
 
   .logo {
@@ -953,6 +974,9 @@
   }
 
   .footer {
+    align-items: center;
+    flex-direction: column;
+    gap: 16px;
     padding: 22px 16px;
   }
 

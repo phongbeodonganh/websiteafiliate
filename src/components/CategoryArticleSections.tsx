@@ -137,7 +137,15 @@ export default function CategoryArticleSections() {
                 <h2 className="text-2xl font-bold uppercase text-black md:text-3xl">{category.name}</h2>
                 {category.description && <p className="mt-2 max-w-2xl text-sm text-neutral-600">{category.description}</p>}
               </div>
-              <span className="text-xs font-semibold text-neutral-500">{category.pagination.total} ARTICLES</span>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-semibold text-neutral-500">{category.pagination.total} ARTICLES</span>
+                <Link
+                  href={`/figma-tech-finance-news/category/${category.slug}`}
+                  className="border border-black bg-black px-4 py-2 text-[10px] font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
+                >
+                  View all category
+                </Link>
+              </div>
             </div>
 
             {category.articles.length === 0 ? (

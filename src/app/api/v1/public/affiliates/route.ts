@@ -6,12 +6,15 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(24, Math.max(1, Number.parseInt(searchParams.get('limit') || '9', 10)));
+  const query = searchParams.get('q')?.trim() || '';
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const filter = query ? { name: { $regex: escapedQuery, $options: 'i' } } : {};
 
   try {
     await connectToDatabase();
     const [links, total] = await Promise.all([
-      AffiliateLinkModel.find().sort({ is_top_pick: -1, created_at: -1 }).skip((page - 1) * limit).limit(limit),
-      AffiliateLinkModel.countDocuments(),
+      AffiliateLinkModel.find(filter).sort({ is_top_pick: -1, created_at: -1 }).skip((page - 1) * limit).limit(limit),
+      AffiliateLinkModel.countDocuments(filter),
     ]);
 
     return NextResponse.json({
