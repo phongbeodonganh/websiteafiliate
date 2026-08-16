@@ -41,6 +41,33 @@
   box-shadow: 0 8px 18px rgba(17, 17, 17, 0.09);
 }
 
+.searchBox input {
+  background: transparent;
+  border: 0;
+  color: #111111;
+  flex: 1;
+  font: inherit;
+  font-size: 16px;
+  min-width: 0;
+  outline: 0;
+}
+
+.searchBox input::placeholder {
+  color: #9b9b9b;
+}
+
+.searchBox button {
+  background: #111111;
+  border: 0;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  height: 30px;
+  padding: 0 10px;
+  text-transform: uppercase;
+}
+
 .searchIcon {
   color: #111111;
   flex: 0 0 auto;
@@ -48,11 +75,29 @@
   width: 24px;
 }
 
-.searchPlaceholder {
-  color: #b4b4b4;
-  font-size: 19px;
-  line-height: 1;
-  margin-left: 8px;
+.resultsBar,
+.statusMessage {
+  background: #ffffff;
+  border: 1px solid #d7d7d7;
+  font-size: 13px;
+  font-weight: 650;
+  margin: 0 auto 20px;
+  max-width: 1200px;
+  padding: 14px 18px;
+}
+
+.resultsBar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.resultsBar button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
 }
 
 .actions {
@@ -130,6 +175,25 @@
   max-width: 370px;
 }
 
+.featuredCopy h1 a,
+.latestItem h3 a,
+.hotItem h3 a,
+.editorialLead h3 a,
+.miniGrid h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.featuredCopy h1 a:hover,
+.latestItem h3 a:hover,
+.hotItem h3 a:hover,
+.editorialLead h3 a:hover,
+.miniGrid h3 a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
 .eyebrow,
 .meta {
   color: #6b6b6b;
@@ -205,6 +269,13 @@
 .latestItem img {
   height: 78px;
   box-shadow: 0 8px 16px rgba(17, 17, 17, 0.12);
+}
+
+.latestItem > a,
+.hotItem > a,
+.editorialLead > a {
+  display: block;
+  height: fit-content;
 }
 
 .latestItem h3 {
