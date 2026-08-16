@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import LeadCapture from "@/components/LeadCapture";
 import TopPicksWidget from "@/components/TopPicksWidget";
+import CategoryArticleSections from "@/components/CategoryArticleSections";
 import styles from "./page.module.css";
 
 const fallbackImage =
@@ -239,6 +240,10 @@ export default function TechFinanceNewsClient() {
 
       <div className={styles.leadCapture}>
         <LeadCapture variant="editorial" />
+      </div>
+
+      <div className={styles.categorySections}>
+        <CategoryArticleSections />
       </div>
 
       <footer className={styles.footer}>

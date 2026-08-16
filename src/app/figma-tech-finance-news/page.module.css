@@ -486,7 +486,8 @@
 }
 
 .affiliateSection,
-.leadCapture {
+.leadCapture,
+.categorySections {
   margin: 0 auto 36px;
   max-width: 1252px;
 }
