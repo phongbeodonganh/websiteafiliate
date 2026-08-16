@@ -148,7 +148,12 @@ export default function TechFinanceNewsClient() {
         </div>
       )}
       {error && <p className={styles.statusMessage}>Unable to load articles: {error}</p>}
-      {loading && <p className={styles.statusMessage}>Loading articles...</p>}
+      {loading && (
+        <div className={styles.loadingScreen} role="status" aria-live="polite">
+          <span className={styles.loadingSpinner} aria-hidden="true" />
+          <p>Loading articles...</p>
+        </div>
+      )}
       {!loading && !error && !featured && <p className={styles.statusMessage}>No published articles found.</p>}
 
       {featured && (
@@ -224,8 +229,6 @@ export default function TechFinanceNewsClient() {
               </div>
             )}
           </section>
-
-          <Link className={styles.productLink} href={articleHref(featured)}>READ FEATURED -&gt;</Link>
         </div>
       )}
 

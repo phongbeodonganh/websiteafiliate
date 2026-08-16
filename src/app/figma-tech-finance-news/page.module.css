@@ -1,24 +1,43 @@
 .page {
+  --header-gap: 16px;
+  --header-height: 82px;
+  --header-top: 0px;
   min-height: 100vh;
-  background: #f1f1f0;
+  background: #ffffff;
   color: #111111;
   font-family: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
-  padding: 22px 14px 0;
+  padding: calc(var(--header-top) + var(--header-height) + var(--header-gap)) 14px 0;
 }
 
 .header {
   align-items: center;
-  background: #ffffff;
-  border-top: 4px solid #111111;
-  border-bottom: 1px solid #d8d8d8;
+  background: #111111;
+  border-top: 0;
+  border-bottom: 1px solid #ffffff;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 260px minmax(220px, 330px) 1fr;
   gap: 28px;
-  height: 82px;
-  margin: 0 auto 20px;
-  max-width: 1408px;
+  height: var(--header-height);
+  left: 0;
+  margin: 0 auto;
+  max-width: none;
   padding: 0 28px;
+  position: fixed;
+  right: 0;
+  top: var(--header-top);
+  width: 100%;
+  z-index: 1000;
   box-shadow: 0 14px 34px rgba(17, 17, 17, 0.08);
+}
+
+.header .logo,
+.header .actions a {
+  color: #ffffff;
+}
+
+.header .actions a {
+  border-color: #ffffff;
 }
 
 .logo,
@@ -32,8 +51,8 @@
 
 .searchBox {
   align-items: center;
-  background: #ffffff;
-  border: 2px solid #111111;
+  background: #111111;
+  border: 2px solid #ffffff;
   border-radius: 8px;
   display: flex;
   height: 46px;
@@ -44,7 +63,7 @@
 .searchBox input {
   background: transparent;
   border: 0;
-  color: #111111;
+  color: #ffffff;
   flex: 1;
   font: inherit;
   font-size: 16px;
@@ -53,13 +72,13 @@
 }
 
 .searchBox input::placeholder {
-  color: #9b9b9b;
+  color: #bdbdbd;
 }
 
 .searchBox button {
-  background: #111111;
+  background: #ffffff;
   border: 0;
-  color: #ffffff;
+  color: #111111;
   cursor: pointer;
   font-size: 10px;
   font-weight: 700;
@@ -69,7 +88,7 @@
 }
 
 .searchIcon {
-  color: #111111;
+  color: #ffffff;
   flex: 0 0 auto;
   height: 24px;
   width: 24px;
@@ -82,7 +101,7 @@
   font-size: 13px;
   font-weight: 650;
   margin: 0 auto 20px;
-  max-width: 1200px;
+  max-width: 1252px;
   padding: 14px 18px;
 }
 
@@ -98,6 +117,48 @@
   cursor: pointer;
   font: inherit;
   text-decoration: underline;
+}
+
+.loadingScreen {
+  align-items: center;
+  background: #111111;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 2000;
+}
+
+.loadingScreen p {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.loadingSpinner {
+  animation: loading-spin 800ms linear infinite;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  height: 46px;
+  width: 46px;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingSpinner {
+    animation-duration: 1600ms;
+  }
 }
 
 .actions {
@@ -128,14 +189,14 @@
 
 .shell {
   display: grid;
-  grid-template-columns: minmax(0, 780px) 395px;
+  grid-template-columns: minmax(0, 1fr) 395px;
   grid-template-areas:
     "featured latest"
     "hottest latest"
     "editorial product";
   gap: 28px 25px;
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: 1252px;
   padding-bottom: 36px;
 }
 
@@ -531,11 +592,44 @@
   white-space: nowrap;
 }
 
+/* Keep the page visually flat so the header and content read as one surface. */
+.header,
+.actions a,
+.searchBox,
+.searchBox button,
+.featured,
+.latest,
+.hottest,
+.editorial,
+.featuredMedia,
+.latestItem img,
+.hotItem img,
+.editorialLead img,
+.blackButton,
+.productLink,
+.footer,
+.newsletter,
+.newsletter input,
+.newsletter button {
+  box-shadow: none;
+}
+
+.actions a:hover,
+.blackButton:hover,
+.productLink:hover,
+.newsletter button:hover {
+  box-shadow: none;
+}
+
 @media (max-width: 1100px) {
+  .page {
+    --header-height: 200px;
+  }
+
   .header {
     grid-template-columns: 1fr;
     gap: 16px;
-    height: auto;
+    grid-template-rows: repeat(3, auto);
     justify-items: start;
     padding: 24px;
   }
@@ -570,7 +664,23 @@
 
 @media (max-width: 760px) {
   .page {
-    padding: 12px 10px 0;
+    --header-gap: 12px;
+    --header-height: 126px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .header {
+    gap: 12px;
+    grid-template-rows: auto auto;
+    left: 0;
+    padding: 14px;
+    right: 0;
+    width: 100%;
+  }
+
+  .actions {
+    display: none;
   }
 
   .logo {
