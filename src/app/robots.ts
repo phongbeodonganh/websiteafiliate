@@ -7,7 +7,7 @@ export const revalidate = 3600;
 export default async function robots(): Promise<MetadataRoute.Robots> {
   await connectToDatabase();
   const settings = await SettingModel.findOne();
-  const baseUrl = (settings?.canonicalUrl || 'https://aiaffiliatehub.com').replace(/\/$/, '');
+  const baseUrl = (settings?.canonicalUrl || 'https://aidealsuk.com').replace(/\/$/, '');
 
   return {
     rules: {

@@ -221,7 +221,7 @@ const SubscriberSchema = new Schema<ISubscriber>(
 // 9. Setting Schema
 const SettingSchema = new Schema<ISetting>(
   {
-    siteTitle: { type: String, default: 'NEXUS FINANCE GLOBAL' },
+    siteTitle: { type: String, default: 'AIDEALSUK' },
     metaDescription: { type: String },
     focusKeywords: { type: String },
     canonicalUrl: { type: String },

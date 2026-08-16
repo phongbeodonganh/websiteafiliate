@@ -209,7 +209,7 @@ export interface ISetting extends Document {
 }
 
 const SettingSchema = new Schema<ISetting>({
-  site_title: { type: String, default: 'NEXUS FINANCE GLOBAL' },
+  site_title: { type: String, default: 'AIDEALSUK' },
   metaDescription: { type: String },
   focusKeywords: { type: String },
   canonicalUrl: { type: String },

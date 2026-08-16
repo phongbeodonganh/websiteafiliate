@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   try {
     await connectToDatabase();
     const sysSettings = await SettingModel.findOne();
-    const siteTitle = sysSettings?.site_title || "AI AFFILIATE HUB";
+    const siteTitle = sysSettings?.site_title || "AIDEALSUK";
     const desc = sysSettings?.metaDescription || "Discover high-paying AI affiliate programs, comprehensive AI tool reviews, and expert monetization strategies.";
     const ogImg = sysSettings?.ogImageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
 
@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
       openGraph: {
         title: siteTitle,
         description: desc,
-        url: sysSettings?.canonicalUrl || "https://aiaffiliatehub.com",
+        url: sysSettings?.canonicalUrl || "https://aidealsuk.com",
         siteName: siteTitle,
         locale: sysSettings?.hreflang || "en_US",
         type: "website",
@@ -38,8 +38,8 @@ export async function generateMetadata(): Promise<Metadata> {
     };
   } catch (error) {
     return {
-      title: "AI AFFILIATE HUB",
-      description: "Leading AI Tool Reviews & Affiliate Programs Hub",
+      title: "AIDEALSUK",
+      description: "Your Trusted Source for AI Tool Reviews, Tech News & Exclusive Affiliate Deals.",
     };
   }
 }
@@ -66,14 +66,17 @@ export default async function RootLayout({
   const geoPlace = sysSettings?.geo_placename || "New York";
   const lat = sysSettings?.geo_latitude ?? 40.7128;
   const lng = sysSettings?.geo_longitude ?? -74.0060;
-  const primaryColor = sysSettings?.primary_color || "#0f172a";
-  const accentColor = sysSettings?.accent_color || "#f59e0b";
+  const primaryColor = sysSettings?.primary_color || "#111111";
+  const accentColor = sysSettings?.accent_color || "#000000";
   const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
 
   return (
     <html lang={sysSettings?.hreflang || "en"} className="h-full antialiased dark">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
         <meta name="geo.region" content={geoRegion} />
         <meta name="geo.placename" content={geoPlace} />
         <meta name="geo.position" content={`${lat};${lng}`} />
@@ -83,6 +86,8 @@ export default async function RootLayout({
             :root {
               --primary-color: ${primaryColor};
               --accent-color: ${accentColor};
+              --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+              --font-heading: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
             }
             ${customCss}
           `

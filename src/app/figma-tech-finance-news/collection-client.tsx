@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { ArrowRight, Clock, Eye, Loader2, Search, ShieldCheck, Star } from 'lucide-react';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import CategorySelector from '@/components/CategorySelector';
+import EditorialHeader from '@/components/EditorialHeader';
+import EditorialFooter from '@/components/EditorialFooter';
 import styles from './page.module.css';
 
 const fallbackImage =
@@ -22,6 +24,14 @@ interface Article {
   viewCount: number;
   createdAt: string;
   categoryName?: string;
+  authorName?: string;
+}
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 interface Affiliate {
@@ -162,25 +172,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.logo} href="/figma-tech-finance-news">AIDEALSUK</Link>
-        <form className={styles.searchBox} role="search" onSubmit={search}>
-          <Search aria-hidden="true" className={styles.searchIcon} size={24} strokeWidth={1.7} />
-          <input
-            aria-label={`Search ${config.title}`}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={`Search ${config.title.toLowerCase()}`}
-            type="search"
-            value={query}
-          />
-          <button type="submit">Search</button>
-        </form>
-        <nav className={styles.actions} aria-label="News collections">
-          <CategorySelector placement="header" />
-          <Link className={styles.collectionLink} href="/figma-tech-finance-news/latest">Latest</Link>
-          <Link className={styles.collectionLink} href="/figma-tech-finance-news/hottest">Hottest</Link>
-        </nav>
-      </header>
+      <EditorialHeader initialSearchQuery={query} />
 
       {loading && (
         <div className={styles.loadingScreen} role="status">
@@ -218,7 +210,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
                   <img src={article.thumbnailUrl || fallbackImage} alt={article.title} />
                 </Link>
                 <div className={styles.collectionCardBody}>
-                  <p className={styles.meta}>{article.categoryName || 'NEWS'} &middot; <Eye size={12} /> {article.viewCount || 0}</p>
+                  <p className={styles.meta}>By {article.authorName || 'Staff'} &middot; {formatDate(article.createdAt)} &middot; {article.categoryName || 'NEWS'} &middot; <Eye size={12} /> {article.viewCount || 0}</p>
                   <h2><Link href={`/article/${article.slug}`}>{article.title}</Link></h2>
                   <p>{excerptFor(article)}</p>
                   <Link className={styles.collectionCardLink} href={`/article/${article.slug}`}>Read article <ArrowRight size={15} /></Link>
@@ -254,10 +246,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
         </div>
       </div>
 
-      <footer className={styles.footer}>
-        <Link className={styles.footerLogo} href="/figma-tech-finance-news">AIDEALSUK</Link>
-        <CategorySelector placement="footer" />
-      </footer>
+      <EditorialFooter />
     </main>
   );
 }

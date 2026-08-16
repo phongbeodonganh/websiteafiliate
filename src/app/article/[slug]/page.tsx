@@ -8,6 +8,8 @@ import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
 import AffiliateTracker from '@/components/AffiliateTracker';
 import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
+import EditorialHeader from '@/components/EditorialHeader';
+import EditorialFooter from '@/components/EditorialFooter';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -35,7 +37,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   if (!article) return { title: `Article Not Found | ${siteTitle}` };
   const title = article.meta_title || article.title;
   const description = article.meta_description || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
-  const baseUrl = settings?.canonicalUrl || 'https://aiaffiliatehub.com';
+  const baseUrl = settings?.canonicalUrl || 'https://aidealsuk.com';
   return {
     title: `${title} | ${siteTitle}`,
     description,
@@ -121,25 +123,36 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       <AffiliateTracker />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
-      <header className={styles.header}>
-        <Link className={styles.logo} href="/figma-tech-finance-news">AIDEALSUK</Link>
-        <Link className={styles.backLink} href="/figma-tech-finance-news"><ArrowLeft size={15} /> Back to home</Link>
-      </header>
+      <EditorialHeader />
 
       <main className={styles.layout}>
-        <div className={styles.leftSpacer} aria-hidden="true" />
         <article className={styles.articleBox}>
           {categoryName && (categorySlug
             ? <Link className={styles.category} href={`/figma-tech-finance-news/category/${categorySlug}`}>{categoryName}</Link>
             : <p className={styles.category}>{categoryName}</p>)}
           <h1>{doc.title}</h1>
+          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
+            <div className="w-9 h-9 rounded-full bg-black text-white font-bold flex items-center justify-center text-sm shadow-sm">
+              {((doc.author_id as any)?.name || (doc.author_id as any)?.username || 'A')[0].toUpperCase()}
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 m-0 leading-tight">
+                By {(doc.author_id as any)?.name || (doc.author_id as any)?.username || 'AIDEALSUK Editorial'}
+              </p>
+              <p className="text-xs text-slate-500 m-0 mt-0.5">
+                Published on {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} &middot; {doc.view_count || 0} views
+              </p>
+            </div>
+          </div>
           {doc.thumbnail_url && <div className={styles.heroImage}><Image src={doc.thumbnail_url} alt={doc.title} fill priority sizes="(max-width: 900px) 100vw, 760px" /></div>}
           {keyTakeaways.length > 0 && <section className={styles.takeaways}><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
           <div className={styles.articleContent} dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }} />
 
           {placements.length > 0 && <section className={styles.placements}>
             <h2>Recommended Offers</h2>
-            {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+            </div>
           </section>}
 
           {relatedArticles.length > 0 && <section className={styles.related}>
@@ -161,7 +174,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           </section>}
         </div>
       </main>
-      <footer className={styles.footer}><Link href="/figma-tech-finance-news">AIDEALSUK</Link></footer>
+      <EditorialFooter />
     </div>
   );
 }

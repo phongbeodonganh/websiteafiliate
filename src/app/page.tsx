@@ -236,7 +236,7 @@ async function getHomePageData(
 export async function generateMetadata(): Promise<Metadata> {
   const { settings: siteSettings } = await getHomePageData();
 
-  const title = siteSettings?.siteTitle || 'AI AFFILIATE HUB - Leading AI Tool Reviews & Affiliate Insights';
+  const title = siteSettings?.siteTitle || 'AIDEALSUK - AI Tool Reviews & Affiliate Insights';
   const description =
     siteSettings?.metaDescription ||
     'Discover high-paying AI affiliate programs, comprehensive AI tool reviews, and expert strategies for AI content monetization.';
@@ -245,11 +245,11 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     keywords: siteSettings?.focusKeywords?.split(',') || ['ai affiliate programs', 'ai tool reviews', 'jasper ai', 'elevenlabs'],
-    alternates: { canonical: siteSettings?.canonicalUrl || 'https://aiaffiliatehub.com' },
+    alternates: { canonical: siteSettings?.canonicalUrl || 'https://aidealsuk.com' },
     openGraph: {
       title,
       description,
-      url: siteSettings?.canonicalUrl || 'https://aiaffiliatehub.com',
+      url: siteSettings?.canonicalUrl || 'https://aidealsuk.com',
       images: [
         {
           url: siteSettings?.ogImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
@@ -362,12 +362,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const jsonLdSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: siteSettings?.site_title || 'AI AFFILIATE HUB',
-    url: siteSettings?.canonicalUrl || 'https://aiaffiliatehub.com',
-    description: siteSettings?.metaDescription || 'AI Tool Reviews & Revenue Automation Platform',
+    name: siteSettings?.site_title || 'AIDEALSUK',
+    url: siteSettings?.canonicalUrl || 'https://aidealsuk.com',
+    description: siteSettings?.metaDescription || 'AI Tool Reviews & Affiliate Deals Platform',
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${siteSettings?.canonicalUrl || 'https://aiaffiliatehub.com'}/?q={search_term_string}`,
+      target: `${siteSettings?.canonicalUrl || 'https://aidealsuk.com'}/?q={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
   };
@@ -376,7 +376,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <div className="min-h-screen bg-[#F8F9FA] font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B] text-slate-700 overflow-y-auto relative custom-scrollbar flex flex-col justify-between">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }} />
 
-      <h1 className="sr-only">{siteSettings?.site_title || 'AI AFFILIATE HUB'} - AI Tool Reviews & Affiliate Monetization Platform</h1>
+      <h1 className="sr-only">{siteSettings?.site_title || 'AIDEALSUK'} - AI Tool Reviews & Affiliate Monetization Platform</h1>
 
       {/* Soft Background Decorators */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
