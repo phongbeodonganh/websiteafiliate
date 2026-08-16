@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const articleId = searchParams.get('article_id');
   const affiliateLinkId = searchParams.get('affiliate_link_id');
 
-  if (!articleId || !affiliateLinkId) {
+  if (!affiliateLinkId) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
@@ -17,19 +17,19 @@ export async function GET(req: Request) {
     const ipAddress = getClientIp(req);
 
     await ClickLogModel.create({
-      article_id: articleId,
+      ...(articleId ? { article_id: articleId } : {}),
       affiliate_link_id: affiliateLinkId,
       ip_address: ipAddress,
     });
 
-    const article = await ArticleModel.findById(articleId);
+    const article = articleId ? await ArticleModel.findById(articleId) : null;
     const affLink = await AffiliateLinkModel.findById(affiliateLinkId);
 
     if (!affLink) {
       return NextResponse.redirect(new URL('/', req.url));
     }
 
-    const subId = article ? article.slug : `art_${articleId}`;
+    const subId = article ? article.slug : articleId ? `art_${articleId}` : 'homepage';
     const destinationUrl = appendSubId(affLink.base_url, subId);
 
     return NextResponse.redirect(destinationUrl, 302);

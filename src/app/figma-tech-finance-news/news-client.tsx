@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { Search } from "lucide-react";
+import LeadCapture from "@/components/LeadCapture";
+import TopPicksWidget from "@/components/TopPicksWidget";
 import styles from "./page.module.css";
 
 const fallbackImage =
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
-const footerColumns = ["ABOUT", "CATEGORIES", "SUPPORT", "CONNECT"];
 
 type Article = {
   id: string;
@@ -232,19 +233,16 @@ export default function TechFinanceNewsClient() {
         </div>
       )}
 
+      <div className={styles.affiliateSection}>
+        <TopPicksWidget variant="editorial" />
+      </div>
+
+      <div className={styles.leadCapture}>
+        <LeadCapture variant="editorial" />
+      </div>
+
       <footer className={styles.footer}>
-        <div>
-          <p className={styles.eyebrow}>FOOTER</p>
-          <Link className={styles.footerLogo} href="/">SIGNAL<span>/</span></Link>
-        </div>
-        {footerColumns.map((column) => (
-          <div className={styles.footerColumn} key={column}><h2>{column}</h2><span /><span /><span /></div>
-        ))}
-        <form className={styles.newsletter} onSubmit={(event) => event.preventDefault()}>
-          <h2>NEWSLETTER</h2>
-          <div><input aria-label="Email address" placeholder="Email address" type="email" /><button type="submit">Join</button></div>
-        </form>
-        <p className={styles.copyright}>© 2026 SIGNAL. All rights reserved.</p>
+        <Link className={styles.footerLogo} href="/">AIDEALSUK</Link>
       </footer>
     </main>
   );
