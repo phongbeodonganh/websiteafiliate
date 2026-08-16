@@ -11,7 +11,12 @@ interface AffiliateItem {
   cookie?: string;
 }
 
-export default function VerticalAffiliateSidebar() {
+interface VerticalAffiliateSidebarProps {
+  hideWhenEmpty?: boolean;
+  sticky?: boolean;
+}
+
+export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky = true }: VerticalAffiliateSidebarProps) {
   const [items, setItems] = useState<AffiliateItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,10 +34,12 @@ export default function VerticalAffiliateSidebar() {
     return () => controller.abort();
   }, []);
 
+  if (!loading && hideWhenEmpty && items.length === 0) return null;
+
   return (
-    <aside className="self-start border border-[#d7d7d7] border-t-4 border-t-black bg-white p-5 lg:sticky lg:top-[98px]" aria-label="Recommended affiliate deals">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">Partner links</p>
-      <h2 className="mb-5 text-2xl font-bold uppercase leading-none text-black">Top Deals</h2>
+    <aside className={`w-full self-start border border-[#d7d7d7] border-t-4 border-t-black bg-white p-[22px] ${sticky ? 'lg:sticky lg:top-[98px]' : ''}`} aria-label="Recommended affiliate deals">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">Partner Links</p>
+      <h2 className="mb-[22px] text-[26px] font-bold uppercase leading-none text-black">Top Deals</h2>
 
       {loading && (
         <div className="flex items-center gap-2 border-t border-[#d7d7d7] py-6 text-xs font-bold uppercase text-neutral-500">

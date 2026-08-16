@@ -1,62 +1,50 @@
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import AffiliateTracker from '@/components/AffiliateTracker';
-import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
-import Link from 'next/link';
+import type { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
-import { Eye, Calendar, User, ArrowLeft, ShieldCheck, Tag, ChevronRight } from 'lucide-react';
+import type { Types } from 'mongoose';
+import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
+import AffiliateTracker from '@/components/AffiliateTracker';
+import SocialShare from '@/components/SocialShare';
+import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
-import type { Metadata } from 'next';
+import styles from './article.module.css';
 
 export const revalidate = 0;
 
-interface ArticlePageProps {
-  params: Promise<{ slug: string }>;
+interface ArticlePageProps { params: Promise<{ slug: string }>; }
+
+interface PopulatedAuthor { _id: Types.ObjectId; name?: string; username?: string; }
+interface PopulatedCategory { _id: Types.ObjectId; name?: string; slug?: string; }
+interface PopulatedPlacement {
+  position_label: string;
+  affiliate_link_id?: { _id: Types.ObjectId; name: string; commission?: string; cookie?: string };
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
   await connectToDatabase();
-  const article = await ArticleModel.findOne({ slug, status: 'published' });
-  const siteSettings = await SettingModel.findOne();
-
-  const siteTitle = siteSettings?.site_title || 'AI AFFILIATE HUB';
-  const baseUrl = siteSettings?.canonicalUrl || 'https://aiaffiliatehub.com';
-
-  if (!article) {
-    return {
-      title: `Article Not Found - ${siteTitle}`,
-    };
-  }
-
+  const [article, settings] = await Promise.all([
+    ArticleModel.findOne({ slug, status: 'published' }),
+    SettingModel.findOne(),
+  ]);
+  const siteTitle = settings?.site_title || 'AIDEALSUK';
+  if (!article) return { title: `Article Not Found | ${siteTitle}` };
   const title = article.meta_title || article.title;
   const description = article.meta_description || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
-
+  const baseUrl = settings?.canonicalUrl || 'https://aiaffiliatehub.com';
   return {
     title: `${title} | ${siteTitle}`,
     description,
-    alternates: {
-      canonical: `${baseUrl}/article/${article.slug}`,
-    },
+    alternates: { canonical: `${baseUrl}/article/${article.slug}` },
     openGraph: {
-      title,
-      description,
-      url: `${baseUrl}/article/${article.slug}`,
-      siteName: siteTitle,
-      locale: 'en_US',
-      type: 'article',
+      title, description, url: `${baseUrl}/article/${article.slug}`, siteName: siteTitle,
+      locale: 'en_US', type: 'article',
       publishedTime: article.created_at ? new Date(article.created_at).toISOString() : undefined,
-      images: [
-        {
-          url: article.thumbnail_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ],
+      images: article.thumbnail_url ? [{ url: article.thumbnail_url, width: 1200, height: 630, alt: title }] : [],
     },
   };
 }
@@ -64,287 +52,116 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const { slug } = await params;
   await connectToDatabase();
-
   const article = await ArticleModel.findOne({ slug, status: 'published' })
     .populate('author_id', 'name username avatar')
     .populate('category_id', 'name slug')
     .populate('affiliate_placements.affiliate_link_id', 'name commission cookie');
+  if (!article) notFound();
 
-  if (!article) {
-    notFound();
-  }
-
-  // Increment view count
   article.view_count += 1;
   await article.save();
-
   const doc = article.toObject();
   const articleId = doc._id.toString();
-
-  const placements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : [])
-    .filter((p: any) => p.affiliate_link_id && p.affiliate_link_id._id)
-    .map((p: any) => ({
-      positionLabel: p.position_label as string,
+  const populatedAuthor = doc.author_id as unknown as PopulatedAuthor | undefined;
+  const populatedCategory = doc.category_id as unknown as PopulatedCategory | undefined;
+  const authorId = populatedAuthor?._id;
+  const categoryId = populatedCategory?._id;
+  const categoryName = populatedCategory?.name;
+  const categorySlug = populatedCategory?.slug;
+  const authorName = populatedAuthor?.name || populatedAuthor?.username;
+  const keyTakeaways = Array.isArray(doc.key_takeaways) ? doc.key_takeaways.map((item) => item.trim()).filter(Boolean) : [];
+  const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
+  const placements = populatedPlacements
+    .filter((placement) => placement.affiliate_link_id?._id)
+    .map((placement) => ({
+      positionLabel: placement.position_label as string,
       link: {
-        id: p.affiliate_link_id._id.toString(),
-        name: p.affiliate_link_id.name,
-        commission: p.affiliate_link_id.commission,
-        cookie: p.affiliate_link_id.cookie,
+        id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
+        commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
       },
     }));
 
-  const topPlacements = placements.filter((p) => p.positionLabel === 'top_cta');
-  const otherPlacements = placements.filter((p) => p.positionLabel !== 'top_cta');
+  const relationFilters = [
+    ...(authorId ? [{ author_id: authorId }] : []),
+    ...(categoryId ? [{ category_id: categoryId }] : []),
+  ];
+  const [rawRelated, latestArticles] = await Promise.all([
+    relationFilters.length
+      ? ArticleModel.find({ status: 'published', _id: { $ne: doc._id }, $or: relationFilters })
+          .populate('author_id', 'name username').populate('category_id', 'name slug')
+          .sort({ created_at: -1 }).limit(8)
+      : Promise.resolve([]),
+    ArticleModel.find({ status: 'published', _id: { $ne: doc._id } })
+      .select('title slug created_at view_count').sort({ created_at: -1 }).limit(5),
+  ]);
 
-  // Related articles
-  const rawRelated = await ArticleModel.find({
-    status: 'published',
-    _id: { $ne: doc._id },
-  }).limit(3);
+  const relatedArticles = rawRelated.map((related) => {
+    const relatedAuthor = related.author_id as unknown as PopulatedAuthor | undefined;
+    const relatedCategory = related.category_id as unknown as PopulatedCategory | undefined;
+    const sameAuthor = Boolean(authorId && relatedAuthor?._id?.toString() === authorId.toString());
+    const sameCategory = Boolean(categoryId && relatedCategory?._id?.toString() === categoryId.toString());
+    return { id: related._id.toString(), title: related.title, slug: related.slug, viewCount: related.view_count, sameAuthor, sameCategory, score: Number(sameAuthor) + Number(sameCategory) };
+  }).sort((a, b) => b.score - a.score).slice(0, 4);
 
-  const relatedArticles = rawRelated.map((rel) => ({
-    id: rel._id.toString(),
-    title: rel.title,
-    slug: rel.slug,
-    thumbnailUrl: rel.thumbnail_url,
-    viewCount: rel.view_count,
-  }));
-
-  const authorName = (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'AI Specialist';
-  const categoryName = (doc.category_id as any)?.name || 'AI Strategy';
-  const formattedDate = doc.created_at ? new Date(doc.created_at).toISOString().split('T')[0] : '';
-
-  // Schema NewsArticle JSON-LD in English
   const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
-    headline: doc.title,
+    '@context': 'https://schema.org', '@type': 'NewsArticle', headline: doc.title,
     description: doc.meta_description || doc.excerpt || doc.content.replace(/<[^>]*>?/gm, '').substring(0, 150),
-    image: [doc.thumbnail_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'],
-    datePublished: doc.created_at,
+    ...(doc.thumbnail_url ? { image: [doc.thumbnail_url] } : {}), datePublished: doc.created_at,
     dateModified: doc.updated_at || doc.created_at,
-    author: {
-      '@type': 'Person',
-      name: authorName,
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'AI AFFILIATE HUB',
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://aiaffiliatehub.com/logo.png',
-      },
-    },
+    ...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
+    publisher: { '@type': 'Organization', name: 'AIDEALSUK' },
   };
-
-  // Schema FAQPage JSON-LD
-  const faqSchemaData =
-    Array.isArray(doc.faq_schema) && doc.faq_schema.length > 0
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          mainEntity: doc.faq_schema.map((faq: any) => ({
-            '@type': 'Question',
-            name: faq.question,
-            acceptedAnswer: {
-              '@type': 'Answer',
-              text: faq.answer,
-            },
-          })),
-        }
-      : null;
+  const faqSchemaData = Array.isArray(doc.faq_schema) && doc.faq_schema.length ? {
+    '@context': 'https://schema.org', '@type': 'FAQPage',
+    mainEntity: doc.faq_schema.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })),
+  } : null;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-slate-700 flex flex-col font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B]">
+    <div className={styles.page}>
       <AffiliateTracker />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
-      />
-      {faqSchemaData && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }}
-        />
-      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
+      <header className={styles.header}>
+        <Link className={styles.logo} href="/figma-tech-finance-news">AIDEALSUK</Link>
+        <Link className={styles.backLink} href="/figma-tech-finance-news"><ArrowLeft size={15} /> Back to home</Link>
+      </header>
 
-      {/* Nav Topbar */}
-      <nav className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold tracking-tighter text-slate-900 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#0056B3]"></span>
-            AI<span className="text-[#0056B3] font-medium">AFFILIATE HUB</span>
-          </Link>
-          <Link
-            href="/"
-            className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 border border-slate-200 px-3.5 py-1.5 rounded-full hover:bg-slate-100 transition-colors bg-white font-medium"
-          >
-            <ArrowLeft size={14} /> Back To Home
-          </Link>
-        </div>
-      </nav>
+      <main className={styles.layout}>
+        <div className={styles.leftSpacer} aria-hidden="true" />
+        <article className={styles.articleBox}>
+          {categoryName && (categorySlug
+            ? <Link className={styles.category} href={`/figma-tech-finance-news/category/${categorySlug}`}>{categoryName}</Link>
+            : <p className={styles.category}>{categoryName}</p>)}
+          <h1>{doc.title}</h1>
+          {doc.thumbnail_url && <div className={styles.heroImage}><Image src={doc.thumbnail_url} alt={doc.title} fill priority sizes="(max-width: 900px) 100vw, 760px" /></div>}
+          {keyTakeaways.length > 0 && <section className={styles.takeaways}><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
+          <div className={styles.articleContent} dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }} />
 
-      <main className="flex-1 max-w-4xl mx-auto px-6 py-12 w-full">
-        <article className="relative bg-white border border-slate-100 rounded-3xl p-8 lg:p-14 shadow-xl shadow-slate-200/50">
-          {/* Header */}
-          <header className="mb-8 text-center relative z-10">
-            <div className="text-[#0056B3] text-xs font-bold tracking-widest uppercase mb-3">
-              {categoryName} • In-Depth Case Study & Review
-            </div>
+          {placements.length > 0 && <section className={styles.placements}>
+            <h2>Recommended Offers</h2>
+            {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+          </section>}
 
-            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
-              {doc.title}
-            </h1>
-
-            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500 border-b border-slate-100 pb-6">
-              <span className="flex items-center gap-1.5 text-slate-700">
-                <User size={14} className="text-[#0056B3]" /> By <strong>{authorName}</strong>
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Calendar size={14} className="text-slate-400" /> {formattedDate}
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1 text-emerald-800 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                <Eye size={14} className="text-[#20C997]" /> {doc.view_count} Views
-              </span>
-            </div>
-          </header>
-
-          {/* Thumbnail */}
-          {doc.thumbnail_url && (
-            <div className="relative w-full h-64 md:h-96 rounded-2xl overflow-hidden border border-slate-100 mb-8 shadow-md">
-              <Image
-                src={doc.thumbnail_url}
-                alt={doc.title}
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 800px"
-                className="object-cover"
-              />
-            </div>
-          )}
-
-          {/* GEO Key Takeaways Box */}
-          {Array.isArray(doc.key_takeaways) && doc.key_takeaways.length > 0 && (
-            <div className="mb-10 bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-6 relative overflow-hidden">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow">
-                  AI
-                </div>
-                <h3 className="text-sm font-bold text-indigo-950 uppercase tracking-wide">
-                  Key Takeaways (Generative AI Summary)
-                </h3>
-              </div>
-              <ul className="space-y-2 text-xs sm:text-sm text-indigo-900 leading-relaxed list-disc list-inside">
-                {doc.key_takeaways.map((point: string, idx: number) => (
-                  <li key={idx} className="font-medium">
-                    {point.replace(/^[-\s]+/, '')}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Entities Badge Bar */}
-          {Array.isArray(doc.entities) && doc.entities.length > 0 && (
-            <div className="mb-8 flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Recognized Entities:</span>
-              {doc.entities.map((entity: string, idx: number) => (
-                <span
-                  key={idx}
-                  className="bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full font-medium text-[11px]"
-                >
-                  {entity}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Top Affiliate CTA Placements */}
-          {topPlacements.map((p, idx) => (
-            <AffiliateCtaBlock key={`top-${idx}`} articleId={articleId} link={p.link} positionLabel={p.positionLabel} />
-          ))}
-
-          {/* Content HTML in Charcoal text */}
-          <div
-            className="prose prose-slate prose-lg max-w-none text-slate-700 leading-relaxed font-serif prose-headings:text-slate-900 prose-headings:font-sans prose-a:text-[#0056B3] hover:prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }}
-          />
-
-          {/* Remaining Affiliate CTA Placements (middle / footer) */}
-          {otherPlacements.map((p, idx) => (
-            <AffiliateCtaBlock key={`other-${idx}`} articleId={articleId} link={p.link} positionLabel={p.positionLabel} />
-          ))}
-
-          {/* FAQ Accordion Block */}
-          {Array.isArray(doc.faq_schema) && doc.faq_schema.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-slate-200">
-              <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <span className="w-7 h-7 rounded-xl bg-blue-50 text-[#0056B3] flex items-center justify-center font-bold text-xs border border-blue-100">
-                  ?
-                </span>
-                Frequently Asked Questions (FAQ)
-              </h3>
-              <div className="space-y-4">
-                {doc.faq_schema.map((faq: any, idx: number) => (
-                  <div key={idx} className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-5 space-y-2">
-                    <h4 className="text-sm font-bold text-slate-900 flex items-start gap-2">
-                      <span className="text-[#0056B3]">Q:</span> {faq.question}
-                    </h4>
-                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pl-5">
-                      {faq.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Transparent Partner Disclosure */}
-          <div className="mt-12 pt-6 border-t border-slate-100 flex items-center gap-3 text-xs text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-            <ShieldCheck className="w-5 h-5 text-[#0056B3] shrink-0" />
-            <p>
-              <strong className="text-slate-900">Affiliate Disclosure:</strong> This review contains verified referral links. When you purchase through these partner links, we may receive a commission at no extra cost to you, supporting our research team.
-            </p>
-          </div>
+          {relatedArticles.length > 0 && <section className={styles.related}>
+            <div className={styles.relatedHeading}><p>Continue Reading</p><h2>Related Articles</h2></div>
+            <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={styles.relatedCard}>
+              <div className={styles.relationLabels}>{related.sameAuthor && <span>Same author</span>}{related.sameCategory && <span>Same category</span>}</div>
+              <h3>{related.title}</h3><p><span><Eye size={13} /> {related.viewCount} views</span><ArrowRight size={14} /></p>
+            </Link>)}</div>
+          </section>}
+          <SocialShare title={doc.title} />
         </article>
 
-        {/* Related Articles */}
-        {relatedArticles.length > 0 && (
-          <section className="mt-16 pt-8 border-t border-slate-200">
-            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <Tag className="w-5 h-5 text-[#0056B3]" /> Related AI Case Studies
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {relatedArticles.map((rel) => (
-                <Link
-                  key={rel.id}
-                  href={`/article/${rel.slug}`}
-                  className="bg-white border border-slate-100 rounded-2xl p-4 hover:border-[#0056B3]/40 hover:shadow-md transition-all flex flex-col justify-between group shadow-sm"
-                >
-                  <h4 className="text-sm font-bold text-slate-900 group-hover:text-[#0056B3] transition-colors line-clamp-2 mb-3">
-                    {rel.title}
-                  </h4>
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="flex items-center gap-1 text-[#20C997] font-semibold">
-                      <Eye size={12} /> {rel.viewCount}
-                    </span>
-                    <span className="text-[#0056B3] font-semibold flex items-center gap-0.5">
-                      Read Story <ChevronRight size={12} />
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+        <div className={styles.rightRail}>
+          <VerticalAffiliateSidebar hideWhenEmpty sticky={false} />
+          {latestArticles.length > 0 && <section className={styles.latestNews}>
+            <p>Recently Published</p><h2>Latest News</h2>
+            <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
+            <Link className={styles.latestAll} href="/figma-tech-finance-news/latest">View all latest <ArrowRight size={14} /></Link>
+          </section>}
+        </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-8 px-6 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} AI AFFILIATE HUB. All Rights Reserved.
-      </footer>
+      <footer className={styles.footer}><Link href="/figma-tech-finance-news">AIDEALSUK</Link></footer>
     </div>
   );
 }
