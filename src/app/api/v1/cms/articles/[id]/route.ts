@@ -4,6 +4,7 @@ import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
+import { revalidateTag } from 'next/cache';
 
 // GET /api/v1/cms/articles/:id (Fetch single article for edit form)
 export async function GET(
@@ -135,6 +136,7 @@ export async function PUT(
     existingArticle.updated_at = new Date();
 
     await existingArticle.save();
+    revalidateTag('public-articles', 'max');
 
     return NextResponse.json({
       status: 'success',
@@ -176,6 +178,7 @@ export async function DELETE(
     }
 
     await ArticleModel.findByIdAndDelete(id);
+    revalidateTag('public-articles', 'max');
 
     return NextResponse.json({
       status: 'success',

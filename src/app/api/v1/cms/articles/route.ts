@@ -4,6 +4,7 @@ import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
+import { revalidateTag } from 'next/cache';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
@@ -123,6 +124,8 @@ export async function POST(req: Request) {
       faq_schema: Array.isArray(faqSchema) ? faqSchema : [],
       affiliate_placements: Array.isArray(affiliatePlacements) ? affiliatePlacements : [],
     });
+
+    revalidateTag('public-articles', 'max');
 
     return NextResponse.json(
       {

@@ -74,17 +74,20 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json({
-      status: 'success',
-      data: result,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages,
-        hasMore: page < totalPages,
+    return NextResponse.json(
+      {
+        status: 'success',
+        data: result,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasMore: page < totalPages,
+        },
       },
-    });
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
   } catch (error) {
     console.error('Public articles API error:', error);
     return NextResponse.json({ status: 'error', message: 'Failed to fetch public articles' }, { status: 500 });

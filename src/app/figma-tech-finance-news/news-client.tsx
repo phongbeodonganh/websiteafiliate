@@ -15,7 +15,7 @@ import styles from "./page.module.css";
 const fallbackImage =
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
 
-type Article = {
+export type Article = {
   id: string;
   title: string;
   slug: string;
@@ -28,6 +28,12 @@ type Article = {
   categoryName?: string | null;
   authorName?: string | null;
   authorAvatar?: string | null;
+};
+
+export type HomepageArticleData = {
+  latest: Article[];
+  popular: Article[];
+  editorial: Article[];
 };
 
 function formatDate(dateStr?: string) {
@@ -74,6 +80,7 @@ function relativeTime(value: string) {
 async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
   const response = await fetch(`/api/v1/public/articles?${params.toString()}`, {
     signal,
+    cache: "no-store",
     headers: { Accept: "application/json" },
   });
   const payload = (await response.json()) as ArticleResponse;
@@ -83,18 +90,26 @@ async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
   return payload.data || [];
 }
 
-export default function TechFinanceNewsClient() {
+type TechFinanceNewsClientProps = {
+  initialData?: HomepageArticleData;
+  initialQuery?: string;
+};
+
+export default function TechFinanceNewsClient({
+  initialData,
+  initialQuery = "",
+}: TechFinanceNewsClientProps) {
   const searchParams = useSearchParams();
-  const [latest, setLatest] = useState<Article[]>([]);
-  const [popular, setPopular] = useState<Article[]>([]);
-  const [editorial, setEditorial] = useState<Article[]>([]);
-  const [query, setQuery] = useState("");
-  const [activeQuery, setActiveQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [latest, setLatest] = useState<Article[]>(initialData?.latest || []);
+  const [popular, setPopular] = useState<Article[]>(initialData?.popular || []);
+  const [editorial, setEditorial] = useState<Article[]>(initialData?.editorial || []);
+  const [query, setQuery] = useState(initialQuery);
+  const [activeQuery, setActiveQuery] = useState(initialQuery);
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const q = searchParams.get("q") || "";
+    const q = searchParams.get("q")?.trim() || "";
     setActiveQuery(q);
     setQuery(q);
   }, [searchParams]);
@@ -133,7 +148,7 @@ export default function TechFinanceNewsClient() {
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
+    if (!latest.length && !popular.length && !editorial.length) setLoading(true);
     setError("");
     setActiveQuery(query.trim());
   }
@@ -141,7 +156,7 @@ export default function TechFinanceNewsClient() {
   function clearSearch() {
     setQuery("");
     setError("");
-    if (activeQuery) setLoading(true);
+    if (activeQuery && !latest.length && !popular.length && !editorial.length) setLoading(true);
     setActiveQuery("");
   }
 
