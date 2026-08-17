@@ -5,7 +5,6 @@ import { ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
-import AffiliateTracker from '@/components/AffiliateTracker';
 import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialHeader from '@/components/EditorialHeader';
@@ -120,7 +119,6 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
   return (
     <div className={styles.page}>
-      <AffiliateTracker />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
       <EditorialHeader />

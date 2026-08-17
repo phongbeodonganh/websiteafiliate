@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     const articlesWithClicks = rawArticles.map((art) => {
       const doc = art.toObject();
       const artIdStr = doc._id.toString();
-      const clicks = clickMap[artIdStr] || (doc.view_count > 0 ? Math.floor(doc.view_count * 0.07) : 0);
+      const clicks = clickMap[artIdStr] ?? 0;
       return {
         id: artIdStr,
         authorId: doc.author_id ? (doc.author_id as any)._id?.toString() || doc.author_id.toString() : null,
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
       allPublished.forEach((article) => {
         const artDoc = article.toObject();
         const artIdStr = artDoc._id.toString();
-        const clicks = clickMap[artIdStr] || (artDoc.view_count > 0 ? Math.floor(artDoc.view_count * 0.07) : 0);
+        const clicks = clickMap[artIdStr] ?? 0;
         const authorIdStr = artDoc.author_id ? artDoc.author_id.toString() : 'unknown';
 
         if (!userStats[authorIdStr]) {

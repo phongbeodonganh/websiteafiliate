@@ -73,7 +73,7 @@ export default function EditorialFooter() {
         {/* Col 1 — Brand */}
         <div style={{ gridColumn: 'span 1' }}>
           <Link
-            href="/figma-tech-finance-news"
+            href="/"
             style={{
               color: '#ffffff',
               fontSize: 26,

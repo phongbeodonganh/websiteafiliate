@@ -37,7 +37,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             setUser(data.data);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
@@ -70,7 +70,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
       <div className="flex items-center gap-4 sm:gap-6">
         {/* Brand Name -> Click to Home */}
         <Link
-          href="/figma-tech-finance-news"
+          href="/"
           className="text-white text-2xl sm:text-3xl font-extrabold tracking-tight text-decoration-none hover:text-gray-200 transition-colors font-['Plus_Jakarta_Sans',sans-serif]"
         >
           {BRAND_NAME}
@@ -78,7 +78,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
 
         {/* Home Button */}
         <Link
-          href="/figma-tech-finance-news"
+          href="/"
           role="button"
           className="hidden md:flex items-center gap-1.5 border border-white/80 text-white px-3.5 py-1.5 text-xs font-bold uppercase transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02] text-decoration-none"
         >
@@ -190,7 +190,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
 
           <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
             <Link
-              href="/figma-tech-finance-news"
+              href="/"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-1.5 text-white text-xs font-bold uppercase hover:text-gray-300"
             >
@@ -249,7 +249,7 @@ export default function EditorialHeader(props: EditorialHeaderProps) {
     <Suspense
       fallback={
         <header className="fixed top-0 left-0 right-0 z-[1000] h-[82px] bg-[#111111] border-b border-[#222222] flex items-center justify-between px-4 sm:px-7">
-          <Link href="/figma-tech-finance-news" className="text-white text-2xl font-bold">
+          <Link href="/" className="text-white text-2xl font-bold">
             {BRAND_NAME}
           </Link>
         </header>

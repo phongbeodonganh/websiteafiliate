@@ -67,8 +67,6 @@ export default function AffiliateCtaBlock({ articleId, link, positionLabel, vari
       {/* High-Converting Black Button */}
       <a
         href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`}
-        data-affiliate-id={link.id}
-        data-article-id={articleId}
         className="affiliate-btn w-full inline-flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider py-3 transition-colors text-center"
         rel="nofollow sponsored"
         target="_blank"
