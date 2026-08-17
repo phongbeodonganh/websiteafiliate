@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import LeadCapture from "@/components/LeadCapture";
 import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
 import CategorySelector from "@/components/CategorySelector";
+import EditorialHeader from "@/components/EditorialHeader";
+import EditorialFooter from "@/components/EditorialFooter";
 import styles from "./page.module.css";
 
 const fallbackImage =
@@ -23,7 +26,16 @@ type Article = {
   thumbnailUrl?: string;
   createdAt: string;
   categoryName?: string | null;
+  authorName?: string | null;
+  authorAvatar?: string | null;
 };
+
+function formatDate(dateStr?: string) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 type ArticleResponse = {
   status: "success" | "error";
@@ -72,6 +84,7 @@ async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
 }
 
 export default function TechFinanceNewsClient() {
+  const searchParams = useSearchParams();
   const [latest, setLatest] = useState<Article[]>([]);
   const [popular, setPopular] = useState<Article[]>([]);
   const [editorial, setEditorial] = useState<Article[]>([]);
@@ -79,6 +92,12 @@ export default function TechFinanceNewsClient() {
   const [activeQuery, setActiveQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    setActiveQuery(q);
+    setQuery(q);
+  }, [searchParams]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -134,19 +153,7 @@ export default function TechFinanceNewsClient() {
 
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <Link className={styles.logo} href="/">AIDEALSUK</Link>
-        <form className={styles.searchBox} role="search" onSubmit={handleSearch}>
-          <Search aria-hidden="true" className={styles.searchIcon} size={32} strokeWidth={1.7} />
-          <input aria-label="Search articles" onChange={(event) => setQuery(event.target.value)} placeholder="Search articles" type="search" value={query} />
-          <button type="submit">Search</button>
-        </form>
-        <nav className={styles.actions} aria-label="Site navigation">
-          <CategorySelector placement="header" />
-          <Link className={styles.authLink} href="/admin/login">Sign up</Link>
-          <Link className={styles.authLink} href="/admin/login">Sign in</Link>
-        </nav>
-      </header>
+      <EditorialHeader initialSearchQuery={query} />
 
       {activeQuery && !loading && (
         <div className={styles.resultsBar}>
@@ -171,7 +178,9 @@ export default function TechFinanceNewsClient() {
               <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY"}</p>
               <h1 id="featured-title"><Link href={articleHref(featured)}>{featured.title}</Link></h1>
               <p className={styles.lede}>{descriptionFor(featured)}</p>
-              <p className={styles.meta}>{readingTime(featured)} &middot; {featured.categoryName || "NEWS"}</p>
+              <p className={styles.meta}>
+                By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
+              </p>
             </div>
             <Link className={styles.featuredMedia} href={articleHref(featured)}>
               <img src={imageFor(featured)} alt={featured.title} />
@@ -186,7 +195,7 @@ export default function TechFinanceNewsClient() {
                 <article className={styles.latestItem} key={article.id}>
                   <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
                   <div>
-                    <p className={styles.meta}>{relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
+                    <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
                     <h3><Link href={articleHref(article)}>{article.title}</Link></h3>
                   </div>
                 </article>
@@ -203,7 +212,7 @@ export default function TechFinanceNewsClient() {
               <article className={styles.hotItem} key={article.id}>
                 <strong>{String(index + 1).padStart(2, "0")}</strong>
                 <div>
-                  <p className={styles.meta}>{article.categoryName || "NEWS"} &middot; {readingTime(article)} &middot; {article.viewCount} VIEWS</p>
+                  <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt)} &middot; {article.viewCount} VIEWS</p>
                   <h3><Link href={articleHref(article)}>{article.title}</Link></h3>
                 </div>
                 <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
@@ -220,7 +229,7 @@ export default function TechFinanceNewsClient() {
               <article className={styles.editorialLead}>
                 <Link href={articleHref(editorialLead)}><img src={imageFor(editorialLead)} alt={editorialLead.title} /></Link>
                 <div>
-                  <p className={styles.meta}>EDITOR&apos;S PICK &middot; {readingTime(editorialLead)}</p>
+                  <p className={styles.meta}>By {editorialLead.authorName || "Editor"} &middot; {formatDate(editorialLead.createdAt)} &middot; {readingTime(editorialLead)}</p>
                   <h3><Link href={articleHref(editorialLead)}>{editorialLead.title}</Link></h3>
                   <p>{descriptionFor(editorialLead)}</p>
                 </div>
@@ -253,10 +262,7 @@ export default function TechFinanceNewsClient() {
         <CategoryArticleSections />
       </div>
 
-      <footer className={styles.footer}>
-        <Link className={styles.footerLogo} href="/">AIDEALSUK</Link>
-        <CategorySelector placement="footer" />
-      </footer>
+      <EditorialFooter />
     </main>
   );
 }

@@ -108,7 +108,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
   const accentColor = siteSettings?.accentColor || '#0056B3';
   const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'AI AFFILIATE HUB';
+  const siteTitle = siteSettings?.siteTitle || 'AIDEALSUK';
 
   return (
     <nav className="fixed top-0 left-0 w-full z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all duration-300 shadow-sm">
@@ -135,7 +135,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
                 {siteTitle[0] || 'A'}
               </div>
               <span className="font-extrabold tracking-tight text-slate-900">
-                AI<span className="text-[#0056B3] font-medium">AFFILIATE HUB</span>
+                {siteTitle}
               </span>
             </>
           )}

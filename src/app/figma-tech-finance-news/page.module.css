@@ -1,34 +1,36 @@
 .page {
-  --header-gap: 16px;
+  --header-gap: 24px;
   --header-height: 82px;
   --header-top: 0px;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   background: #ffffff;
-  color: #111111;
-  font-family: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
-  padding: calc(var(--header-top) + var(--header-height) + var(--header-gap)) 14px 0;
+  color: #0f172a;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding: calc(var(--header-top) + var(--header-height) + var(--header-gap)) 0 0;
+  box-sizing: border-box;
 }
 
 .header {
   align-items: center;
   background: #111111;
   border-top: 0;
-  border-bottom: 1px solid #ffffff;
+  border-bottom: 1px solid #222222;
   box-sizing: border-box;
-  display: grid;
-  grid-template-columns: 260px minmax(220px, 330px) 1fr;
-  gap: 28px;
+  display: flex;
+  justify-content: space-between;
   height: var(--header-height);
   left: 0;
   margin: 0 auto;
-  max-width: none;
-  padding: 0 28px;
+  padding: 0 32px;
   position: fixed;
   right: 0;
   top: var(--header-top);
   width: 100%;
   z-index: 1000;
-  box-shadow: 0 14px 34px rgba(17, 17, 17, 0.08);
+  box-shadow: 0 14px 34px rgba(17, 17, 17, 0.12);
 }
 
 .header .logo,
@@ -97,12 +99,13 @@
 .resultsBar,
 .statusMessage {
   background: #ffffff;
-  border: 1px solid #d7d7d7;
-  font-size: 13px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
   font-weight: 650;
-  margin: 0 auto 20px;
-  max-width: 1252px;
-  padding: 14px 18px;
+  margin: 0 auto 24px;
+  max-width: 1440px;
+  padding: 16px 24px;
+  border-radius: 10px;
 }
 
 .resultsBar {
@@ -116,6 +119,8 @@
   border: 0;
   cursor: pointer;
   font: inherit;
+  color: #111111;
+  font-weight: 700;
   text-decoration: underline;
 }
 
@@ -189,15 +194,18 @@
 
 .shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 395px;
+  grid-template-columns: minmax(0, 1fr) 420px;
   grid-template-areas:
     "featured latest"
     "hottest latest"
     "editorial product";
-  gap: 28px 25px;
+  gap: 32px 30px;
   margin: 0 auto;
-  max-width: 1252px;
-  padding-bottom: 36px;
+  max-width: 1440px;
+  width: 100%;
+  padding: 0 32px 48px;
+  box-sizing: border-box;
+  flex: 1 0 auto;
 }
 
 .featured,
@@ -205,18 +213,20 @@
 .hottest,
 .editorial {
   background: #ffffff;
-  border: 1px solid #d7d7d7;
+  border: 1px solid #e2e8f0;
+  border-radius: 0px;
   position: relative;
-  box-shadow: 0 18px 38px rgba(17, 17, 17, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 }
 
 .sectionRule {
   background: #111111;
   height: 4px;
-  left: -1px;
+  left: 0;
   position: absolute;
-  right: -1px;
-  top: -1px;
+  right: 0;
+  top: 0;
 }
 
 .featured {
@@ -334,7 +344,8 @@
 
 .latestItem > a,
 .hotItem > a,
-.editorialLead > a {
+.editorialLead > a,
+.featuredMedia {
   display: block;
   height: fit-content;
 }
@@ -363,7 +374,7 @@
 
 .blackButton:hover {
   box-shadow: 0 16px 30px rgba(17, 17, 17, 0.26);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .hottest {
@@ -482,7 +493,7 @@
 
 .productLink:hover {
   box-shadow: 0 16px 30px rgba(17, 17, 17, 0.24);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
 }
 
 .sectionViewAll {
@@ -507,8 +518,11 @@
 .affiliateSection,
 .leadCapture,
 .categorySections {
-  margin: 0 auto 36px;
-  max-width: 1252px;
+  margin: 0 auto 40px;
+  max-width: 1440px;
+  width: 100%;
+  padding: 0 32px;
+  box-sizing: border-box;
 }
 
 .collectionNavLabel {
@@ -523,8 +537,10 @@
 
 .collectionShell {
   margin: 0 auto;
-  max-width: 1252px;
-  padding-bottom: 48px;
+  max-width: 1440px;
+  width: 100%;
+  padding: 0 32px 48px;
+  box-sizing: border-box;
 }
 
 .collectionHero {
@@ -571,12 +587,6 @@
   border: 1px solid #d7d7d7;
   display: flex;
   flex-direction: column;
-  transition: transform 160ms ease;
-}
-
-.collectionCard:hover,
-.affiliateCard:hover {
-  transform: translateY(-2px) scale(1.02);
 }
 
 .collectionImage {

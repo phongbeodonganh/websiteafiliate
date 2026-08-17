@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import TechFinanceNewsClient from "./news-client";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function FigmaTechFinanceNewsPage() {
-  return <TechFinanceNewsClient />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#111111] text-white flex items-center justify-center p-8">Loading...</div>}>
+      <TechFinanceNewsClient />
+    </Suspense>
+  );
 }

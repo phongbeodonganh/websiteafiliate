@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connectToDatabase();
 
   const settings = await SettingModel.findOne();
-  const baseUrl = (settings?.canonicalUrl || 'https://aiaffiliatehub.com').replace(/\/$/, '');
+  const baseUrl = (settings?.canonicalUrl || 'https://aidealsuk.com').replace(/\/$/, '');
 
   const articles = await ArticleModel.find({ status: 'published' })
     .select('slug updated_at created_at')

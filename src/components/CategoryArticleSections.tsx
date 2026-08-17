@@ -70,7 +70,7 @@ export default function CategoryArticleSections() {
   useEffect(() => {
     if (!started) return;
     const controller = new AbortController();
-    fetch('/api/v1/public/articles/by-category?limit=3', { signal: controller.signal })
+    fetch('/api/v1/public/articles/by-category?limit=4', { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json();
         if (!response.ok || payload.status !== 'success') {
@@ -130,17 +130,18 @@ export default function CategoryArticleSections() {
 
       <div className="space-y-9">
         {categories.map((category) => (
-          <section key={category.id} className="border border-[#d7d7d7] border-t-4 border-t-black bg-white p-6 md:p-8">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-[#d7d7d7] pb-5">
+          <section key={category.id} className="border border-neutral-300 border-t-4 border-t-black bg-white p-6 md:p-8 shadow-sm">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-5">
               <div>
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-neutral-500">Category</p>
-                <h2 className="text-2xl font-bold uppercase text-black md:text-3xl">{category.name}</h2>
-                {category.description && <p className="mt-2 max-w-2xl text-sm text-neutral-600">{category.description}</p>}
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-neutral-500">Category</p>
+                <h2 className="text-2xl font-bold uppercase text-black md:text-3xl font-['Plus_Jakarta_Sans']">{category.name}</h2>
+                {category.description && <p className="mt-1 max-w-2xl text-sm text-neutral-600">{category.description}</p>}
               </div>
               <div className="flex items-center gap-4">
                 <span className="text-xs font-semibold text-neutral-500">{category.pagination.total} ARTICLES</span>
                 <Link
                   href={`/figma-tech-finance-news/category/${category.slug}`}
+                  role="button"
                   className="border border-black bg-black px-4 py-2 text-[10px] font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
                 >
                   View all category
@@ -151,7 +152,7 @@ export default function CategoryArticleSections() {
             {category.articles.length === 0 ? (
               <p className="py-8 text-sm text-neutral-500">No published articles in this category yet.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.articles.map((article) => (
                   <article key={article.id} className="group flex flex-col border border-[#d7d7d7] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]">
                     <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">

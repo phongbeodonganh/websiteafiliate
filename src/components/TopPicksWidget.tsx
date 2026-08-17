@@ -38,36 +38,36 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
     <section
       className={
         editorial
-          ? 'relative bg-white border border-[#d7d7d7] border-t-4 border-t-[#111111] px-6 py-8 animate-in fade-in duration-700'
+          ? 'relative bg-white border border-neutral-300 border-t-4 border-t-black px-6 md:px-8 py-8 shadow-sm animate-in fade-in duration-700'
           : 'my-12 animate-in fade-in duration-700'
       }
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-neutral-200">
         <div className="flex items-center gap-2">
-          <Award className={`w-5 h-5 ${editorial ? 'text-black' : 'text-[#0056B3]'}`} />
-          <h2 className={`text-xl md:text-2xl font-bold ${editorial ? 'text-black uppercase' : 'text-slate-900'}`}>
+          <Award className="w-5 h-5 text-black" />
+          <h2 className="text-xl md:text-2xl font-bold text-black uppercase font-['Plus_Jakarta_Sans']">
             Top Recommended AI Deals (Editor&apos;s Choice)
           </h2>
         </div>
         <span
           className={
             editorial
-              ? 'text-xs text-black font-semibold bg-white px-3 py-1 border border-black uppercase'
-              : 'text-xs text-[#20C997] font-semibold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200/80'
+              ? 'text-xs text-black font-semibold bg-neutral-100 px-3 py-1 border border-black uppercase'
+              : 'text-xs text-black font-semibold bg-neutral-100 px-3 py-1 border border-neutral-300'
           }
         >
           ✓ Verified Offers
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {picks.map((pick, index) => (
           <div
             key={pick.id}
             className={
               editorial
-                ? 'group relative bg-white border border-[#d7d7d7] p-6 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02] flex flex-col justify-between'
-                : 'group relative bg-white rounded-2xl border border-slate-100 p-6 hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 shadow-sm flex flex-col justify-between'
+                ? 'group relative bg-white border border-neutral-300 p-6 flex flex-col justify-between'
+                : 'group relative bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between'
             }
           >
             <div

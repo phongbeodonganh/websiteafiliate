@@ -369,14 +369,14 @@ export async function seedMongoDB() {
 
   // 7. Seed Site Settings
   await SettingModel.create({
-    site_title: 'AI AFFILIATE HUB',
+    site_title: 'AIDEALSUK',
     metaDescription:
       'Discover top AI tool categories, real-world AI use-case case studies, high-paying affiliate programs, and revenue automation strategies.',
     focusKeywords: 'ai use-cases, ai case studies, ai affiliate programs, ai content copywriting, ai coding tools',
-    canonicalUrl: 'https://aiaffiliatehub.com',
+    canonicalUrl: 'https://aidealsuk.com',
     hreflang: 'en-US',
     geoTarget: 'GLOBAL',
-    businessName: 'AI Affiliate Hub LLC',
+    businessName: 'AIDEALSUK Ltd',
     businessAddress: '500 Innovation Way, Suite 300, San Francisco, CA 94105, USA',
     businessPhone: '+1 (800) 555-0188',
     ogImageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
