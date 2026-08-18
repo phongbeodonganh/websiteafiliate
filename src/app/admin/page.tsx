@@ -52,6 +52,7 @@ import {
   Upload,
   FileSpreadsheet,
   AlertTriangle,
+  Home,
 } from 'lucide-react';
 
 // Reusable Luxury Button Component
@@ -1392,12 +1393,12 @@ export default function AdminDashboardPage() {
     return (
       <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
         <div className="flex items-center gap-4 text-slate-400">
-          <button
-            onClick={() => setEditingArticle(null)}
+          <Link
+            href="/"
             className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
           >
-            ← Back to Articles List
-          </button>
+            <Home size={14} /> Home
+          </Link>
           <ChevronRight size={14} />
           <span className="text-amber-400 font-bold text-xs">
             {editingArticle?.id ? 'Edit Article (SEO & GEO Studio V5.1)' : 'Create Article (SEO & GEO Studio V5.1)'}

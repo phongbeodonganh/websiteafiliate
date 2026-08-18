@@ -125,6 +125,61 @@ input[type="submit"]:active,
   transform: translateY(0px) scale(0.98) !important;
 }
 
+/* Makes a card's primary link cover the full card without nesting anchors. */
+.card-stretched-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.card-stretched-link:focus-visible {
+  outline: none;
+}
+
+/* Keep real links/buttons above the card overlay so their hover area stays local. */
+.clickable-card :is(a, button):not(.card-stretched-link) {
+  position: relative;
+  z-index: 2;
+}
+
+.clickable-card {
+  max-width: 100%;
+  min-width: 0;
+  transform: translateY(0) scale(0.99);
+  transform-origin: center;
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+  will-change: transform;
+}
+
+.clickable-card:hover,
+.clickable-card:focus-within {
+  transform: translateY(-3px) scale(1);
+}
+
+.clickable-card:active {
+  transform: translateY(-1px) scale(0.985);
+  transition-duration: 80ms;
+}
+
+.clickable-card:has(.card-stretched-link:focus-visible) {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clickable-card,
+  .clickable-card:hover,
+  .clickable-card:focus-within,
+  .clickable-card:active {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* TipTap WYSIWYG Editor Styles */
 .custom-editor-content p {
   margin-bottom: 1rem;

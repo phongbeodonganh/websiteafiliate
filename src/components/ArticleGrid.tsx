@@ -92,7 +92,7 @@ export default function ArticleGrid({ initialArticles, initialPagination, curren
         {articlesList.map((article) => (
           <article
             key={article.id}
-            className="group cursor-pointer bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-slate-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 flex flex-col justify-between shadow-sm"
+            className="clickable-card group relative cursor-pointer bg-white rounded-2xl border border-slate-100 overflow-hidden hover:border-slate-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300 flex flex-col justify-between shadow-sm"
           >
             {/* 16:9 Aspect Ratio Thumbnail */}
             <div className="aspect-video bg-slate-100 relative overflow-hidden">
@@ -131,7 +131,7 @@ export default function ArticleGrid({ initialArticles, initialPagination, curren
                 </div>
 
                 <h3 className="text-lg font-bold text-slate-900 mb-3 leading-snug group-hover:text-[#0056B3] transition-colors line-clamp-2">
-                  <Link href={`/article/${article.slug}`}>{article.title}</Link>
+                  <Link className="card-stretched-link" href={`/article/${article.slug}`}>{article.title}</Link>
                 </h3>
 
                 <p className="text-sm text-slate-600 line-clamp-2 mb-6 leading-relaxed">

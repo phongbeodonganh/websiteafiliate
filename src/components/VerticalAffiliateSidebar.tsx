@@ -55,8 +55,15 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
         {items.map((item, index) => (
           <article
             key={item.id}
-            className={`${index >= 2 ? 'hidden lg:block' : 'block'} min-w-[min(280px,82vw)] snap-start border-b border-[#d7d7d7] py-5 lg:min-w-0`}
+            className={`${index >= 2 ? 'hidden lg:block' : 'block'} clickable-card relative min-w-[min(280px,82vw)] cursor-pointer snap-start border-b border-[#d7d7d7] py-5 lg:min-w-0`}
           >
+            <a
+              href={`/api/v1/public/tracking/redirect?affiliate_link_id=${item.id}`}
+              target="_blank"
+              rel="nofollow sponsored"
+              className="card-stretched-link"
+              aria-label={`View affiliate deal for ${item.name}`}
+            />
             <div className="mb-3 inline-flex items-center gap-1 bg-black px-2 py-1 text-[9px] font-bold uppercase text-white">
               <Star size={9} fill="currentColor" /> Pick #{index + 1}
             </div>

@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, KeyboardEvent, Suspense } from 'react';
-import { Search, Home, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
 import CategorySelector from '@/components/CategorySelector';
 import { BRAND_NAME } from '@/lib/brand';
 
@@ -13,10 +13,12 @@ interface EditorialHeaderProps {
 
 function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || searchParams.get('q') || '');
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isHome = pathname === '/' || pathname === '/figma-tech-finance-news';
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -57,6 +59,14 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
     }
   };
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/');
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] shadow-[0_14px_34px_rgba(17,17,17,0.15)] flex items-center justify-between px-4 sm:px-7 font-['Inter',system-ui,sans-serif]">
       {/* ── Brand & Navigation Links ── */}
@@ -68,6 +78,19 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
         >
           {BRAND_NAME}
         </Link>
+
+        {!isHome && (
+          <button
+            type="button"
+            onClick={handleBack}
+            className="inline-flex min-h-10 items-center gap-1.5 border border-white/80 px-2.5 text-xs font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02] sm:px-3.5"
+            aria-label="Go back to the previous page"
+            title="Back"
+          >
+            <ArrowLeft size={15} />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+        )}
 
         {/* Home Button */}
         <Link

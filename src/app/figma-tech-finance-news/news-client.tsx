@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import LeadCapture from "@/components/LeadCapture";
 import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
-import CategorySelector from "@/components/CategorySelector";
 import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
 import styles from "./page.module.css";
@@ -85,19 +83,14 @@ async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
 
 export default function TechFinanceNewsClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const searchQuery = searchParams.get("q") || "";
   const [latest, setLatest] = useState<Article[]>([]);
   const [popular, setPopular] = useState<Article[]>([]);
   const [editorial, setEditorial] = useState<Article[]>([]);
-  const [query, setQuery] = useState("");
-  const [activeQuery, setActiveQuery] = useState("");
+  const activeQuery = searchQuery;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const q = searchParams.get("q") || "";
-    setActiveQuery(q);
-    setQuery(q);
-  }, [searchParams]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -131,18 +124,12 @@ export default function TechFinanceNewsClient() {
     return () => controller.abort();
   }, [activeQuery]);
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-    setActiveQuery(query.trim());
-  }
-
   function clearSearch() {
-    setQuery("");
     setError("");
-    if (activeQuery) setLoading(true);
-    setActiveQuery("");
+    if (activeQuery) {
+      setLoading(true);
+      router.push('/figma-tech-finance-news');
+    }
   }
 
   const featured = latest.find((article) => article.isFeatured) || latest[0];
@@ -153,7 +140,7 @@ export default function TechFinanceNewsClient() {
 
   return (
     <main className={styles.page}>
-      <EditorialHeader initialSearchQuery={query} />
+      <EditorialHeader initialSearchQuery={activeQuery} />
 
       {activeQuery && !loading && (
         <div className={styles.resultsBar}>
@@ -172,11 +159,11 @@ export default function TechFinanceNewsClient() {
 
       {featured && (
         <div className={styles.shell}>
-          <section className={styles.featured} aria-labelledby="featured-title">
+          <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title">
             <div className={styles.sectionRule} />
             <div className={styles.featuredCopy}>
               <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY"}</p>
-              <h1 id="featured-title"><Link href={articleHref(featured)}>{featured.title}</Link></h1>
+              <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
               <p className={styles.lede}>{descriptionFor(featured)}</p>
               <p className={styles.meta}>
                 By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
@@ -192,11 +179,11 @@ export default function TechFinanceNewsClient() {
             <h2 id="latest-title">LATEST ARTICLES</h2>
             <div className={styles.latestList}>
               {latestArticles.map((article) => (
-                <article className={styles.latestItem} key={article.id}>
+                <article className={`${styles.latestItem} clickable-card`} key={article.id}>
                   <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
                   <div>
                     <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
-                    <h3><Link href={articleHref(article)}>{article.title}</Link></h3>
+                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
                   </div>
                 </article>
               ))}
@@ -209,11 +196,11 @@ export default function TechFinanceNewsClient() {
             <h2 id="hottest-title">HOTTEST ARTICLES</h2>
             <p className={styles.meta}>MOST READ TODAY</p>
             {popular.map((article, index) => (
-              <article className={styles.hotItem} key={article.id}>
+              <article className={`${styles.hotItem} clickable-card`} key={article.id}>
                 <strong>{String(index + 1).padStart(2, "0")}</strong>
                 <div>
                   <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt)} &middot; {article.viewCount} VIEWS</p>
-                  <h3><Link href={articleHref(article)}>{article.title}</Link></h3>
+                  <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
                 </div>
                 <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
               </article>
@@ -226,11 +213,11 @@ export default function TechFinanceNewsClient() {
             <p className={styles.eyebrow}>CURATED BY OUR EDITORS</p>
             <h2 id="editorial-title">EDITORIAL PICKS</h2>
             {editorialLead && (
-              <article className={styles.editorialLead}>
+              <article className={`${styles.editorialLead} clickable-card`}>
                 <Link href={articleHref(editorialLead)}><img src={imageFor(editorialLead)} alt={editorialLead.title} /></Link>
                 <div>
                   <p className={styles.meta}>By {editorialLead.authorName || "Editor"} &middot; {formatDate(editorialLead.createdAt)} &middot; {readingTime(editorialLead)}</p>
-                  <h3><Link href={articleHref(editorialLead)}>{editorialLead.title}</Link></h3>
+                  <h3><Link className="card-stretched-link" href={articleHref(editorialLead)}>{editorialLead.title}</Link></h3>
                   <p>{descriptionFor(editorialLead)}</p>
                 </div>
               </article>
@@ -238,9 +225,9 @@ export default function TechFinanceNewsClient() {
             {miniArticles.length > 0 && (
               <div className={styles.miniGrid}>
                 {miniArticles.map((article) => (
-                  <article key={article.id}>
+                  <article className="clickable-card" key={article.id}>
                     <p className={styles.meta}>{article.categoryName || "NEWS"} &middot; {readingTime(article)}</p>
-                    <h3><Link href={articleHref(article)}>{article.title}</Link></h3>
+                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
                   </article>
                 ))}
               </div>

@@ -154,7 +154,7 @@ export default function CategoryArticleSections() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.articles.map((article) => (
-                  <article key={article.id} className="group flex flex-col border border-[#d7d7d7] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]">
+                  <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#d7d7d7] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]">
                     <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">
                       <img src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full object-cover" />
                     </Link>
@@ -164,7 +164,7 @@ export default function CategoryArticleSections() {
                         <span className="flex items-center gap-1"><Eye size={12} /> {article.viewCount || 0}</span>
                       </div>
                       <h3 className="mb-3 text-lg font-bold leading-tight text-black">
-                        <Link href={`/article/${article.slug}`} className="hover:underline">{article.title}</Link>
+                        <Link href={`/article/${article.slug}`} className="card-stretched-link hover:underline">{article.title}</Link>
                       </h3>
                       <p className="mb-5 text-sm leading-relaxed text-neutral-600">{excerptFor(article)}</p>
                       <Link href={`/article/${article.slug}`} className="mt-auto flex items-center justify-between border-t border-[#d7d7d7] pt-4 text-xs font-bold uppercase text-black">
