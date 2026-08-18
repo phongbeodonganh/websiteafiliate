@@ -2,11 +2,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { isBlacklisted } from './tokenBlacklist';
 
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET is not set. Provide it via the JWT_SECRET environment variable.');
+// Đọc lazy (lúc thực sự sign/verify token) thay vì lúc import module — import module
+// này (vd Next.js phân tích route lúc build, hoặc 1 test file import gián tiếp) không
+// còn tự throw nữa; chỉ throw khi có request thật cần JWT_SECRET, đúng lúc bắt buộc
+// phải có nó. Cùng lý do/pattern với getMongoUri() trong mongodb.ts.
+function getJwtSecret(): string {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not set. Provide it via the JWT_SECRET environment variable.');
+  }
+  return process.env.JWT_SECRET;
 }
-
-const JWT_SECRET = process.env.JWT_SECRET;
 
 export interface AuthPayload {
   userId: string | number;
@@ -26,14 +31,14 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 // Sign JWT Token (thời hạn 24h theo spec)
 export function signToken(payload: AuthPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '24h' });
 }
 
 // Verify JWT Token
 export function verifyToken(token: string): AuthPayload | null {
   if (isBlacklisted(token)) return null;
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthPayload;
+    return jwt.verify(token, getJwtSecret()) as AuthPayload;
   } catch (error) {
     return null;
   }
