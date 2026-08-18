@@ -79,7 +79,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] shadow-[0_14px_34px_rgba(17,17,17,0.15)] flex items-center justify-between gap-3 px-4 sm:px-7 font-['Inter',system-ui,sans-serif]">
+    <header className="pointer-events-auto fixed isolate top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] shadow-[0_14px_34px_rgba(17,17,17,0.15)] flex items-center justify-between gap-3 px-4 sm:px-7 font-['Inter',system-ui,sans-serif]">
       {/* ── Brand & Navigation Links ── */}
       <div className="flex min-w-0 shrink-0 items-center gap-2 xl:gap-4">
         {/* Brand Name -> Click to Home */}
@@ -128,6 +128,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           className="bg-transparent border-0 text-white placeholder-gray-400 text-sm w-full outline-none"
         />
         <button
+          type="button"
           onClick={handleSearch}
           className="bg-white text-black font-bold text-[10px] uppercase px-2.5 h-[28px] shrink-0 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
         >
@@ -152,6 +153,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
               <span>{user.username}</span>
             </Link>
             <button
+              type="button"
               onClick={handleLogout}
               title="Sign out"
               className="bg-zinc-800 text-white border border-zinc-600 p-2 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
@@ -181,16 +183,19 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
 
       {/* ── Mobile Hamburger Button ── */}
       <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden text-white p-2 hover:bg-zinc-800 rounded"
+        type="button"
+        onClick={() => setMobileMenuOpen((current) => !current)}
+        className="pointer-events-auto relative z-[2] shrink-0 touch-manipulation md:hidden text-white p-2 hover:bg-zinc-800 rounded"
         aria-label="Toggle Navigation"
+        aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-editorial-navigation"
       >
         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* ── Mobile Menu Dropdown ── */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-[70px] left-0 right-0 max-h-[calc(100dvh-70px)] overflow-y-auto bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div id="mobile-editorial-navigation" className="pointer-events-auto fixed top-[70px] left-0 right-0 z-[1100] max-h-[calc(100dvh-70px)] touch-manipulation overflow-y-auto overscroll-contain bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center bg-[#111111] border-2 border-white rounded-lg h-[44px] px-3">
             <Search className="text-white shrink-0 w-5 h-5 mr-2" />
             <input
@@ -207,6 +212,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
               className="bg-transparent border-0 text-white placeholder-gray-400 text-sm w-full outline-none"
             />
             <button
+              type="button"
               onClick={() => {
                 handleSearch();
                 setMobileMenuOpen(false);
@@ -243,6 +249,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                   <ShieldCheck size={14} className="text-emerald-400" /> CMS: {user.username}
                 </Link>
                 <button
+                  type="button"
                   onClick={() => {
                     handleLogout();
                     setMobileMenuOpen(false);

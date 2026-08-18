@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Eye, Loader2 } from 'lucide-react';
+import PublicArticleImage, { ARTICLE_PLACEHOLDER } from '@/components/PublicArticleImage';
 
-const fallbackImage =
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
+const fallbackImage = ARTICLE_PLACEHOLDER;
 
 interface CategoryArticle {
   id: string;
@@ -156,7 +156,7 @@ export default function CategoryArticleSections() {
                 {category.articles.map((article, index) => (
                   <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]" data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                     <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">
-                      <img src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full object-cover" />
+                      <PublicArticleImage src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full" loading="lazy" />
                     </Link>
                     <div className="flex flex-1 flex-col p-5">
                       <div className="mb-3 flex items-center justify-between text-[11px] font-semibold uppercase text-neutral-500">

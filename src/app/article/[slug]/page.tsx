@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
+import AffiliateRecommendationSheet from '@/components/AffiliateRecommendationSheet';
 import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
 import PublicMotion from '@/components/PublicMotion';
+import EditorialBackdrop from '@/components/EditorialBackdrop';
+import PublicArticleImage from '@/components/PublicArticleImage';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -146,10 +148,12 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   return (
     <div className={styles.page}>
       <PublicMotion />
+      <EditorialBackdrop section={categoryName || 'ARTICLE'} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
       <EditorialHeader />
+      <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 
       <main className={styles.layout}>
         <article className={styles.articleBox}>
@@ -170,7 +174,9 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               </p>
             </div>
           </div>
-          {doc.thumbnail_url && <div className={styles.heroImage} data-motion="fade"><Image src={doc.thumbnail_url} alt={doc.title} fill priority sizes="(max-width: 900px) 100vw, 760px" /></div>}
+          <div className={`${styles.heroImage} public-article-image-frame`} data-motion="fade">
+            <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
+          </div>
           {keyTakeaways.length > 0 && <section className={styles.takeaways} data-motion="rise"><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
           <div className={styles.articleContent} dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }} />
 

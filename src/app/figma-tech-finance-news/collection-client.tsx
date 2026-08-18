@@ -5,12 +5,13 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, Clock, Eye, Loader2, ShieldCheck, Star } from 'lucide-react';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import PublicMotion from '@/components/PublicMotion';
+import EditorialBackdrop from '@/components/EditorialBackdrop';
+import PublicArticleImage, { ARTICLE_PLACEHOLDER } from '@/components/PublicArticleImage';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
 import styles from './page.module.css';
 
-const fallbackImage =
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
+const fallbackImage = ARTICLE_PLACEHOLDER;
 
 export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category';
 
@@ -162,6 +163,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
   return (
     <main className={styles.page}>
       <PublicMotion />
+      <EditorialBackdrop section={config.title} />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
       {loading && (
@@ -197,7 +199,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
             {articles.map((article, index) => (
               <article className={`${styles.collectionCard} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                 <Link className={styles.collectionImage} href={`/article/${article.slug}`}>
-                  <img src={article.thumbnailUrl || fallbackImage} alt={article.title} />
+                  <PublicArticleImage src={article.thumbnailUrl || fallbackImage} alt={article.title} loading="lazy" />
                 </Link>
                 <div className={styles.collectionCardBody}>
                   <p className={styles.meta}>By {article.authorName || 'Staff'} &middot; {formatDate(article.createdAt)} &middot; {article.categoryName || 'NEWS'} &middot; <Eye size={12} /> {article.viewCount || 0}</p>

@@ -9,10 +9,11 @@ import CategoryArticleSections from "@/components/CategoryArticleSections";
 import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
 import PublicMotion from "@/components/PublicMotion";
+import EditorialBackdrop from "@/components/EditorialBackdrop";
+import PublicArticleImage, { ARTICLE_PLACEHOLDER } from "@/components/PublicArticleImage";
 import styles from "./page.module.css";
 
-const fallbackImage =
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
+const fallbackImage = ARTICLE_PLACEHOLDER;
 
 export type Article = {
   id: string;
@@ -165,6 +166,7 @@ export default function TechFinanceNewsClient({
   return (
     <main className={styles.page}>
       <PublicMotion />
+      <EditorialBackdrop section="NEWSROOM" />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
       {activeQuery && !loading && (
@@ -186,35 +188,21 @@ export default function TechFinanceNewsClient({
         <div className={styles.shell}>
           <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title" data-motion="rise">
             <div className={styles.sectionRule} />
+            <div className={styles.featuredAccent} />
             <div className={styles.featuredCopy}>
+              <span className={styles.featuredFolio} aria-hidden="true">01</span>
               <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY"}</p>
               <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
               <p className={styles.lede}>{descriptionFor(featured)}</p>
               <p className={styles.meta}>
                 By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
               </p>
+              <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <span aria-hidden="true">&rarr;</span></Link>
             </div>
             <Link className={styles.featuredMedia} href={articleHref(featured)}>
-              <img src={imageFor(featured)} alt={featured.title} />
+              <PublicArticleImage src={imageFor(featured)} alt={featured.title} loading="eager" fetchPriority="high" />
             </Link>
           </section>
-
-          <aside className={styles.latest} aria-labelledby="latest-title" data-motion="rise" style={{ '--motion-delay': '70ms' } as React.CSSProperties}>
-            <div className={styles.sectionRule} />
-            <h2 id="latest-title">LATEST ARTICLES</h2>
-            <div className={styles.latestList}>
-              {latestArticles.map((article) => (
-                <article className={`${styles.latestItem} clickable-card`} key={article.id} data-motion="rise">
-                  <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
-                  <div>
-                    <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
-                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
-          </aside>
 
           <section className={styles.hottest} aria-labelledby="hottest-title" data-motion="rise">
             <div className={styles.sectionRule} />
@@ -227,7 +215,7 @@ export default function TechFinanceNewsClient({
                   <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt)} &middot; {article.viewCount} VIEWS</p>
                   <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
                 </div>
-                <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
+                <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
               </article>
             ))}
             <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/hottest">VIEW ALL HOTTEST ARTICLES</Link>
@@ -239,7 +227,7 @@ export default function TechFinanceNewsClient({
             <h2 id="editorial-title">EDITORIAL PICKS</h2>
             {editorialLead && (
               <article className={`${styles.editorialLead} clickable-card`}>
-                <Link href={articleHref(editorialLead)}><img src={imageFor(editorialLead)} alt={editorialLead.title} /></Link>
+                <Link href={articleHref(editorialLead)}><PublicArticleImage src={imageFor(editorialLead)} alt={editorialLead.title} loading="lazy" /></Link>
                 <div>
                   <p className={styles.meta}>By {editorialLead.authorName || "Editor"} &middot; {formatDate(editorialLead.createdAt)} &middot; {readingTime(editorialLead)}</p>
                   <h3><Link className="card-stretched-link" href={articleHref(editorialLead)}>{editorialLead.title}</Link></h3>
@@ -259,6 +247,23 @@ export default function TechFinanceNewsClient({
             )}
             <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/editorial-picks">VIEW ALL EDITORIAL PICKS</Link>
           </section>
+
+          <aside className={styles.latest} aria-labelledby="latest-title" data-motion="rise" style={{ '--motion-delay': '70ms' } as React.CSSProperties}>
+            <div className={styles.sectionRule} />
+            <h2 id="latest-title">LATEST ARTICLES</h2>
+            <div className={styles.latestList}>
+              {latestArticles.map((article) => (
+                <article className={`${styles.latestItem} clickable-card`} key={article.id} data-motion="rise">
+                  <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
+                  <div>
+                    <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
+                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
+          </aside>
         </div>
       )}
 
