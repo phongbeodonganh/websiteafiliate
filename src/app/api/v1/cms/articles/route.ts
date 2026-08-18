@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { slugify } from '@/lib/utils';
+import { slugify, isValidObjectId } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
@@ -90,6 +90,7 @@ export async function POST(req: Request) {
       entities,
       faqSchema,
       affiliatePlacements,
+      id,
     } = body;
 
     if (!title || !content) {
@@ -103,7 +104,13 @@ export async function POST(req: Request) {
       finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
     }
 
+    let presetId: string | undefined;
+    if (id && isValidObjectId(id) && !(await ArticleModel.exists({ _id: id }))) {
+      presetId = id;
+    }
+
     const newArticle = await ArticleModel.create({
+      ...(presetId ? { _id: presetId } : {}),
       author_id: user.userId.toString(),
       category_id: categoryId || undefined,
       sub_category_id: subCategoryId || undefined,

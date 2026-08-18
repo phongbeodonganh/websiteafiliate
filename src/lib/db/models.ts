@@ -65,18 +65,47 @@ const SubCategorySchema = new Schema<ISubCategory>({
 export interface IAffiliateLink extends Document {
   name: string;
   base_url: string;
+  product_url?: string;
   commission?: string;
   cookie?: string;
   is_top_pick: boolean;
+  status: 'active' | 'inactive' | 'blacklisted';
   created_at: Date;
 }
 
 const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   name: { type: String, required: true },
   base_url: { type: String, required: true },
+  product_url: { type: String, default: '' },
   commission: { type: String },
   cookie: { type: String },
   is_top_pick: { type: Boolean, default: false },
+  status: { type: String, enum: ['active', 'inactive', 'blacklisted'], default: 'active' },
+  created_at: { type: Date, default: Date.now }
+});
+
+// 4.5 Blacklist
+export interface IBlacklist extends Document {
+  project_name?: string;
+  website_url: string;
+  extracted_domain: string;
+  match_type: 'domain' | 'exact_url';
+  reason: string;
+  blocked_countries?: string[];
+  status: 'active' | 'inactive';
+  created_by?: mongoose.Types.ObjectId;
+  created_at: Date;
+}
+
+const BlacklistSchema = new Schema<IBlacklist>({
+  project_name: { type: String },
+  website_url: { type: String, required: true },
+  extracted_domain: { type: String, required: true, index: true },
+  match_type: { type: String, enum: ['domain', 'exact_url'], default: 'domain' },
+  reason: { type: String, required: true },
+  blocked_countries: [{ type: String }],
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  created_by: { type: Schema.Types.ObjectId, ref: 'User' },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -89,7 +118,7 @@ export interface IArticle extends Document {
   slug: string;
   excerpt?: string;
   content: string;
-  status: 'draft' | 'published';
+  status: 'generating' | 'draft' | 'published' | 'failed';
   is_featured: boolean;
   view_count: number;
   revenue: number;
@@ -113,7 +142,7 @@ const ArticleSchema = new Schema<IArticle>({
   slug: { type: String, required: true, unique: true },
   excerpt: { type: String },
   content: { type: String, required: true },
-  status: { type: String, enum: ['draft', 'published'], default: 'draft' },
+  status: { type: String, enum: ['generating', 'draft', 'published', 'failed'], default: 'draft' },
   is_featured: { type: Boolean, default: false },
   view_count: { type: Number, default: 0 },
   revenue: { type: Number, default: 0 },
@@ -242,6 +271,7 @@ export const UserModel: Model<IUser> = mongoose.models.User || mongoose.model<IU
 export const CategoryModel: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
 export const SubCategoryModel: Model<ISubCategory> = mongoose.models.SubCategory || mongoose.model<ISubCategory>('SubCategory', SubCategorySchema);
 export const AffiliateLinkModel: Model<IAffiliateLink> = mongoose.models.AffiliateLink || mongoose.model<IAffiliateLink>('AffiliateLink', AffiliateLinkSchema);
+export const BlacklistModel: Model<IBlacklist> = mongoose.models.Blacklist || mongoose.model<IBlacklist>('Blacklist', BlacklistSchema);
 export const ArticleModel: Model<IArticle> = mongoose.models.Article || mongoose.model<IArticle>('Article', ArticleSchema);
 export const ArticleAffiliateRelationModel: Model<IArticleAffiliateRelation> = mongoose.models.ArticleAffiliateRelation || mongoose.model<IArticleAffiliateRelation>('ArticleAffiliateRelation', ArticleAffiliateRelationSchema);
 export const ClickLogModel: Model<IClickLog> = mongoose.models.ClickLog || mongoose.model<IClickLog>('ClickLog', ClickLogSchema);
