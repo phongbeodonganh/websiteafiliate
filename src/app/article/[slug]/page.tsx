@@ -53,10 +53,13 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const { slug } = await params;
   await connectToDatabase();
-  const article = await ArticleModel.findOne({ slug, status: 'published' })
-    .populate('author_id', 'name username avatar')
-    .populate('category_id', 'name slug')
-    .populate('affiliate_placements.affiliate_link_id', 'name commission cookie');
+  const [article, settings] = await Promise.all([
+    ArticleModel.findOne({ slug, status: 'published' })
+      .populate('author_id', 'name username avatar')
+      .populate('category_id', 'name slug')
+      .populate('affiliate_placements.affiliate_link_id', 'name commission cookie'),
+    SettingModel.findOne(),
+  ]);
   if (!article) notFound();
 
   article.view_count += 1;
@@ -117,9 +120,32 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     mainEntity: doc.faq_schema.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })),
   } : null;
 
+  // SEO-04: BreadcrumbList — Home > Category (nếu bài có category) > Bài viết.
+  // Trang bài viết hiện chỉ populate category_id (không có sub_category), nên
+  // breadcrumb chỉ đi tới đúng cấp dữ liệu thực sự có sẵn.
+  const baseUrl = (settings?.canonicalUrl || 'https://aidealsuk.com').replace(/\/$/, '');
+  const breadcrumbItems = [
+    { name: 'Home', url: baseUrl },
+    ...(categoryName && categorySlug
+      ? [{ name: categoryName, url: `${baseUrl}/figma-tech-finance-news/category/${categorySlug}` }]
+      : []),
+    { name: doc.title, url: `${baseUrl}/article/${doc.slug}` },
+  ];
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+
   return (
     <div className={styles.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
       <EditorialHeader />
 

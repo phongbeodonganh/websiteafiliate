@@ -33,8 +33,6 @@ function getMongoUri(): string {
   );
 }
 
-const MONGODB_URI = getMongoUri();
-
 interface MongooseCache {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -52,16 +50,17 @@ if (!cached) {
 }
 
 async function connectWithRetry(
+  uri: string,
   opts: { bufferCommands: boolean; serverSelectionTimeoutMS: number },
   attempt = 1
 ): Promise<typeof mongoose> {
   try {
-    return await mongoose.connect(MONGODB_URI, opts);
+    return await mongoose.connect(uri, opts);
   } catch (e) {
     const isDnsRefused = e instanceof Error && e.message.includes('querySrv ECONNREFUSED');
     if (isDnsRefused && attempt < 3) {
       await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
-      return connectWithRetry(opts, attempt + 1);
+      return connectWithRetry(uri, opts, attempt + 1);
     }
     throw e;
   }
@@ -80,12 +79,13 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   }
 
   if (!cached!.promise) {
+    const uri = getMongoUri();
     const opts = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 10000,
     };
 
-    cached!.promise = connectWithRetry(opts);
+    cached!.promise = connectWithRetry(uri, opts);
   }
 
   try {
