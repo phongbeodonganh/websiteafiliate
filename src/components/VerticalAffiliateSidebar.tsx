@@ -51,9 +51,12 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
         <p className="border-t border-[#d7d7d7] py-5 text-sm text-neutral-500">No partner deals available.</p>
       )}
 
-      <div className="divide-y divide-[#d7d7d7] border-t border-[#d7d7d7]">
+      <div className="-mx-[22px] flex snap-x snap-mandatory gap-4 overflow-x-auto border-t border-[#d7d7d7] px-[22px] pb-2 lg:mx-0 lg:block lg:overflow-visible lg:px-0 lg:pb-0">
         {items.map((item, index) => (
-          <article key={item.id} className="py-5">
+          <article
+            key={item.id}
+            className={`${index >= 2 ? 'hidden lg:block' : 'block'} min-w-[min(280px,82vw)] snap-start border-b border-[#d7d7d7] py-5 lg:min-w-0`}
+          >
             <div className="mb-3 inline-flex items-center gap-1 bg-black px-2 py-1 text-[9px] font-bold uppercase text-white">
               <Star size={9} fill="currentColor" /> Pick #{index + 1}
             </div>

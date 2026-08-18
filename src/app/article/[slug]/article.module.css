@@ -119,6 +119,33 @@
   border-radius: 0px;
 }
 
+.articleContent :is(table, pre, iframe, video) {
+  max-width: 100%;
+}
+
+.articleContent table {
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.articleContent pre {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.articleContent :is(p, li, a, code) {
+  overflow-wrap: anywhere;
+}
+
+.articleContent iframe,
+.articleContent video {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  width: 100%;
+}
+
 .articleContent a {
   color: #111111;
   font-weight: 600;
@@ -288,5 +315,37 @@
   }
   .rightRail {
     position: static;
+  }
+}
+
+@media (max-width: 480px) {
+  .layout {
+    gap: 24px;
+    padding: 14px 12px 30px;
+  }
+
+  .articleBox {
+    padding: 24px 16px;
+  }
+
+  .articleBox > h1 {
+    font-size: clamp(28px, 9vw, 34px);
+    line-height: 1.15;
+    margin-bottom: 22px;
+  }
+
+  .articleContent {
+    font-size: 16.5px;
+    line-height: 1.72;
+  }
+
+  .takeaways {
+    padding: 20px 18px;
+  }
+
+  .placements,
+  .related {
+    margin-top: 36px;
+    padding-top: 28px;
   }
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Eye } from 'lucide-react';
+import { ArrowRight, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
@@ -129,13 +129,13 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             ? <Link className={styles.category} href={`/figma-tech-finance-news/category/${categorySlug}`}>{categoryName}</Link>
             : <p className={styles.category}>{categoryName}</p>)}
           <h1>{doc.title}</h1>
-          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
+          <div className="flex min-w-0 flex-wrap items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
             <div className="w-9 h-9 rounded-full bg-black text-white font-bold flex items-center justify-center text-sm shadow-sm">
-              {((doc.author_id as any)?.name || (doc.author_id as any)?.username || 'A')[0].toUpperCase()}
+              {(authorName || 'A')[0].toUpperCase()}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-bold text-slate-900 m-0 leading-tight">
-                By {(doc.author_id as any)?.name || (doc.author_id as any)?.username || 'AIDEALSUK Editorial'}
+                By {authorName || 'AIDEALSUK Editorial'}
               </p>
               <p className="text-xs text-slate-500 m-0 mt-0.5">
                 Published on {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} &middot; {doc.view_count || 0} views
@@ -148,7 +148,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
           {placements.length > 0 && <section className={styles.placements}>
             <h2>Recommended Offers</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
             </div>
           </section>}
