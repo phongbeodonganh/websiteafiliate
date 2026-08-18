@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, KeyboardEvent, Suspense } from 'react';
-import { Search, Home, User, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
 import CategorySelector from '@/components/CategorySelector';
+import Button from '@/components/Button';
 import { BRAND_NAME } from '@/lib/brand';
 
 interface EditorialHeaderProps {
@@ -13,17 +14,12 @@ interface EditorialHeaderProps {
 
 function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || searchParams.get('q') || '');
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const q = searchParams.get('q');
-    if (q !== null) {
-      setSearchQuery(q);
-    }
-  }, [searchParams]);
+  const isHome = pathname === '/' || pathname === '/figma-tech-finance-news';
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -74,31 +70,54 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
     router.refresh();
   };
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/');
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-[1000] h-[82px] bg-[#111111] border-b border-[#222222] shadow-[0_14px_34px_rgba(17,17,17,0.15)] flex items-center justify-between px-4 sm:px-7 font-['Inter',system-ui,sans-serif]">
+    <header className="pointer-events-auto fixed isolate top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] shadow-[0_14px_34px_rgba(17,17,17,0.15)] flex items-center justify-between gap-3 px-4 sm:px-7 font-['Inter',system-ui,sans-serif]">
       {/* ── Brand & Navigation Links ── */}
-      <div className="flex items-center gap-4 sm:gap-6">
+      <div className="flex min-w-0 shrink-0 items-center gap-2 xl:gap-4">
         {/* Brand Name -> Click to Home */}
         <Link
           href="/"
-          className="text-white text-2xl sm:text-3xl font-extrabold tracking-tight text-decoration-none hover:text-gray-200 transition-colors font-['Plus_Jakarta_Sans',sans-serif]"
+          className="whitespace-nowrap text-xl font-extrabold tracking-tight text-white text-decoration-none transition-colors hover:text-gray-200 sm:text-2xl xl:text-3xl font-['Plus_Jakarta_Sans',sans-serif]"
         >
           {BRAND_NAME}
         </Link>
 
+        {!isHome && (
+          <Button
+            onClick={handleBack}
+            variant="headerOutline"
+            size="headerNav"
+            leadingIcon={<ArrowLeft size={15} />}
+            className="w-10 sm:w-[88px]"
+            aria-label="Go back to the previous page"
+            title="Back"
+          >
+            <span className="hidden sm:inline">Back</span>
+          </Button>
+        )}
+
         {/* Home Button */}
-        <Link
-          href="/"
-          role="button"
-          className="hidden md:flex items-center gap-1.5 border border-white/80 text-white px-3.5 py-1.5 text-xs font-bold uppercase transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02] text-decoration-none"
+        <Button
+          onClick={() => router.push('/')}
+          variant="headerOutline"
+          size="headerNav"
+          leadingIcon={<Home size={14} />}
+          className="hidden md:inline-flex"
         >
-          <Home size={14} />
           <span>Home</span>
-        </Link>
+        </Button>
       </div>
 
       {/* ── Center: Search Bar ── */}
-      <div className="hidden lg:flex items-center bg-[#111111] border-2 border-white rounded-lg h-[44px] px-3 w-[260px] xl:w-[320px] shadow-[0_8px_18px_rgba(17,17,17,0.09)]">
+      <div className="hidden h-[44px] w-[280px] min-w-0 items-center rounded-lg border-2 border-white bg-[#111111] px-3 shadow-[0_8px_18px_rgba(17,17,17,0.09)] xl:flex 2xl:w-[320px]">
         <Search className="text-white shrink-0 w-5 h-5 mr-2" />
         <input
           type="text"
@@ -109,6 +128,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           className="bg-transparent border-0 text-white placeholder-gray-400 text-sm w-full outline-none"
         />
         <button
+          type="button"
           onClick={handleSearch}
           className="bg-white text-black font-bold text-[10px] uppercase px-2.5 h-[28px] shrink-0 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
         >
@@ -117,7 +137,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
       </div>
 
       {/* ── Right: Categories + Auth Actions ── */}
-      <div className="hidden md:flex items-center gap-3">
+      <div className="hidden min-w-0 shrink-0 items-center gap-2 md:flex xl:gap-3">
         {/* Categories Selection */}
         <CategorySelector placement="header" />
 
@@ -133,6 +153,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
               <span>{user.username}</span>
             </Link>
             <button
+              type="button"
               onClick={handleLogout}
               title="Sign out"
               className="bg-zinc-800 text-white border border-zinc-600 p-2 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
@@ -162,16 +183,19 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
 
       {/* ── Mobile Hamburger Button ── */}
       <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="md:hidden text-white p-2 hover:bg-zinc-800 rounded"
+        type="button"
+        onClick={() => setMobileMenuOpen((current) => !current)}
+        className="pointer-events-auto relative z-[2] shrink-0 touch-manipulation md:hidden text-white p-2 hover:bg-zinc-800 rounded"
         aria-label="Toggle Navigation"
+        aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-editorial-navigation"
       >
         {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
       {/* ── Mobile Menu Dropdown ── */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-[82px] left-0 right-0 bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl z-50">
+        <div id="mobile-editorial-navigation" className="pointer-events-auto fixed top-[70px] left-0 right-0 z-[1100] max-h-[calc(100dvh-70px)] touch-manipulation overflow-y-auto overscroll-contain bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center bg-[#111111] border-2 border-white rounded-lg h-[44px] px-3">
             <Search className="text-white shrink-0 w-5 h-5 mr-2" />
             <input
@@ -188,6 +212,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
               className="bg-transparent border-0 text-white placeholder-gray-400 text-sm w-full outline-none"
             />
             <button
+              type="button"
               onClick={() => {
                 handleSearch();
                 setMobileMenuOpen(false);
@@ -198,14 +223,18 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             </button>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
-            <Link
-              href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-1.5 text-white text-xs font-bold uppercase hover:text-gray-300"
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-2">
+            <Button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                router.push('/');
+              }}
+              variant="headerOutline"
+              size="headerNav"
+              leadingIcon={<Home size={14} />}
             >
-              <Home size={14} /> Home
-            </Link>
+              Home
+            </Button>
             <CategorySelector placement="header" />
           </div>
 
@@ -220,6 +249,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                   <ShieldCheck size={14} className="text-emerald-400" /> CMS: {user.username}
                 </Link>
                 <button
+                  type="button"
                   onClick={() => {
                     handleLogout();
                     setMobileMenuOpen(false);
@@ -258,7 +288,7 @@ export default function EditorialHeader(props: EditorialHeaderProps) {
   return (
     <Suspense
       fallback={
-        <header className="fixed top-0 left-0 right-0 z-[1000] h-[82px] bg-[#111111] border-b border-[#222222] flex items-center justify-between px-4 sm:px-7">
+        <header className="fixed top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] flex items-center justify-between px-4 sm:px-7">
           <Link href="/" className="text-white text-2xl font-bold">
             {BRAND_NAME}
           </Link>

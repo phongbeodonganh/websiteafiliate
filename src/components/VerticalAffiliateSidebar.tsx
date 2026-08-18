@@ -37,23 +37,35 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
   if (!loading && hideWhenEmpty && items.length === 0) return null;
 
   return (
-    <aside className={`w-full self-start border border-[#d7d7d7] border-t-4 border-t-black bg-white p-[22px] ${sticky ? 'lg:sticky lg:top-[98px]' : ''}`} aria-label="Recommended affiliate deals">
+    <aside className={`w-full self-start border border-[#E2E2DE] border-t-2 border-t-black bg-white p-[22px] ${sticky ? 'lg:sticky lg:top-[98px]' : ''}`} aria-label="Recommended affiliate deals">
       <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">Partner Links</p>
       <h2 className="mb-[22px] text-[26px] font-bold uppercase leading-none text-black">Top Deals</h2>
 
       {loading && (
-        <div className="flex items-center gap-2 border-t border-[#d7d7d7] py-6 text-xs font-bold uppercase text-neutral-500">
+        <div className="flex items-center gap-2 border-t border-[#E2E2DE] py-6 text-xs font-bold uppercase text-neutral-500">
           <Loader2 size={15} className="animate-spin" /> Loading deals
         </div>
       )}
 
       {!loading && items.length === 0 && (
-        <p className="border-t border-[#d7d7d7] py-5 text-sm text-neutral-500">No partner deals available.</p>
+        <p className="border-t border-[#E2E2DE] py-5 text-sm text-neutral-500">No partner deals available.</p>
       )}
 
-      <div className="divide-y divide-[#d7d7d7] border-t border-[#d7d7d7]">
+      <div className="-mx-[22px] flex snap-x snap-mandatory gap-4 overflow-x-auto border-t border-[#E2E2DE] px-[22px] pb-2 lg:mx-0 lg:block lg:overflow-visible lg:px-0 lg:pb-0">
         {items.map((item, index) => (
-          <article key={item.id} className="py-5">
+          <article
+            key={item.id}
+            data-motion="rise"
+            style={{ '--motion-delay': `${index * 55}ms` } as React.CSSProperties}
+            className={`${index >= 2 ? 'hidden lg:block' : 'block'} clickable-card relative min-w-[min(280px,82vw)] cursor-pointer snap-start border-b border-[#E2E2DE] py-5 lg:min-w-0`}
+          >
+            <a
+              href={`/api/v1/public/tracking/redirect?affiliate_link_id=${item.id}`}
+              target="_blank"
+              rel="nofollow sponsored"
+              className="card-stretched-link"
+              aria-label={`View affiliate deal for ${item.name}`}
+            />
             <div className="mb-3 inline-flex items-center gap-1 bg-black px-2 py-1 text-[9px] font-bold uppercase text-white">
               <Star size={9} fill="currentColor" /> Pick #{index + 1}
             </div>

@@ -38,7 +38,7 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
     <section
       className={
         editorial
-          ? 'relative bg-white border border-neutral-300 border-t-4 border-t-black px-6 md:px-8 py-8 shadow-sm animate-in fade-in duration-700'
+          ? 'relative bg-white border border-[#E2E2DE] border-t-2 border-t-black px-6 md:px-8 py-8 animate-in fade-in duration-700'
           : 'my-12 animate-in fade-in duration-700'
       }
     >
@@ -64,12 +64,21 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
         {picks.map((pick, index) => (
           <div
             key={pick.id}
+            data-motion="scale"
+            style={{ '--motion-delay': `${index * 55}ms` } as React.CSSProperties}
             className={
               editorial
-                ? 'group relative bg-white border border-neutral-300 p-6 flex flex-col justify-between'
-                : 'group relative bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between'
+                ? 'clickable-card group relative cursor-pointer bg-white border border-[#E2E2DE] p-6 flex flex-col justify-between'
+                : 'clickable-card group relative cursor-pointer bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between'
             }
           >
+            <a
+              href={`/api/v1/public/tracking/redirect?affiliate_link_id=${pick.id}`}
+              rel="nofollow sponsored"
+              target="_blank"
+              className="card-stretched-link"
+              aria-label={`View affiliate deal for ${pick.name}`}
+            />
             <div
               className={
                 editorial
@@ -99,8 +108,8 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
                 <div
                   className={
                     editorial
-                      ? 'flex items-center gap-2 text-xs text-black font-semibold bg-white px-3 py-1 border border-black w-max'
-                      : 'flex items-center gap-2 text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200/80 w-max'
+                      ? 'flex max-w-full items-center gap-2 break-words text-xs text-black font-semibold bg-white px-3 py-1 border border-black'
+                      : 'flex max-w-full items-center gap-2 break-words text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200/80'
                   }
                 >
                   <ShieldCheck size={14} className={editorial ? 'text-black' : 'text-[#20C997]'} />

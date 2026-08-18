@@ -49,6 +49,7 @@ export default function EditorialFooter() {
 
   return (
     <footer
+      data-motion="fade"
       style={{
         borderTop: '4px solid #0056B3',
         background: '#111111',
@@ -61,6 +62,7 @@ export default function EditorialFooter() {
     >
       {/* ── Main grid ─────────────────────────────────────────────── */}
       <div
+        className="editorial-footer-grid"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -205,6 +207,7 @@ export default function EditorialFooter() {
 
       {/* ── Affiliate disclaimer ──────────────────────────────────── */}
       <div
+        className="editorial-footer-disclosure"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -228,6 +231,7 @@ export default function EditorialFooter() {
 
       {/* ── Copyright bar ─────────────────────────────────────────── */}
       <div
+        className="editorial-footer-copyright"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -250,13 +254,30 @@ export default function EditorialFooter() {
       {/* ── Responsive overrides ──────────────────────────────────── */}
       <style>{`
         @media (max-width: 900px) {
-          footer > div:first-child {
+          .editorial-footer-grid {
             grid-template-columns: repeat(2, 1fr) !important;
+            padding: 40px 24px 0 !important;
+          }
+          .editorial-footer-disclosure,
+          .editorial-footer-copyright {
+            padding-left: 24px !important;
+            padding-right: 24px !important;
           }
         }
         @media (max-width: 560px) {
-          footer > div:first-child {
+          .editorial-footer-grid {
             grid-template-columns: 1fr !important;
+            gap: 32px !important;
+            padding: 36px 16px 0 !important;
+          }
+          .editorial-footer-disclosure,
+          .editorial-footer-copyright {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+          .editorial-footer-copyright {
+            align-items: flex-start !important;
+            flex-direction: column !important;
           }
         }
       `}</style>

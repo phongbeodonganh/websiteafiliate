@@ -1,16 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
-import { ArrowRight, Clock, Eye, Loader2, Search, ShieldCheck, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Clock, Eye, Loader2, ShieldCheck, Star } from 'lucide-react';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
-import CategorySelector from '@/components/CategorySelector';
+import PublicMotion from '@/components/PublicMotion';
+import EditorialBackdrop from '@/components/EditorialBackdrop';
+import PublicArticleImage, { ARTICLE_PLACEHOLDER } from '@/components/PublicArticleImage';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
 import styles from './page.module.css';
 
-const fallbackImage =
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
+const fallbackImage = ARTICLE_PLACEHOLDER;
 
 export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category';
 
@@ -90,7 +91,6 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const categoryLabel = categorySlug
     ? categorySlug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
@@ -130,17 +130,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
     return () => controller.abort();
   }, [activeQuery, categorySlug, kind]);
 
-  function search(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextQuery = query.trim();
-    if (nextQuery === activeQuery) return;
-    setError('');
-    setLoading(true);
-    setActiveQuery(nextQuery);
-  }
-
   function clearSearch() {
-    setQuery('');
     setError('');
     if (activeQuery) setLoading(true);
     setActiveQuery('');
@@ -172,7 +162,9 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
 
   return (
     <main className={styles.page}>
-      <EditorialHeader initialSearchQuery={query} />
+      <PublicMotion />
+      <EditorialBackdrop section={config.title} />
+      <EditorialHeader initialSearchQuery={activeQuery} />
 
       {loading && (
         <div className={styles.loadingScreen} role="status">
@@ -182,7 +174,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
       )}
 
       <div className={styles.collectionShell}>
-        <header className={styles.collectionHero}>
+        <header className={styles.collectionHero} data-motion="rise">
           <p className={styles.eyebrow}>{config.eyebrow}</p>
           <h1>{config.title}</h1>
           <p>{config.description}</p>
@@ -204,14 +196,14 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
 
             {kind !== 'affiliates' && (
               <div className={styles.collectionGrid}>
-            {articles.map((article) => (
-              <article className={styles.collectionCard} key={article.id}>
+            {articles.map((article, index) => (
+              <article className={`${styles.collectionCard} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                 <Link className={styles.collectionImage} href={`/article/${article.slug}`}>
-                  <img src={article.thumbnailUrl || fallbackImage} alt={article.title} />
+                  <PublicArticleImage src={article.thumbnailUrl || fallbackImage} alt={article.title} loading="lazy" />
                 </Link>
                 <div className={styles.collectionCardBody}>
                   <p className={styles.meta}>By {article.authorName || 'Staff'} &middot; {formatDate(article.createdAt)} &middot; {article.categoryName || 'NEWS'} &middot; <Eye size={12} /> {article.viewCount || 0}</p>
-                  <h2><Link href={`/article/${article.slug}`}>{article.title}</Link></h2>
+                  <h2><Link className="card-stretched-link" href={`/article/${article.slug}`}>{article.title}</Link></h2>
                   <p>{excerptFor(article)}</p>
                   <Link className={styles.collectionCardLink} href={`/article/${article.slug}`}>Read article <ArrowRight size={15} /></Link>
                 </div>
@@ -223,7 +215,8 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
             {kind === 'affiliates' && (
               <div className={styles.collectionGrid}>
             {affiliates.map((affiliate, index) => (
-              <article className={styles.affiliateCard} key={affiliate.id}>
+              <article className={`${styles.affiliateCard} clickable-card`} key={affiliate.id} data-motion="scale" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
+                <a className="card-stretched-link" href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored" aria-label={`View affiliate deal for ${affiliate.name}`} />
                 <div className={styles.affiliateRank}><Star size={12} fill="currentColor" /> {affiliate.isTopPick ? 'TOP PICK' : `PARTNER ${index + 1}`}</div>
                 <h2>{affiliate.name}</h2>
                 <p><ShieldCheck size={15} /> Commission: <strong>{affiliate.commission}</strong></p>
