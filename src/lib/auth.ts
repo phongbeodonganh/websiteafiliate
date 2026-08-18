@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { isBlacklisted } from './tokenBlacklist';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is not set. Provide it via the JWT_SECRET environment variable.');
@@ -30,6 +31,7 @@ export function signToken(payload: AuthPayload): string {
 
 // Verify JWT Token
 export function verifyToken(token: string): AuthPayload | null {
+  if (isBlacklisted(token)) return null;
   try {
     return jwt.verify(token, JWT_SECRET) as AuthPayload;
   } catch (error) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { generateObjectId } from '@/lib/utils';
@@ -181,6 +181,77 @@ export default function AdminDashboardPage() {
   const [settingsSection, setSettingsSection] = useState<'appearance' | 'seo_geo' | 'code'>('appearance');
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // FE-01: Đồng bộ state điều hướng (tab / bài đang sửa / bài đang preview) vào
+  // query string, để nút Back/Forward trình duyệt lùi lại đúng từng bước UI thay
+  // vì thoát hẳn khỏi /admin.
+  const buildAdminUrl = (tab: string, editId?: string, previewId?: string) => {
+    const params = new URLSearchParams();
+    if (tab !== 'dashboard') params.set('tab', tab);
+    if (editId) params.set('edit', editId);
+    if (previewId) params.set('preview', previewId);
+    const qs = params.toString();
+    return qs ? `/admin?${qs}` : '/admin';
+  };
+
+  const navigate = (
+    next: { tab?: string; editingArticle?: any; previewArticle?: any },
+    options: { replace?: boolean } = {}
+  ) => {
+    const tab = next.tab ?? activeTab;
+    const nextEditing = 'editingArticle' in next ? next.editingArticle : null;
+    const nextPreview = 'previewArticle' in next ? next.previewArticle : null;
+
+    setActiveTab(tab);
+    setEditingArticle(nextEditing);
+    setPreviewArticle(nextPreview);
+
+    const url = buildAdminUrl(
+      tab,
+      nextEditing ? nextEditing.id || 'new' : undefined,
+      nextPreview?.id
+    );
+    if (options.replace) router.replace(url, { scroll: false });
+    else router.push(url, { scroll: false });
+  };
+
+  // Khôi phục state từ URL khi bấm Back/Forward (hoặc khi mở thẳng link có sẵn
+  // query string). Chạy sau mọi navigate() ở trên cũng vô hại vì lúc đó state
+  // local đã khớp URL sẵn rồi (early-return bên dưới).
+  useEffect(() => {
+    const urlTab = searchParams.get('tab') || 'dashboard';
+    const urlEditId = searchParams.get('edit');
+    const urlPreviewId = searchParams.get('preview');
+
+    const currentEditId = editingArticle ? editingArticle.id || 'new' : null;
+    const currentPreviewId = previewArticle?.id || null;
+
+    if (urlTab === activeTab && urlEditId === currentEditId && urlPreviewId === currentPreviewId) {
+      return;
+    }
+
+    setActiveTab(urlTab);
+
+    if (urlEditId === 'new') {
+      setEditingArticle({});
+    } else if (urlEditId) {
+      const found = articlesList.find((a) => a.id === urlEditId);
+      if (found) setEditingArticle(found);
+      // Chưa tìm thấy (articlesList chưa load xong) — giữ nguyên, effect sẽ chạy
+      // lại khi articlesList cập nhật (đã có trong dependency array).
+    } else {
+      setEditingArticle(null);
+    }
+
+    if (urlPreviewId) {
+      const found = articlesList.find((a) => a.id === urlPreviewId);
+      if (found) setPreviewArticle(found);
+    } else {
+      setPreviewArticle(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, articlesList]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -449,7 +520,19 @@ export default function AdminDashboardPage() {
     }
   }, [activeTab, currentUser]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        // Mất mạng/API lỗi vẫn cứ đăng xuất phía client bình thường — token cũ
+        // không bị revoke ngay lúc đó nhưng vẫn tự hết hạn sau 24h như cũ.
+      }
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     router.push('/admin/login');
@@ -543,25 +626,27 @@ export default function AdminDashboardPage() {
         setShowAiGenerateModal(false);
         loadAllData();
         // Switch to Articles tab and open edit mode
-        setActiveTab('articles');
-        setEditingArticle({
-          id: data.data.articleId,
-          title: data.data.title,
-          slug: data.data.slug,
-          content: data.data.content,
-          excerpt: data.data.excerpt,
-          metaTitle: data.data.seo_meta?.meta_title || '',
-          metaDescription: data.data.seo_meta?.meta_description || '',
-          focusKeyword: data.data.seo_meta?.focus_keywords?.[0] || '',
-          keyTakeaways: Array.isArray(data.data.geo_data?.key_takeaways)
-            ? data.data.geo_data.key_takeaways.join('\n')
-            : data.data.geo_data?.key_takeaways || '',
-          entities: Array.isArray(data.data.geo_data?.entities)
-            ? data.data.geo_data.entities.join(', ')
-            : data.data.geo_data?.entities || '',
-          faqSchema: data.data.faqSchema || data.data.geo_data?.faq_list || [],
-          faqSchemaJsonld: data.data.geo_data?.faq_schema_jsonld || '',
-          status: 'draft',
+        navigate({
+          tab: 'articles',
+          editingArticle: {
+            id: data.data.articleId,
+            title: data.data.title,
+            slug: data.data.slug,
+            content: data.data.content,
+            excerpt: data.data.excerpt,
+            metaTitle: data.data.seo_meta?.meta_title || '',
+            metaDescription: data.data.seo_meta?.meta_description || '',
+            focusKeyword: data.data.seo_meta?.focus_keywords?.[0] || '',
+            keyTakeaways: Array.isArray(data.data.geo_data?.key_takeaways)
+              ? data.data.geo_data.key_takeaways.join('\n')
+              : data.data.geo_data?.key_takeaways || '',
+            entities: Array.isArray(data.data.geo_data?.entities)
+              ? data.data.geo_data.entities.join(', ')
+              : data.data.geo_data?.entities || '',
+            faqSchema: data.data.faqSchema || data.data.geo_data?.faq_list || [],
+            faqSchemaJsonld: data.data.geo_data?.faq_schema_jsonld || '',
+            status: 'draft',
+          },
         });
       } else {
         alert(`Lỗi sinh bài viết AI: ${data.message}`);
@@ -820,7 +905,7 @@ export default function AdminDashboardPage() {
               <h3 className="text-white font-medium flex items-center gap-2">
                 <Activity size={18} className="text-amber-400" /> Top Performing Articles
               </h3>
-              <button onClick={() => setActiveTab('articles')} className="text-xs text-amber-400 hover:text-amber-300">
+              <button onClick={() => navigate({ tab: 'articles' })} className="text-xs text-amber-400 hover:text-amber-300">
                 View All
               </button>
             </div>
@@ -1077,7 +1162,7 @@ export default function AdminDashboardPage() {
           >
             <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
           </button>
-          <LuxuryButton onClick={() => setEditingArticle({})}>
+          <LuxuryButton onClick={() => navigate({ editingArticle: {} })}>
             <Plus size={18} /> Create New Article
           </LuxuryButton>
         </div>
@@ -1140,14 +1225,14 @@ export default function AdminDashboardPage() {
                 </td>
                 <td className="p-4 text-right flex justify-end gap-2">
                   <button
-                    onClick={() => setPreviewArticle(art)}
+                    onClick={() => navigate({ previewArticle: art })}
                     className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
                     title="Preview Article"
                   >
                     <Globe size={16} />
                   </button>
                   <button
-                    onClick={() => setEditingArticle(art)}
+                    onClick={() => navigate({ editingArticle: art })}
                     className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                     title="Edit Article"
                   >
@@ -1334,7 +1419,7 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         if (res.ok && data.status === 'success') {
           alert('Article saved successfully with GEO & SEO metadata!');
-          setEditingArticle(null);
+          navigate({ tab: 'articles', editingArticle: null }, { replace: true });
           loadAllData();
         } else {
           alert(`Error: ${data.message}`);
@@ -1393,7 +1478,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
         <div className="flex items-center gap-4 text-slate-400">
           <button
-            onClick={() => setEditingArticle(null)}
+            onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
             className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
           >
             ← Back to Articles List
@@ -3108,7 +3193,7 @@ export default function AdminDashboardPage() {
   };
 
   const renderContent = () => {
-    if (previewArticle) return <PublicArticlePreview article={previewArticle} onBack={() => setPreviewArticle(null)} />;
+    if (previewArticle) return <PublicArticlePreview article={previewArticle} onBack={() => navigate({ previewArticle: null }, { replace: true })} />;
     if (editingArticle !== null) return <ArticleEditorForm />;
 
     if (activeTab === 'dashboard') return <DashboardView />;
@@ -3128,10 +3213,7 @@ export default function AdminDashboardPage() {
     const isActive = activeTab === id && !editingArticle && !previewArticle;
     return (
       <button
-        onClick={() => {
-          setActiveTab(id);
-          setEditingArticle(null);
-        }}
+        onClick={() => navigate({ tab: id })}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium text-sm cursor-pointer ${
           isActive
             ? 'bg-gradient-to-r from-amber-500/15 to-transparent text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]'

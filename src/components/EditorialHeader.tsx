@@ -56,12 +56,22 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
     }
   };
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      setUser(null);
-      router.refresh();
+  const handleLogout = async () => {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        // Mất mạng/API lỗi vẫn cứ đăng xuất phía client bình thường.
+      }
     }
+    localStorage.removeItem('token');
+    setUser(null);
+    router.refresh();
   };
 
   return (
