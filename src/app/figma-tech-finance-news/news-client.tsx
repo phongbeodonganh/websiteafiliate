@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LeadCapture from "@/components/LeadCapture";
 import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
@@ -14,7 +14,7 @@ import styles from "./page.module.css";
 const fallbackImage =
   "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
 
-type Article = {
+export type Article = {
   id: string;
   title: string;
   slug: string;
@@ -27,6 +27,12 @@ type Article = {
   categoryName?: string | null;
   authorName?: string | null;
   authorAvatar?: string | null;
+};
+
+export type HomepageArticleData = {
+  latest: Article[];
+  popular: Article[];
+  editorial: Article[];
 };
 
 function formatDate(dateStr?: string) {
@@ -73,6 +79,7 @@ function relativeTime(value: string) {
 async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
   const response = await fetch(`/api/v1/public/articles?${params.toString()}`, {
     signal,
+    cache: "no-store",
     headers: { Accept: "application/json" },
   });
   const payload = (await response.json()) as ArticleResponse;
@@ -82,18 +89,34 @@ async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
   return payload.data || [];
 }
 
-export default function TechFinanceNewsClient() {
+type TechFinanceNewsClientProps = {
+  initialData?: HomepageArticleData;
+  initialQuery?: string;
+};
+
+export default function TechFinanceNewsClient({
+  initialData,
+  initialQuery = "",
+}: TechFinanceNewsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const searchQuery = searchParams.get("q") || "";
-  const [latest, setLatest] = useState<Article[]>([]);
-  const [popular, setPopular] = useState<Article[]>([]);
-  const [editorial, setEditorial] = useState<Article[]>([]);
-  const activeQuery = searchQuery;
-  const [loading, setLoading] = useState(true);
+  const [latest, setLatest] = useState<Article[]>(initialData?.latest || []);
+  const [popular, setPopular] = useState<Article[]>(initialData?.popular || []);
+  const [editorial, setEditorial] = useState<Article[]>(initialData?.editorial || []);
+  const activeQuery = searchParams.get("q")?.trim() || "";
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
+  const isInitialRequest = useRef(true);
+  const hasMatchingInitialData = useRef(Boolean(initialData && activeQuery === initialQuery));
 
   useEffect(() => {
+    if (isInitialRequest.current) {
+      isInitialRequest.current = false;
+      if (hasMatchingInitialData.current) return;
+    }
+
+    setLoading(true);
+    setError("");
     const controller = new AbortController();
     const latestParams = new URLSearchParams({ limit: "8" });
     const popularParams = new URLSearchParams({ tab: "popular", limit: "2" });
