@@ -241,7 +241,7 @@ pm2 reload websiteafiliate
 
 ### 12b. Tự động hoá bằng GitHub Actions (khuyến nghị)
 
-Thay vì SSH tay mỗi lần, workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) chạy đúng 4 lệnh ở trên qua SSH mỗi khi push lên `main` (hoặc bấm chạy tay qua tab Actions → "Run workflow").
+Thay vì SSH tay mỗi lần, workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) chạy qua SSH mỗi khi push lên `feature/namdt25-develop` (hoặc bấm chạy tay qua tab Actions → "Run workflow"): `git fetch` + `git reset --hard origin/feature/namdt25-develop` (đồng bộ đúng y hệt code trên remote, bỏ qua mọi thay đổi cục bộ còn sót lại trên VPS) → `npm install` → `npm run build` → `pm2 reload websiteafiliate`.
 
 Cần cấu hình 1 lần trên GitHub repo, mục **Settings → Secrets and variables → Actions**:
 
@@ -251,7 +251,9 @@ Cần cấu hình 1 lần trên GitHub repo, mục **Settings → Secrets and va
 | `SSH_USER` | `deploy` |
 | `SSH_PRIVATE_KEY` | private key riêng cho CI (không dùng key cá nhân) — tạo bằng `ssh-keygen -t ed25519 -f ~/.ssh/gh_deploy_key -N ""`, rồi thêm public key (`gh_deploy_key.pub`) vào `~/.ssh/authorized_keys` của user `deploy` trên VPS |
 
-Nếu `git pull`/`npm install`/`npm run build` lỗi, workflow dừng ngay (nhờ `set -e`) và **không** chạy `pm2 reload` — production vẫn giữ bản build cũ, không bị deploy dở dang.
+Nếu `git reset`/`npm install`/`npm run build` lỗi, workflow dừng ngay (nhờ `set -e`) và **không** chạy `pm2 reload` — production vẫn giữ bản build cũ, không bị deploy dở dang.
+
+> Lưu ý: `git reset --hard` sẽ xoá sạch mọi thay đổi cục bộ chưa commit trong `~/websiteafiliate` trên VPS (kể cả `.env.local`? — **không**, `.env.local` nằm ngoài git nên an toàn, chỉ các file *có trong git* mới bị reset). Vì vậy đừng sửa tay code hoặc chạy `npm install` thủ công trực tiếp trong thư mục này trên VPS — mọi thay đổi cục bộ sẽ mất ở lần deploy tiếp theo. Cần thử gì thì làm ở nhánh riêng rồi push, đừng sửa trực tiếp trên server.
 
 ---
 
