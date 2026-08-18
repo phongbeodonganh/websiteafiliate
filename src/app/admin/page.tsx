@@ -750,7 +750,7 @@ export default function AdminDashboardPage() {
     const schema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": settingsData?.businessName || settingsData?.siteTitle || "NEXUS FINANCE GLOBAL",
+      "name": settingsData?.businessName || settingsData?.siteTitle || "AIDEALSUK",
       "url": settingsData?.canonicalUrl || "https://nexusfinance.global",
       "logo": settingsData?.logoUrl || "https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=300",
       "description": settingsData?.metaDescription || "Institutional Financial Intelligence & Affiliate Deals",
@@ -2822,7 +2822,7 @@ export default function AdminDashboardPage() {
                 rows={2}
                 value={settingsData?.footerText || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, footerText: e.target.value })}
-                placeholder="© 2026 NEXUS FINANCE GLOBAL. All rights reserved..."
+                placeholder="© 2026 AIDEALSUK. All rights reserved..."
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-xs text-white resize-none"
               />
             </div>

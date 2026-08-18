@@ -43,7 +43,7 @@ export default function Header() {
   const accentColor = siteSettings?.accentColor || '#f59e0b';
   const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'AI AFFILIATE HUB';
+  const siteTitle = siteSettings?.siteTitle || 'AIDEALSUK';
 
   return (
     <header

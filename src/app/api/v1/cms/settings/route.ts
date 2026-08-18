@@ -10,7 +10,7 @@ export async function GET() {
 
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
-        site_title: 'NEXUS FINANCE GLOBAL',
+        site_title: 'AIDEALSUK',
         metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
         focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
         canonicalUrl: 'https://nexusfinance.global',

@@ -11,10 +11,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Lets teammates on the same LAN load the dev server via the host machine's IP
-  // and still get working HMR (hot-reload) over WebSocket. Dev-only; no effect on
-  // production builds. Update this if the host machine's LAN IP changes.
-  allowedDevOrigins: ['192.168.102.172'],
+  // Allow development through the LAN and ephemeral ngrok hostnames, including
+  // Next.js's WebSocket HMR requests. This option only affects the dev server.
+  allowedDevOrigins: ['192.168.102.172', '*.ngrok-free.app'],
   images: {
     remotePatterns: [
       // Cloudflare R2 (uploaded thumbnails/content images). Using a wildcard
