@@ -37,6 +37,13 @@ export async function GET(req: Request) {
       affiliate_link_id: affiliateLink._id,
       ip_address: getClientIp(req),
     });
+
+    const affLink = await AffiliateLinkModel.findById(affiliateLinkId);
+
+    if (!affLink) {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+
     // Blacklist Safety Check
     const blacklistCheck = await checkUrlAgainstBlacklist(affLink.base_url);
     if (affLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {
@@ -83,7 +90,6 @@ export async function GET(req: Request) {
     }
 
     const subId = article ? article.slug : `art_${articleId}`;
-    const destinationUrl = appendSubId(affLink.base_url, subId);
 
     const destinationUrl = appendSubId(
       affiliateLink.base_url,

@@ -105,6 +105,7 @@ a.btn:active,
 input[type="submit"]:active,
 [role="button"]:active {
   transform: translateY(0px) scale(0.98) !important;
+}
 /* TipTap WYSIWYG Editor Styles */
 .custom-editor-content p {
   margin-bottom: 1rem;
