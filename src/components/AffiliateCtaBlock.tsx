@@ -26,7 +26,7 @@ export default function AffiliateCtaBlock({ articleId, link, positionLabel }: Af
   const labelText = POSITION_LABELS[positionLabel] || 'Editor Pick';
 
   return (
-    <div className="clickable-card group relative flex cursor-pointer flex-col justify-between border border-neutral-300 bg-white p-5">
+    <div className="clickable-card group relative flex cursor-pointer flex-col justify-between border border-neutral-300 bg-white p-5" data-motion="scale">
       <a
         href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`}
         className="card-stretched-link"

@@ -59,7 +59,7 @@ export default function SocialShare({ title }: SocialShareProps) {
   };
 
   return (
-    <section className={styles.share} aria-labelledby="share-heading">
+    <section className={styles.share} aria-labelledby="share-heading" data-motion="rise">
       <p>Share To</p>
       <div className={styles.headingRow}>
         <h2 id="share-heading">Social Media</h2>

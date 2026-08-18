@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LeadCapture from "@/components/LeadCapture";
 import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
 import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
+import PublicMotion from "@/components/PublicMotion";
+import EditorialBackdrop from "@/components/EditorialBackdrop";
+import PublicArticleImage, { ARTICLE_PLACEHOLDER } from "@/components/PublicArticleImage";
 import styles from "./page.module.css";
 
-const fallbackImage =
-  "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
+const fallbackImage = ARTICLE_PLACEHOLDER;
 
-type Article = {
+export type Article = {
   id: string;
   title: string;
   slug: string;
@@ -26,6 +28,12 @@ type Article = {
   categoryName?: string | null;
   authorName?: string | null;
   authorAvatar?: string | null;
+};
+
+export type HomepageArticleData = {
+  latest: Article[];
+  popular: Article[];
+  editorial: Article[];
 };
 
 function formatDate(dateStr?: string) {
@@ -72,6 +80,7 @@ function relativeTime(value: string) {
 async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
   const response = await fetch(`/api/v1/public/articles?${params.toString()}`, {
     signal,
+    cache: "no-store",
     headers: { Accept: "application/json" },
   });
   const payload = (await response.json()) as ArticleResponse;
@@ -81,18 +90,34 @@ async function fetchArticles(params: URLSearchParams, signal: AbortSignal) {
   return payload.data || [];
 }
 
-export default function TechFinanceNewsClient() {
+type TechFinanceNewsClientProps = {
+  initialData?: HomepageArticleData;
+  initialQuery?: string;
+};
+
+export default function TechFinanceNewsClient({
+  initialData,
+  initialQuery = "",
+}: TechFinanceNewsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const searchQuery = searchParams.get("q") || "";
-  const [latest, setLatest] = useState<Article[]>([]);
-  const [popular, setPopular] = useState<Article[]>([]);
-  const [editorial, setEditorial] = useState<Article[]>([]);
-  const activeQuery = searchQuery;
-  const [loading, setLoading] = useState(true);
+  const [latest, setLatest] = useState<Article[]>(initialData?.latest || []);
+  const [popular, setPopular] = useState<Article[]>(initialData?.popular || []);
+  const [editorial, setEditorial] = useState<Article[]>(initialData?.editorial || []);
+  const activeQuery = searchParams.get("q")?.trim() || "";
+  const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
+  const isInitialRequest = useRef(true);
+  const hasMatchingInitialData = useRef(Boolean(initialData && activeQuery === initialQuery));
 
   useEffect(() => {
+    if (isInitialRequest.current) {
+      isInitialRequest.current = false;
+      if (hasMatchingInitialData.current) return;
+    }
+
+    setLoading(true);
+    setError("");
     const controller = new AbortController();
     const latestParams = new URLSearchParams({ limit: "8" });
     const popularParams = new URLSearchParams({ tab: "popular", limit: "2" });
@@ -140,6 +165,8 @@ export default function TechFinanceNewsClient() {
 
   return (
     <main className={styles.page}>
+      <PublicMotion />
+      <EditorialBackdrop section="NEWSROOM" />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
       {activeQuery && !loading && (
@@ -159,62 +186,48 @@ export default function TechFinanceNewsClient() {
 
       {featured && (
         <div className={styles.shell}>
-          <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title">
+          <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title" data-motion="rise">
             <div className={styles.sectionRule} />
+            <div className={styles.featuredAccent} />
             <div className={styles.featuredCopy}>
+              <span className={styles.featuredFolio} aria-hidden="true">01</span>
               <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY"}</p>
               <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
               <p className={styles.lede}>{descriptionFor(featured)}</p>
               <p className={styles.meta}>
                 By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
               </p>
+              <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <span aria-hidden="true">&rarr;</span></Link>
             </div>
             <Link className={styles.featuredMedia} href={articleHref(featured)}>
-              <img src={imageFor(featured)} alt={featured.title} />
+              <PublicArticleImage src={imageFor(featured)} alt={featured.title} loading="eager" fetchPriority="high" />
             </Link>
           </section>
 
-          <aside className={styles.latest} aria-labelledby="latest-title">
-            <div className={styles.sectionRule} />
-            <h2 id="latest-title">LATEST ARTICLES</h2>
-            <div className={styles.latestList}>
-              {latestArticles.map((article) => (
-                <article className={`${styles.latestItem} clickable-card`} key={article.id}>
-                  <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
-                  <div>
-                    <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
-                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
-          </aside>
-
-          <section className={styles.hottest} aria-labelledby="hottest-title">
+          <section className={styles.hottest} aria-labelledby="hottest-title" data-motion="rise">
             <div className={styles.sectionRule} />
             <h2 id="hottest-title">HOTTEST ARTICLES</h2>
             <p className={styles.meta}>MOST READ TODAY</p>
             {popular.map((article, index) => (
-              <article className={`${styles.hotItem} clickable-card`} key={article.id}>
+              <article className={`${styles.hotItem} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${index * 60}ms` } as React.CSSProperties}>
                 <strong>{String(index + 1).padStart(2, "0")}</strong>
                 <div>
                   <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt)} &middot; {article.viewCount} VIEWS</p>
                   <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
                 </div>
-                <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
+                <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
               </article>
             ))}
             <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/hottest">VIEW ALL HOTTEST ARTICLES</Link>
           </section>
 
-          <section className={styles.editorial} aria-labelledby="editorial-title">
+          <section className={styles.editorial} aria-labelledby="editorial-title" data-motion="rise">
             <div className={styles.sectionRule} />
             <p className={styles.eyebrow}>CURATED BY OUR EDITORS</p>
             <h2 id="editorial-title">EDITORIAL PICKS</h2>
             {editorialLead && (
               <article className={`${styles.editorialLead} clickable-card`}>
-                <Link href={articleHref(editorialLead)}><img src={imageFor(editorialLead)} alt={editorialLead.title} /></Link>
+                <Link href={articleHref(editorialLead)}><PublicArticleImage src={imageFor(editorialLead)} alt={editorialLead.title} loading="lazy" /></Link>
                 <div>
                   <p className={styles.meta}>By {editorialLead.authorName || "Editor"} &middot; {formatDate(editorialLead.createdAt)} &middot; {readingTime(editorialLead)}</p>
                   <h3><Link className="card-stretched-link" href={articleHref(editorialLead)}>{editorialLead.title}</Link></h3>
@@ -234,18 +247,35 @@ export default function TechFinanceNewsClient() {
             )}
             <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/editorial-picks">VIEW ALL EDITORIAL PICKS</Link>
           </section>
+
+          <aside className={styles.latest} aria-labelledby="latest-title" data-motion="rise" style={{ '--motion-delay': '70ms' } as React.CSSProperties}>
+            <div className={styles.sectionRule} />
+            <h2 id="latest-title">LATEST ARTICLES</h2>
+            <div className={styles.latestList}>
+              {latestArticles.map((article) => (
+                <article className={`${styles.latestItem} clickable-card`} key={article.id} data-motion="rise">
+                  <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
+                  <div>
+                    <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
+                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
+          </aside>
         </div>
       )}
 
-      <div className={styles.affiliateSection}>
+      <div className={styles.affiliateSection} data-motion="rise">
         <TopPicksWidget variant="editorial" viewAllHref="/figma-tech-finance-news/affiliates" />
       </div>
 
-      <div className={styles.leadCapture}>
+      <div className={styles.leadCapture} data-motion="fade">
         <LeadCapture variant="editorial" />
       </div>
 
-      <div className={styles.categorySections}>
+      <div className={styles.categorySections} data-motion="rise">
         <CategoryArticleSections />
       </div>
 

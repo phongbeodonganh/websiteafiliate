@@ -55,6 +55,8 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
         {items.map((item, index) => (
           <article
             key={item.id}
+            data-motion="rise"
+            style={{ '--motion-delay': `${index * 55}ms` } as React.CSSProperties}
             className={`${index >= 2 ? 'hidden lg:block' : 'block'} clickable-card relative min-w-[min(280px,82vw)] cursor-pointer snap-start border-b border-[#E2E2DE] py-5 lg:min-w-0`}
           >
             <a
