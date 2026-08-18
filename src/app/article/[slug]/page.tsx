@@ -9,6 +9,7 @@ import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
+import PublicMotion from '@/components/PublicMotion';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -144,6 +145,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
   return (
     <div className={styles.page}>
+      <PublicMotion />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
@@ -168,18 +170,18 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               </p>
             </div>
           </div>
-          {doc.thumbnail_url && <div className={styles.heroImage}><Image src={doc.thumbnail_url} alt={doc.title} fill priority sizes="(max-width: 900px) 100vw, 760px" /></div>}
-          {keyTakeaways.length > 0 && <section className={styles.takeaways}><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
+          {doc.thumbnail_url && <div className={styles.heroImage} data-motion="fade"><Image src={doc.thumbnail_url} alt={doc.title} fill priority sizes="(max-width: 900px) 100vw, 760px" /></div>}
+          {keyTakeaways.length > 0 && <section className={styles.takeaways} data-motion="rise"><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
           <div className={styles.articleContent} dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }} />
 
-          {placements.length > 0 && <section className={styles.placements}>
+          {placements.length > 0 && <section className={styles.placements} data-motion="rise">
             <h2>Recommended Offers</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
             </div>
           </section>}
 
-          {relatedArticles.length > 0 && <section className={styles.related}>
+          {relatedArticles.length > 0 && <section className={styles.related} data-motion="rise">
             <div className={styles.relatedHeading}><p>Continue Reading</p><h2>Related Articles</h2></div>
             <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={`${styles.relatedCard} clickable-card`}>
               <div className={styles.relationLabels}>{related.sameAuthor && <span>Same author</span>}{related.sameCategory && <span>Same category</span>}</div>
@@ -189,7 +191,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           <SocialShare title={doc.title} />
         </article>
 
-        <div className={styles.rightRail}>
+        <div className={styles.rightRail} data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
           <VerticalAffiliateSidebar hideWhenEmpty sticky={false} />
           {latestArticles.length > 0 && <section className={styles.latestNews}>
             <p>Recently Published</p><h2>Latest News</h2>

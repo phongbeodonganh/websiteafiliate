@@ -64,6 +64,8 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
         {picks.map((pick, index) => (
           <div
             key={pick.id}
+            data-motion="scale"
+            style={{ '--motion-delay': `${index * 55}ms` } as React.CSSProperties}
             className={
               editorial
                 ? 'clickable-card group relative cursor-pointer bg-white border border-[#E2E2DE] p-6 flex flex-col justify-between'

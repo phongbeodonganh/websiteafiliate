@@ -176,7 +176,51 @@ input[type="submit"]:active,
   outline-offset: 3px;
 }
 
+/* Public editorial motion. Motion is opt-in; content is never held invisible. */
+.public-motion-ready [data-motion][data-motion-visible="true"] {
+  animation: public-motion-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--motion-delay, 0ms);
+}
+
+.public-motion-ready [data-motion="fade"][data-motion-visible="true"] {
+  animation-name: public-motion-fade;
+}
+
+.public-motion-ready [data-motion="scale"][data-motion-visible="true"] {
+  animation-name: public-motion-scale;
+}
+
+@keyframes public-motion-rise {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes public-motion-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes public-motion-scale {
+  from { opacity: 0; transform: scale(0.975); }
+  to { opacity: 1; transform: none; }
+}
+
+.public-motion-ready [data-motion] img {
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.public-motion-ready [data-motion].clickable-card:hover img,
+.public-motion-ready [data-motion].clickable-card:focus-within img {
+  transform: scale(1.025);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .public-motion-ready [data-motion],
+  .public-motion-ready [data-motion] img {
+    animation: none;
+    transition: none;
+  }
+
   .clickable-card,
   .clickable-card:hover,
   .clickable-card:focus-within,

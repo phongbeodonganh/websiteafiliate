@@ -8,6 +8,7 @@ import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
 import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
+import PublicMotion from "@/components/PublicMotion";
 import styles from "./page.module.css";
 
 const fallbackImage =
@@ -140,6 +141,7 @@ export default function TechFinanceNewsClient() {
 
   return (
     <main className={styles.page}>
+      <PublicMotion />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
       {activeQuery && !loading && (
@@ -159,7 +161,7 @@ export default function TechFinanceNewsClient() {
 
       {featured && (
         <div className={styles.shell}>
-          <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title">
+          <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title" data-motion="rise">
             <div className={styles.sectionRule} />
             <div className={styles.featuredCopy}>
               <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY"}</p>
@@ -174,12 +176,12 @@ export default function TechFinanceNewsClient() {
             </Link>
           </section>
 
-          <aside className={styles.latest} aria-labelledby="latest-title">
+          <aside className={styles.latest} aria-labelledby="latest-title" data-motion="rise" style={{ '--motion-delay': '70ms' } as React.CSSProperties}>
             <div className={styles.sectionRule} />
             <h2 id="latest-title">LATEST ARTICLES</h2>
             <div className={styles.latestList}>
               {latestArticles.map((article) => (
-                <article className={`${styles.latestItem} clickable-card`} key={article.id}>
+                <article className={`${styles.latestItem} clickable-card`} key={article.id} data-motion="rise">
                   <Link href={articleHref(article)}><img src={imageFor(article)} alt="" /></Link>
                   <div>
                     <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
@@ -191,12 +193,12 @@ export default function TechFinanceNewsClient() {
             <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
           </aside>
 
-          <section className={styles.hottest} aria-labelledby="hottest-title">
+          <section className={styles.hottest} aria-labelledby="hottest-title" data-motion="rise">
             <div className={styles.sectionRule} />
             <h2 id="hottest-title">HOTTEST ARTICLES</h2>
             <p className={styles.meta}>MOST READ TODAY</p>
             {popular.map((article, index) => (
-              <article className={`${styles.hotItem} clickable-card`} key={article.id}>
+              <article className={`${styles.hotItem} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${index * 60}ms` } as React.CSSProperties}>
                 <strong>{String(index + 1).padStart(2, "0")}</strong>
                 <div>
                   <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt)} &middot; {article.viewCount} VIEWS</p>
@@ -208,7 +210,7 @@ export default function TechFinanceNewsClient() {
             <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/hottest">VIEW ALL HOTTEST ARTICLES</Link>
           </section>
 
-          <section className={styles.editorial} aria-labelledby="editorial-title">
+          <section className={styles.editorial} aria-labelledby="editorial-title" data-motion="rise">
             <div className={styles.sectionRule} />
             <p className={styles.eyebrow}>CURATED BY OUR EDITORS</p>
             <h2 id="editorial-title">EDITORIAL PICKS</h2>
@@ -237,15 +239,15 @@ export default function TechFinanceNewsClient() {
         </div>
       )}
 
-      <div className={styles.affiliateSection}>
+      <div className={styles.affiliateSection} data-motion="rise">
         <TopPicksWidget variant="editorial" viewAllHref="/figma-tech-finance-news/affiliates" />
       </div>
 
-      <div className={styles.leadCapture}>
+      <div className={styles.leadCapture} data-motion="fade">
         <LeadCapture variant="editorial" />
       </div>
 
-      <div className={styles.categorySections}>
+      <div className={styles.categorySections} data-motion="rise">
         <CategoryArticleSections />
       </div>
 

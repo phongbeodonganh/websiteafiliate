@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Clock, Eye, Loader2, ShieldCheck, Star } from 'lucide-react';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
+import PublicMotion from '@/components/PublicMotion';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
 import styles from './page.module.css';
@@ -160,6 +161,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
 
   return (
     <main className={styles.page}>
+      <PublicMotion />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
       {loading && (
@@ -170,7 +172,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
       )}
 
       <div className={styles.collectionShell}>
-        <header className={styles.collectionHero}>
+        <header className={styles.collectionHero} data-motion="rise">
           <p className={styles.eyebrow}>{config.eyebrow}</p>
           <h1>{config.title}</h1>
           <p>{config.description}</p>
@@ -192,8 +194,8 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
 
             {kind !== 'affiliates' && (
               <div className={styles.collectionGrid}>
-            {articles.map((article) => (
-              <article className={`${styles.collectionCard} clickable-card`} key={article.id}>
+            {articles.map((article, index) => (
+              <article className={`${styles.collectionCard} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                 <Link className={styles.collectionImage} href={`/article/${article.slug}`}>
                   <img src={article.thumbnailUrl || fallbackImage} alt={article.title} />
                 </Link>
@@ -211,7 +213,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
             {kind === 'affiliates' && (
               <div className={styles.collectionGrid}>
             {affiliates.map((affiliate, index) => (
-              <article className={`${styles.affiliateCard} clickable-card`} key={affiliate.id}>
+              <article className={`${styles.affiliateCard} clickable-card`} key={affiliate.id} data-motion="scale" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                 <a className="card-stretched-link" href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored" aria-label={`View affiliate deal for ${affiliate.name}`} />
                 <div className={styles.affiliateRank}><Star size={12} fill="currentColor" /> {affiliate.isTopPick ? 'TOP PICK' : `PARTNER ${index + 1}`}</div>
                 <h2>{affiliate.name}</h2>

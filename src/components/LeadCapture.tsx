@@ -43,7 +43,7 @@ export default function LeadCapture({ variant = 'default' }: LeadCaptureProps) {
   };
 
   return (
-    <section className={editorial
+    <section data-motion="fade" className={editorial
       ? 'relative overflow-hidden bg-[#111111] border border-[#222222] rounded-xl px-8 py-12 lg:px-14 lg:py-16 text-white shadow-md'
       : 'my-16 relative rounded-[2.5rem] overflow-hidden bg-white border border-slate-100 p-8 lg:p-14 shadow-xl shadow-slate-200/50'}>
       {/* Soft Glow */}

@@ -130,7 +130,7 @@ export default function CategoryArticleSections() {
 
       <div className="space-y-9">
         {categories.map((category) => (
-          <section key={category.id} className="border border-[#E2E2DE] border-t-2 border-t-black bg-white p-6 md:p-8">
+          <section key={category.id} className="border border-[#E2E2DE] border-t-2 border-t-black bg-white p-6 md:p-8" data-motion="rise">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-5">
               <div>
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-neutral-500">Category</p>
@@ -153,8 +153,8 @@ export default function CategoryArticleSections() {
               <p className="py-8 text-sm text-neutral-500">No published articles in this category yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {category.articles.map((article) => (
-                  <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]">
+                {category.articles.map((article, index) => (
+                  <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]" data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                     <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">
                       <img src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full object-cover" />
                     </Link>

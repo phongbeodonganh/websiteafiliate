@@ -49,6 +49,7 @@ export default function EditorialFooter() {
 
   return (
     <footer
+      data-motion="fade"
       style={{
         borderTop: '4px solid #0056B3',
         background: '#111111',

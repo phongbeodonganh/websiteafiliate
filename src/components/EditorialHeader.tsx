@@ -190,7 +190,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
 
       {/* ── Mobile Menu Dropdown ── */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-[70px] left-0 right-0 max-h-[calc(100dvh-70px)] overflow-y-auto bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl z-50">
+        <div className="md:hidden absolute top-[70px] left-0 right-0 max-h-[calc(100dvh-70px)] overflow-y-auto bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center bg-[#111111] border-2 border-white rounded-lg h-[44px] px-3">
             <Search className="text-white shrink-0 w-5 h-5 mr-2" />
             <input
