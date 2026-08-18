@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
@@ -26,6 +26,9 @@ import {
   Trash2,
   Columns,
   Rows,
+  Undo,
+  Redo,
+  Code2,
 } from 'lucide-react';
 import AffiliateInsertModal from './AffiliateInsertModal';
 
@@ -74,6 +77,8 @@ function ToolbarButton({
 export default function RichTextEditor({ value, onChange, articleId, affiliateLinks }: RichTextEditorProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
+  const [isCodeView, setIsCodeView] = useState(false);
+  const [rawHtml, setRawHtml] = useState(value);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -92,7 +97,9 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
     content: value,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const html = editor.getHTML();
+      setRawHtml(html);
+      onChange(html);
     },
     editorProps: {
       attributes: {
@@ -165,6 +172,21 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
       return;
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  // Đồng bộ lại editor khi `value` bị set từ bên ngoài (ví dụ nạp content bài
+  // cũ sau khi fetch xong, hoặc 1 tính năng khác set thẳng vào state content).
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || '');
+      setRawHtml(value || '');
+    }
+  }, [value, editor]);
+
+  const handleRawHtmlChange = (val: string) => {
+    setRawHtml(val);
+    onChange(val);
+    editor?.commands.setContent(val);
   };
 
   if (!editor) return null;
@@ -282,12 +304,34 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           <Tag size={13} /> Chèn Affiliate
         </button>
 
+        <div className="w-px h-5 bg-slate-800 mx-1" />
+
+        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Hoàn tác">
+          <Undo size={15} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Làm lại">
+          <Redo size={15} />
+        </ToolbarButton>
+
         {isUploadingImage && <span className="text-[10px] text-slate-400 ml-2">Đang tải ảnh lên...</span>}
+
+        <button
+          type="button"
+          onClick={() => setIsCodeView(!isCodeView)}
+          title="Chuyển sang xem/sửa HTML thô"
+          className={`ml-auto flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border transition-colors ${
+            isCodeView
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+              : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+          }`}
+        >
+          <Code2 size={13} /> {isCodeView ? 'WYSIWYG' : 'HTML thô'}
+        </button>
 
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileChange} className="hidden" />
       </div>
 
-      {editor && (
+      {!isCodeView && editor && (
         <BubbleMenu editor={editor} className="flex items-center gap-0.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1">
           <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Đậm">
             <Bold size={14} />
@@ -304,7 +348,17 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         </BubbleMenu>
       )}
 
-      <EditorContent editor={editor} />
+      {isCodeView ? (
+        <textarea
+          rows={16}
+          value={rawHtml}
+          onChange={(e) => handleRawHtmlChange(e.target.value)}
+          className="w-full bg-slate-950 p-4 text-xs text-amber-300 font-mono focus:outline-none leading-relaxed border-none shadow-inner resize-y"
+          placeholder="Nhập HTML thô..."
+        />
+      ) : (
+        <EditorContent editor={editor} />
+      )}
 
       <AffiliateInsertModal
         open={showAffiliateModal}
