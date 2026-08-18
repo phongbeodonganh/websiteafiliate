@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: #ffffff;
+  background: var(--editorial-canvas);
   color: #0f172a;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   padding-top: 82px;
@@ -23,12 +23,12 @@
 }
 
 .articleBox {
-  border: 1px solid #e2e8f0;
-  border-top: 4px solid #111111;
+  border: 1px solid var(--editorial-divider);
+  border-top: 2px solid var(--editorial-ink);
   border-radius: 0px;
   min-width: 0;
   padding: 48px;
-  background: #ffffff;
+  background: var(--editorial-surface);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
 }
 
@@ -66,9 +66,9 @@
 }
 
 .takeaways {
-  border: 1px solid #111111;
-  border-left: 4px solid #111111;
-  background: #f8fafc;
+  border: 1px solid var(--editorial-divider);
+  border-left: 2px solid var(--editorial-ink);
+  background: var(--editorial-canvas);
   border-radius: 0px;
   margin-bottom: 36px;
   padding: 24px 28px;
@@ -155,7 +155,7 @@
 
 .placements,
 .related {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--editorial-divider);
   margin-top: 48px;
   padding-top: 36px;
 }
@@ -177,7 +177,7 @@
 }
 
 .relatedCard {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--editorial-divider);
   border-radius: 0px;
   color: #0f172a;
   display: flex;
@@ -235,8 +235,8 @@
 }
 
 .latestNews {
-  border: 1px solid #e2e8f0;
-  border-top: 4px solid #111111;
+  border: 1px solid var(--editorial-divider);
+  border-top: 2px solid var(--editorial-ink);
   border-radius: 0px;
   padding: 24px;
   width: 100%;

@@ -4,6 +4,12 @@
 :root {
   --background: #020617;
   --foreground: #f8fafc;
+  --editorial-canvas: #f5f5f2;
+  --editorial-surface: #ffffff;
+  --editorial-ink: #111111;
+  --editorial-copy: #2d2d2b;
+  --editorial-muted: #6f706c;
+  --editorial-divider: #e2e2de;
 }
 
 body {

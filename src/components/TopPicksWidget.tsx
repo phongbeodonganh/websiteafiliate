@@ -38,7 +38,7 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
     <section
       className={
         editorial
-          ? 'relative bg-white border border-neutral-300 border-t-4 border-t-black px-6 md:px-8 py-8 shadow-sm animate-in fade-in duration-700'
+          ? 'relative bg-white border border-[#E2E2DE] border-t-2 border-t-black px-6 md:px-8 py-8 animate-in fade-in duration-700'
           : 'my-12 animate-in fade-in duration-700'
       }
     >
@@ -66,7 +66,7 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
             key={pick.id}
             className={
               editorial
-                ? 'clickable-card group relative cursor-pointer bg-white border border-neutral-300 p-6 flex flex-col justify-between'
+                ? 'clickable-card group relative cursor-pointer bg-white border border-[#E2E2DE] p-6 flex flex-col justify-between'
                 : 'clickable-card group relative cursor-pointer bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between'
             }
           >
