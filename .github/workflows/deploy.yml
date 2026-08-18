@@ -2,7 +2,7 @@ name: Deploy to VPS
 
 on:
   push:
-    branches: [namdt25-develop]
+    branches: ['feature/namdt25-develop']
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
           script: |
             set -e
             cd ~/websiteafiliate
-            git pull origin namdt25-develop
+            git pull origin feature/namdt25-develop
             npm install
             npm run build
             pm2 reload websiteafiliate
