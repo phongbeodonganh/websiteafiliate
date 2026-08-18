@@ -239,6 +239,20 @@ pm2 reload websiteafiliate
 
 `pm2 reload` (thay vì `restart`) giúp zero-downtime khi cập nhật.
 
+### 12b. Tự động hoá bằng GitHub Actions (khuyến nghị)
+
+Thay vì SSH tay mỗi lần, workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) chạy đúng 4 lệnh ở trên qua SSH mỗi khi push lên `main` (hoặc bấm chạy tay qua tab Actions → "Run workflow").
+
+Cần cấu hình 1 lần trên GitHub repo, mục **Settings → Secrets and variables → Actions**:
+
+| Secret | Giá trị |
+|---|---|
+| `SSH_HOST` | `103.90.225.161` |
+| `SSH_USER` | `deploy` |
+| `SSH_PRIVATE_KEY` | private key riêng cho CI (không dùng key cá nhân) — tạo bằng `ssh-keygen -t ed25519 -f ~/.ssh/gh_deploy_key -N ""`, rồi thêm public key (`gh_deploy_key.pub`) vào `~/.ssh/authorized_keys` của user `deploy` trên VPS |
+
+Nếu `git pull`/`npm install`/`npm run build` lỗi, workflow dừng ngay (nhờ `set -e`) và **không** chạy `pm2 reload` — production vẫn giữ bản build cũ, không bị deploy dở dang.
+
 ---
 
 ## Checklist trước khi coi là "go-live" thật

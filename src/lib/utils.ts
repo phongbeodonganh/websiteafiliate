@@ -38,6 +38,21 @@ export function appendSubId(baseUrl: string, subId: string): string {
   }
 }
 
+// Sinh trước 1 Mongo ObjectId hợp lệ ở client, dùng làm article_id cho các
+// link/nút affiliate chèn vào bài trước khi bài được lưu lần đầu. Nếu bài
+// không được lưu, id này không tồn tại ở đâu khác nên tự bị bỏ qua.
+export function generateObjectId(): string {
+  const timestamp = Math.floor(Date.now() / 1000)
+    .toString(16)
+    .padStart(8, '0');
+  const random = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  return (timestamp + random).slice(0, 24);
+}
+
+export function isValidObjectId(id: string): boolean {
+  return /^[0-9a-fA-F]{24}$/.test(id);
+}
+
 // Lấy IP từ Request
 export function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { sanitizeArticleContent } from '@/lib/sanitize';
+import { generateObjectId } from '@/lib/utils';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import {
   LayoutDashboard,
   FileText,
@@ -860,6 +862,11 @@ export default function AdminDashboardPage() {
 
   // Article Editor Form V5.1 (SEO & GEO Studio)
   const ArticleEditorForm = () => {
+    // ID sinh trước ở client cho bài mới (chưa có editingArticle.id), dùng để
+    // gắn link/nút affiliate có theo dõi ngay cả khi chưa bấm Save. Nếu bài
+    // được lưu, id này được gửi kèm để MongoDB dùng làm _id thật; nếu không
+    // bao giờ lưu thì id chỉ tồn tại tạm trong state và tự mất khi rời trang.
+    const [pendingId] = useState(() => editingArticle?.id || generateObjectId());
     const [title, setTitle] = useState(editingArticle?.title || '');
     const [slug, setSlug] = useState(editingArticle?.slug || '');
     const [excerpt, setExcerpt] = useState(editingArticle?.excerpt || '');
@@ -959,6 +966,13 @@ export default function AdminDashboardPage() {
 
     const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
+
+      const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
+      if (isContentEmpty) {
+        alert('Vui lòng nhập nội dung bài viết');
+        return;
+      }
+
       const token = localStorage.getItem('token');
 
       const takeawaysList = keyTakeawaysText
@@ -974,6 +988,7 @@ export default function AdminDashboardPage() {
       const validFaq = faqRows.filter((f) => f.question.trim() && f.answer.trim());
 
       const payload = {
+        ...(editingArticle?.id ? {} : { id: pendingId }),
         title,
         slug,
         excerpt,
@@ -1151,39 +1166,12 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-slate-300">Article Content (Rich Text / HTML) *</label>
-                  <div className="flex space-x-1.5 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setContent((prev: string) => prev + ' **In Đậm** ')}
-                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
-                    >
-                      Bold
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setContent((prev: string) => prev + ' *In Nghiêng* ')}
-                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
-                    >
-                      Italic
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setContent((prev: string) => prev + '\n\n## Tiêu đề phụ (H2 chuẩn GEO)\n')}
-                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
-                    >
-                      + H2
-                    </button>
-                  </div>
-                </div>
-                <textarea
-                  rows={12}
+                <label className="text-xs font-semibold text-slate-300 mb-2 block">Article Content (Rich Text) *</label>
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-amber-500 shadow-inner leading-relaxed"
-                  placeholder="Write article content here..."
-                  required
+                  onChange={setContent}
+                  articleId={pendingId}
+                  affiliateLinks={affiliateLinksList}
                 />
               </div>
             </div>
