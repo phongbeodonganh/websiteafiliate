@@ -155,7 +155,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
           {relatedArticles.length > 0 && <section className={styles.related}>
             <div className={styles.relatedHeading}><p>Continue Reading</p><h2>Related Articles</h2></div>
-            <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={styles.relatedCard}>
+            <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={`${styles.relatedCard} clickable-card`}>
               <div className={styles.relationLabels}>{related.sameAuthor && <span>Same author</span>}{related.sameCategory && <span>Same category</span>}</div>
               <h3>{related.title}</h3><p><span><Eye size={13} /> {related.viewCount} views</span><ArrowRight size={14} /></p>
             </Link>)}</div>
