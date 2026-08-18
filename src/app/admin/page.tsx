@@ -1258,6 +1258,65 @@ export default function AdminDashboardPage() {
     const [slug, setSlug] = useState(editingArticle?.slug || '');
     const [excerpt, setExcerpt] = useState(editingArticle?.excerpt || '');
     const [content, setContent] = useState(editingArticle?.content || '');
+
+    // Autosave nháp vào localStorage — chống mất bài khi crash/đóng nhầm tab.
+    // Bài đang sửa dùng đúng id thật (ổn định qua nhiều phiên); bài mới tạo dùng
+    // 1 slot cố định "new" (không dùng pendingId vì mỗi lần "Create New" sinh ra
+    // 1 id ngẫu nhiên khác nhau — nếu dùng pendingId sẽ không bao giờ tìm lại
+    // được nháp cũ ở phiên sau).
+    const draftKey = editingArticle?.id ? `admin_article_draft_${editingArticle.id}` : 'admin_article_draft_new';
+    const [draftBanner, setDraftBanner] = useState<{ savedAt: number } | null>(null);
+
+    useEffect(() => {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        const isDifferent = draft.title !== (editingArticle?.title || '') || draft.content !== (editingArticle?.content || '');
+        if (isDifferent && typeof draft.savedAt === 'number') {
+          setDraftBanner({ savedAt: draft.savedAt });
+        }
+      } catch {
+        // ignore malformed draft
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+      if (!title && !content) return;
+      const timer = setTimeout(() => {
+        try {
+          localStorage.setItem(draftKey, JSON.stringify({ title, excerpt, content, savedAt: Date.now() }));
+        } catch {
+          // localStorage đầy/bị chặn — bỏ qua autosave, không chặn viết bài
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }, [title, excerpt, content, draftKey]);
+
+    const restoreDraft = () => {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (raw) {
+          const draft = JSON.parse(raw);
+          setTitle(draft.title || '');
+          setExcerpt(draft.excerpt || '');
+          setContent(draft.content || '');
+        }
+      } catch {
+        // ignore
+      }
+      setDraftBanner(null);
+    };
+
+    const dismissDraft = () => {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
+      setDraftBanner(null);
+    };
     const [status, setStatus] = useState(editingArticle?.status || 'published');
     const [isFeatured, setIsFeatured] = useState(editingArticle?.isFeatured || editingArticle?.is_featured || false);
     const [categoryId, setCategoryId] = useState(editingArticle?.categoryId || editingArticle?.category_id?._id || editingArticle?.category_id || '');
@@ -1290,6 +1349,12 @@ export default function AdminDashboardPage() {
         : [{ question: '', answer: '' }]
     );
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
+    // này, KHÔNG dùng chung previewArticle/navigate() của trang ngoài, vì
+    // navigate() sẽ set editingArticle = null làm unmount hẳn ArticleEditorForm
+    // (state title/content sống trong chính component này, không phải ở parent)
+    // — mất hết nội dung đang gõ dở khi bấm quay lại từ preview.
+    const [showLivePreview, setShowLivePreview] = useState(false);
     const [affiliatePlacements, setAffiliatePlacements] = useState<Array<{ affiliate_link_id: string; position_label: string }>>(
       (() => {
         const raw = editingArticle?.affiliatePlacements || editingArticle?.affiliate_placements || [];
@@ -1419,6 +1484,11 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         if (res.ok && data.status === 'success') {
           alert('Article saved successfully with GEO & SEO metadata!');
+          try {
+            localStorage.removeItem(draftKey);
+          } catch {
+            // ignore
+          }
           navigate({ tab: 'articles', editingArticle: null }, { replace: true });
           loadAllData();
         } else {
@@ -1487,7 +1557,35 @@ export default function AdminDashboardPage() {
           <span className="text-amber-400 font-bold text-xs">
             {editingArticle?.id ? 'Edit Article (SEO & GEO Studio V5.1)' : 'Create Article (SEO & GEO Studio V5.1)'}
           </span>
+          <button
+            type="button"
+            onClick={() => setShowLivePreview(true)}
+            disabled={!title.trim() && !content.trim()}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <Globe size={13} /> Preview
+          </button>
         </div>
+
+        {draftBanner && (
+          <div className="flex items-center justify-between gap-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-2.5 text-xs">
+            <span className="text-cyan-300">
+              Phát hiện bản nháp tự động lưu lúc {new Date(draftBanner.savedAt).toLocaleTimeString('vi-VN')} — khôi phục?
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={restoreDraft}
+                className="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold hover:bg-cyan-500/30"
+              >
+                Khôi phục
+              </button>
+              <button type="button" onClick={dismissDraft} className="px-3 py-1 rounded-lg text-slate-400 hover:text-white">
+                Bỏ qua
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Column (Span 2) */}
@@ -1854,14 +1952,43 @@ export default function AdminDashboardPage() {
             </LuxuryButton>
           </div>
         </form>
+
+        {showLivePreview && (
+          <PublicArticlePreview
+            article={{
+              title: title || 'Untitled',
+              content,
+              thumbnailUrl,
+              authorName: currentUser?.name || currentUser?.username,
+            }}
+            onBack={() => setShowLivePreview(false)}
+          />
+        )}
       </div>
     );
   };
 
-  // Preview Modal
-  const PublicArticlePreview = ({ article, onBack }: any) => (
-    <div className="fixed inset-0 z-50 bg-[#0c0c0e] overflow-y-auto animate-in slide-in-from-bottom-10 duration-500 font-sans">
-      <nav className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-10">
+  // Preview Modal — toggle overlay: bấm ra ngoài vùng nội dung (backdrop) cũng
+  // đóng lại, giống hành vi modal chuẩn thay vì chiếm nguyên màn hình trước đây.
+  const PublicArticlePreview = ({ article, onBack }: any) => {
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onBack();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onBack]);
+
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200 flex justify-center p-4 md:p-8"
+        onClick={onBack}
+      >
+        <div
+          className="w-full max-w-4xl h-fit bg-[#0c0c0e] rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 font-sans"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <nav className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
@@ -1900,8 +2027,10 @@ export default function AdminDashboardPage() {
           dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(article.content) }}
         />
       </article>
-    </div>
-  );
+        </div>
+      </div>
+    );
+  };
 
   // Affiliate Links Management
   const LinksView = () => (

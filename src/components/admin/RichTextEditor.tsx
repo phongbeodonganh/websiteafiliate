@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
+import CharacterCount from '@tiptap/extension-character-count';
 import { Table, TableRow, TableCell, TableHeader } from '@tiptap/extension-table';
 import {
   Bold,
@@ -29,8 +29,16 @@ import {
   Undo,
   Redo,
   Code2,
+  Search,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from 'lucide-react';
 import AffiliateInsertModal from './AffiliateInsertModal';
+import { AlignableImage } from './editor/alignableImage';
+import { SlashCommand, slashCommandHandlers } from './editor/slashCommand';
+import { SearchAndReplace } from './editor/searchAndReplace';
+import SearchReplacePanel from './editor/SearchReplacePanel';
 
 interface AffiliateLinkOption {
   id: string;
@@ -78,6 +86,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [isCodeView, setIsCodeView] = useState(false);
+  const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [rawHtml, setRawHtml] = useState(value);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,12 +96,15 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         heading: { levels: [2, 3, 4] },
         link: { openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } },
       }),
-      Image,
-      Placeholder.configure({ placeholder: 'Viết nội dung bài viết ở đây...' }),
+      AlignableImage,
+      Placeholder.configure({ placeholder: 'Viết nội dung bài viết ở đây... (gõ "/" để chèn nhanh)' }),
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
       TableCell,
+      CharacterCount,
+      SlashCommand,
+      SearchAndReplace,
     ],
     content: value,
     immediatelyRender: false,
@@ -141,7 +153,8 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         });
         const json = await res.json();
         if (res.ok && json.status === 'success') {
-          editor?.chain().focus().setImage({ src: json.data.url }).run();
+          const alt = window.prompt('Nhập alt text cho ảnh (tốt cho SEO & accessibility, có thể để trống):', '') || '';
+          editor?.chain().focus().setImage({ src: json.data.url, alt }).run();
         } else {
           alert(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
         }
@@ -155,6 +168,14 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
   );
 
   const handleImageButtonClick = () => fileInputRef.current?.click();
+
+  // Trỏ handler của slash-command ("/Ảnh", "/Affiliate") vào đúng instance editor
+  // này. slashCommandHandlers là object module-level dùng chung, chỉ an toàn vì
+  // ArticleEditorForm luôn chỉ mount 1 RichTextEditor tại 1 thời điểm.
+  useEffect(() => {
+    slashCommandHandlers.openImagePicker = () => fileInputRef.current?.click();
+    slashCommandHandlers.openAffiliateModal = () => setShowAffiliateModal(true);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -313,6 +334,12 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           <Redo size={15} />
         </ToolbarButton>
 
+        <div className="w-px h-5 bg-slate-800 mx-1" />
+
+        <ToolbarButton onClick={() => setShowSearchPanel((v) => !v)} active={showSearchPanel} title="Tìm & Thay thế">
+          <Search size={15} />
+        </ToolbarButton>
+
         {isUploadingImage && <span className="text-[10px] text-slate-400 ml-2">Đang tải ảnh lên...</span>}
 
         <button
@@ -332,7 +359,12 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
       </div>
 
       {!isCodeView && editor && (
-        <BubbleMenu editor={editor} className="flex items-center gap-0.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1">
+        <BubbleMenu
+          editor={editor}
+          pluginKey="textBubbleMenu"
+          shouldShow={({ editor }) => !editor.isActive('image') && !editor.state.selection.empty}
+          className="flex items-center gap-0.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1"
+        >
           <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Đậm">
             <Bold size={14} />
           </ToolbarButton>
@@ -348,6 +380,53 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         </BubbleMenu>
       )}
 
+      {!isCodeView && editor && (
+        <BubbleMenu
+          editor={editor}
+          pluginKey="imageBubbleMenu"
+          shouldShow={({ editor }) => editor.isActive('image')}
+          className="flex items-center gap-0.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1"
+        >
+          <span className="text-[10px] text-slate-500 px-1.5">Cỡ:</span>
+          {(['25%', '50%', '75%', '100%'] as const).map((size) => (
+            <button
+              key={size}
+              type="button"
+              onClick={() => editor.chain().focus().updateAttributes('image', { width: size, height: null }).run()}
+              className="px-1.5 py-1 rounded-md text-[10px] font-semibold text-slate-300 hover:bg-slate-800"
+            >
+              {size}
+            </button>
+          ))}
+          <div className="w-px h-5 bg-slate-800 mx-1" />
+          <ToolbarButton
+            onClick={() => editor.chain().focus().updateAttributes('image', { align: 'left' }).run()}
+            active={editor.getAttributes('image').align === 'left'}
+            title="Căn trái"
+          >
+            <AlignLeft size={14} />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().updateAttributes('image', { align: 'center' }).run()}
+            active={editor.getAttributes('image').align === 'center'}
+            title="Căn giữa"
+          >
+            <AlignCenter size={14} />
+          </ToolbarButton>
+          <ToolbarButton
+            onClick={() => editor.chain().focus().updateAttributes('image', { align: 'right' }).run()}
+            active={editor.getAttributes('image').align === 'right'}
+            title="Căn phải"
+          >
+            <AlignRight size={14} />
+          </ToolbarButton>
+        </BubbleMenu>
+      )}
+
+      {!isCodeView && showSearchPanel && (
+        <SearchReplacePanel editor={editor} onClose={() => setShowSearchPanel(false)} />
+      )}
+
       {isCodeView ? (
         <textarea
           rows={16}
@@ -358,6 +437,14 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         />
       ) : (
         <EditorContent editor={editor} />
+      )}
+
+      {!isCodeView && (
+        <div className="flex items-center justify-end gap-3 border-t border-slate-800 bg-slate-900/40 px-3 py-1.5 text-[10px] text-slate-500">
+          <span>{editor.storage.characterCount.words()} từ</span>
+          <span>{editor.storage.characterCount.characters()} ký tự</span>
+          <span>~{Math.max(1, Math.ceil(editor.storage.characterCount.words() / 200))} phút đọc</span>
+        </div>
       )}
 
       <AffiliateInsertModal

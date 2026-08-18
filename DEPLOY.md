@@ -166,6 +166,12 @@ server {
     listen 80;
     server_name aidealsuk.com www.aidealsuk.com;
 
+    # Mặc định Nginx chỉ cho phép body request tối đa 1MB — thấp hơn cả giới hạn
+    # 5MB app tự áp cho upload ảnh (src/app/api/v1/cms/upload/route.ts), nên phải
+    # nới ở đây, nếu không mọi upload ảnh > ~1MB sẽ bị Nginx chặn thẳng bằng 413
+    # trước khi tới được Next.js (app không kịp trả lỗi JSON rõ ràng của riêng nó).
+    client_max_body_size 10m;
+
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -198,6 +204,8 @@ sudo certbot --nginx -d aidealsuk.com -d www.aidealsuk.com
 ```
 
 Certbot tự sửa file Nginx để redirect HTTP → HTTPS và tự gia hạn cert định kỳ.
+
+> ⚠️ Certbot thường **tách file thành 2 block riêng**: block `listen 80` gốc (giờ chỉ redirect sang HTTPS) và 1 block **`listen 443 ssl` mới do Certbot tự sinh** — chứa toàn bộ `location`/`proxy_pass` thật. Directive `client_max_body_size` thêm ở bước 8 nằm trong block 80 sẽ **không tự áp dụng** sang block 443 mới này (mỗi block Nginx độc lập trừ khi đặt ở cấp `http {}`). Sau khi chạy Certbot, mở lại `/etc/nginx/sites-available/websiteafiliate`, xác nhận `client_max_body_size 10m;` có mặt trong **cả 2 block**, rồi `sudo nginx -t && sudo systemctl reload nginx`. Kiểm tra nhanh bằng `sudo nginx -T | grep -B5 client_max_body_size` — phải thấy directive xuất hiện ở cả block 80 và 443.
 
 ## 10. Firewall (ufw)
 
