@@ -122,7 +122,7 @@ export default function CategoryArticleSections() {
     <div ref={triggerRef} className="min-h-24">
       {!started && <div className="h-24" aria-hidden="true" />}
       {started && !loaded && (
-        <div className="flex items-center justify-center gap-3 border border-[#d7d7d7] bg-white py-12 text-xs font-bold uppercase tracking-widest">
+        <div className="flex items-center justify-center gap-3 border border-[#E2E2DE] bg-white py-12 text-xs font-bold uppercase tracking-widest">
           <Loader2 size={18} className="animate-spin" /> Loading categories
         </div>
       )}
@@ -130,7 +130,7 @@ export default function CategoryArticleSections() {
 
       <div className="space-y-9">
         {categories.map((category) => (
-          <section key={category.id} className="border border-neutral-300 border-t-4 border-t-black bg-white p-6 md:p-8 shadow-sm">
+          <section key={category.id} className="border border-[#E2E2DE] border-t-2 border-t-black bg-white p-6 md:p-8">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-neutral-200 pb-5">
               <div>
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-neutral-500">Category</p>
@@ -154,7 +154,7 @@ export default function CategoryArticleSections() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.articles.map((article) => (
-                  <article key={article.id} className="group flex flex-col border border-[#d7d7d7] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]">
+                  <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]">
                     <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">
                       <img src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full object-cover" />
                     </Link>
@@ -164,10 +164,10 @@ export default function CategoryArticleSections() {
                         <span className="flex items-center gap-1"><Eye size={12} /> {article.viewCount || 0}</span>
                       </div>
                       <h3 className="mb-3 text-lg font-bold leading-tight text-black">
-                        <Link href={`/article/${article.slug}`} className="hover:underline">{article.title}</Link>
+                        <Link href={`/article/${article.slug}`} className="card-stretched-link hover:underline">{article.title}</Link>
                       </h3>
                       <p className="mb-5 text-sm leading-relaxed text-neutral-600">{excerptFor(article)}</p>
-                      <Link href={`/article/${article.slug}`} className="mt-auto flex items-center justify-between border-t border-[#d7d7d7] pt-4 text-xs font-bold uppercase text-black">
+                      <Link href={`/article/${article.slug}`} className="mt-auto flex items-center justify-between border-t border-[#E2E2DE] pt-4 text-xs font-bold uppercase text-black">
                         Read article <ArrowRight size={15} />
                       </Link>
                     </div>

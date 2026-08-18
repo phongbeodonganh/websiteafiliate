@@ -27,7 +27,6 @@ export async function GET(req: Request) {
         : null,
     ]);
 
-    // Invalid or deleted links must never create analytics records.
     if (!affiliateLink) {
       return NextResponse.redirect(fallbackUrl);
     }
@@ -38,17 +37,12 @@ export async function GET(req: Request) {
       ip_address: getClientIp(req),
     });
 
-    const affLink = await AffiliateLinkModel.findById(affiliateLinkId);
-
-    if (!affLink) {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-
-    // Blacklist Safety Check
-    const blacklistCheck = await checkUrlAgainstBlacklist(affLink.base_url);
-    if (affLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {
-      const reason = blacklistCheck.reason || 'Nền tảng vi phạm chính sách an toàn / bùng hoa hồng';
-      const projectName = blacklistCheck.projectName || affLink.name;
+    const blacklistCheck = await checkUrlAgainstBlacklist(affiliateLink.base_url);
+    if (affiliateLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {
+      const reason =
+        blacklistCheck.reason ||
+        'Nền tảng vi phạm chính sách an toàn / bùng hoa hồng';
+      const projectName = blacklistCheck.projectName || affiliateLink.name;
 
       const warningHtml = `
         <!DOCTYPE html>
@@ -74,8 +68,12 @@ export async function GET(req: Request) {
               </p>
             </div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left text-xs space-y-2">
-              <p className="text-slate-400"><strong class="text-slate-200">Lý do chặn:</strong> ${reason}</p>
-              ${blacklistCheck.blockedCountries && blacklistCheck.blockedCountries.length > 0 ? `<p class="text-slate-400"><strong class="text-slate-200">Quốc gia cấm:</strong> ${blacklistCheck.blockedCountries.join(', ')}</p>` : ''}
+              <p class="text-slate-400"><strong class="text-slate-200">Lý do chặn:</strong> ${reason}</p>
+              ${blacklistCheck.blockedCountries &&
+          blacklistCheck.blockedCountries.length > 0
+          ? `<p class="text-slate-400"><strong class="text-slate-200">Quốc gia cấm:</strong> ${blacklistCheck.blockedCountries.join(', ')}</p>`
+          : ''
+        }
             </div>
             <a href="/" class="inline-block w-full py-3.5 bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 text-slate-950 font-bold rounded-xl text-sm hover:scale-[1.02] transition-transform">
               ← Quay Về Trang Chủ An Toàn
@@ -84,12 +82,11 @@ export async function GET(req: Request) {
         </body>
         </html>
       `;
+
       return new Response(warningHtml, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
-
-    const subId = article ? article.slug : `art_${articleId}`;
 
     const destinationUrl = appendSubId(
       affiliateLink.base_url,
