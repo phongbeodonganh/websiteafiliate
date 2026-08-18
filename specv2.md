@@ -1,14 +1,14 @@
-# BẢN ĐẶC TẢ KỸ THUẬT VÀ KIẾN TRÚC HỆ THỐNG (V5.0 BENTO & SAAS LIGHT EDITION)
+# BẢN ĐẶC TẢ KỸ THUẬT VÀ KIẾN TRÚC HỆ THỐNG (V5.2 BLACKLIST INTERCEPTOR EDITION)
 
 **Thương hiệu hệ thống:** AI AFFILIATE HUB (`aiaffiliatehub.com`)  
-**Phiên bản:** 5.0 Bento & SaaS Light Edition  
+**Phiên bản:** 5.2 Blacklist Interceptor & SEO/GEO Edition  
 **Công nghệ Nền tảng:** Next.js (App Router, Turbopack, Server Components), TypeScript, TailwindCSS, MongoDB Atlas (Mongoose ODM).
 
 ---
 
 ## 1. Sơ đồ Cấu trúc Cơ sở Dữ liệu MongoDB (MongoDB Schemas & Collections)
 
-Hệ thống lưu trữ trên **MongoDB Atlas** với kết nối tối ưu DNS (`dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4'])`), bao gồm 8 Collections chính:
+Hệ thống lưu trữ trên **MongoDB Atlas** với kết nối tối ưu DNS (`dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4'])`), bao gồm 9 Collections chính:
 
 ### 1.1. Collection `users` (Quản lý Nhân sự & Phân quyền)
 | Trường dữ liệu (Field) | Kiểu dữ liệu | Mô tả chi tiết |
@@ -77,6 +77,31 @@ Ghi nhận chi tiết địa chỉ IP, User-Agent, thời gian click và ngữ c
 - `primary_color`: `"#0056B3"` (Royal Blue)
 - `accent_color`: `"#FF6B6B"` (Coral Orange)
 - `footer_text`: Mô tả thương hiệu chuẩn tiếng Anh.
+
+### 1.8. Bảng `blacklists` (Kho Domain & Link Cấm)
+Lưu trữ danh sách các domain lừa đảo, không trả tiền hoa hồng, hoặc bắt ads trái phép được nạp từ Google Sheet hoặc do Admin khai báo.
+
+```typescript
+interface IBlacklist {
+  id: string;
+  project_name: string;           // Tên dự án (ví dụ: NordVPN, Scalenut)
+  website_url: string;            // URL gốc (ví dụ: https://nordvpn.com)
+  extracted_domain: string;       // Root Domain tự động bóc tách (ví dụ: nordvpn.com)
+  match_type: 'domain' | 'exact_url'; // 'domain': Wildcard chặn toàn bộ subdomains, 'exact_url': Chặn đúng URL
+  reason: string;                 // Lý do chặn (ví dụ: Bắt Ads - Không trả tiền)
+  blocked_countries?: string[];   // Danh sách quốc gia cấm (ví dụ: ["Bồ Đào Nha", "Ba Lan"])
+  status: 'active' | 'inactive';  // Trạng thái hiệu lực
+  created_by?: string;            // Admin ID tạo
+  created_at: Date;
+  updated_at: Date;
+}
+```
+
+### 1.9. Bộ Nạp Tự Động Toàn Bộ Sheet Google (`POST /api/v1/cms/blacklist/import-sheet-url`)
+- **Cơ chế**: Cho phép Admin dán bất kỳ URL Google Sheet nào (e.g. `https://docs.google.com/spreadsheets/d/1HNAJ6F_EBzVs0bqBfC2mt2pFQHCtCNlIRGXDRnNvEuQ/...`).
+- **Tự động chuyển đổi**: Chuyển URL Google Sheet thành đường dẫn xuất CSV live (`/export?format=csv&gid=...`).
+- **Xử lý dữ liệu**: Tải trực tiếp file CSV, đọc toàn bộ 300+ hàng dữ liệu, nhận diện các cột Tên Dự Án, Website URL, Lý do cấm, Quốc gia cấm; bóc tách Root Domain và lưu hàng loạt vào MongoDB.
+- **Retroactive Sweeper Integration**: Tự động kích hoạt bộ quét ngầm vô hiệu hóa và đánh dấu `blacklisted` đối với tất cả các chiến dịch Affiliate active hiện có trong hệ thống trùng khớp với domain mới nạp.
 
 ---
 

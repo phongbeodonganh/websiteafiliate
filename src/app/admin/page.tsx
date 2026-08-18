@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { sanitizeArticleContent } from '@/lib/sanitize';
+import { generateObjectId } from '@/lib/utils';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import {
   LayoutDashboard,
   FileText,
@@ -46,6 +48,10 @@ import {
   Layout,
   Mail,
   Download,
+  ShieldAlert,
+  Upload,
+  FileSpreadsheet,
+  AlertTriangle,
 } from 'lucide-react';
 
 // Reusable Luxury Button Component
@@ -142,8 +148,34 @@ export default function AdminDashboardPage() {
   // Affiliate Link Form State
   const [newAffName, setNewAffName] = useState('');
   const [newAffUrl, setNewAffUrl] = useState('');
+  const [newAffProductUrl, setNewAffProductUrl] = useState('');
   const [newAffCommission, setNewAffCommission] = useState('15% / Sale');
   const [newAffCookie, setNewAffCookie] = useState('30 Days');
+  const [affUrlBlacklistError, setAffUrlBlacklistError] = useState<any>(null);
+
+  // AI Auto Article Generator States
+  const [showAiGenerateModal, setShowAiGenerateModal] = useState(false);
+  const [aiModalCampaign, setAiModalCampaign] = useState<any>(null);
+  const [aiModalTopic, setAiModalTopic] = useState('');
+  const [aiModalBaseUrl, setAiModalBaseUrl] = useState('');
+  const [aiModalProductUrl, setAiModalProductUrl] = useState('');
+  const [aiModalLanguage, setAiModalLanguage] = useState<'vi-VN' | 'en-US'>('vi-VN');
+  const [aiModalApiKey, setAiModalApiKey] = useState('');
+  const [isGeneratingAiArticle, setIsGeneratingAiArticle] = useState(false);
+
+  // Blacklist Center States
+  const [blacklistList, setBlacklistList] = useState<any[]>([]);
+  const [showAddBlacklistModal, setShowAddBlacklistModal] = useState(false);
+  const [showImportSheetModal, setShowImportSheetModal] = useState(false);
+  const [importSheetUrl, setImportSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1HNAJ6F_EBzVs0bqBfC2mt2pFQHCtCNlIRGXDRnNvEuQ/edit?gid=802654639#gid=802654639');
+  const [isImportingSheet, setIsImportingSheet] = useState(false);
+  const [activeBlacklistTab, setActiveBlacklistTab] = useState<'repository' | 'rules'>('repository');
+  const [blProjectName, setBlProjectName] = useState('');
+  const [blWebsiteUrl, setBlWebsiteUrl] = useState('');
+  const [blReason, setBlReason] = useState('Bắt Ads - Không trả tiền');
+  const [blBlockedCountries, setBlBlockedCountries] = useState('Bồ Đào Nha, Croatia, Ba Lan, Bỉ, Đức');
+  const [blMatchType, setBlMatchType] = useState<'domain' | 'exact_url'>('domain');
+  const [blSearchQuery, setBlSearchQuery] = useState('');
 
   // Settings Sub-Tab
   const [settingsSection, setSettingsSection] = useState<'appearance' | 'seo_geo' | 'code'>('appearance');
@@ -197,8 +229,181 @@ export default function AdminDashboardPage() {
       .then((r) => r.json())
       .then((d) => d.status === 'success' && setSettingsData(d.data));
 
+    fetch('/api/v1/cms/blacklist', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => d.status === 'success' && setBlacklistList(d.data));
+
     if (currentUser?.role === 'admin') {
       loadSubscribersData(token);
+    }
+  };
+
+  const handleCheckAffUrl = async (urlStr: string) => {
+    setNewAffUrl(urlStr);
+    if (!urlStr || urlStr.length < 4) {
+      setAffUrlBlacklistError(null);
+      return;
+    }
+    try {
+      const res = await fetch('/api/v1/cms/blacklist/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlStr }),
+      });
+      const data = await res.json();
+      if (data.status === 'success' && data.data?.isBlacklisted) {
+        setAffUrlBlacklistError({
+          isError: true,
+          projectName: data.data.projectName,
+          matchedDomain: data.data.matchedDomain,
+          reason: data.data.reason,
+          blockedCountries: data.data.blockedCountries || [],
+        });
+      } else {
+        setAffUrlBlacklistError(null);
+      }
+    } catch {
+      setAffUrlBlacklistError(null);
+    }
+  };
+
+  const handleSaveBlacklist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    const blockedList = blBlockedCountries.split(',').map((s) => s.trim()).filter(Boolean);
+
+    try {
+      const res = await fetch('/api/v1/cms/blacklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          projectName: blProjectName,
+          websiteUrl: blWebsiteUrl,
+          reason: blReason,
+          matchType: blMatchType,
+          blockedCountries: blockedList,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        alert(`✅ Đã thêm "${data.data.extractedDomain}" vào Blacklist!\n📊 Tự động làm sạch ${data.data.sweep?.totalUpdatedLinks || 0} chiến dịch bị ảnh hưởng.`);
+        setShowAddBlacklistModal(false);
+        setBlProjectName('');
+        setBlWebsiteUrl('');
+        loadAllData();
+      } else {
+        alert(`Lỗi: ${data.message}`);
+      }
+    } catch {
+      alert('Không thể thêm vào Blacklist');
+    }
+  };
+
+  const handleQuickBlacklist = async (campaignId: string, campaignName: string) => {
+    const reasonPrompt = prompt(`Đưa chiến dịch "${campaignName}" vào danh sách Blacklist?\nNhập lý do cấm (ví dụ: Bắt Ads - Không trả tiền):`, 'Bắt Ads - Không trả tiền');
+    if (!reasonPrompt) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('/api/v1/cms/blacklist/quick-blacklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ campaignId, reason: reasonPrompt }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        alert(`🛑 Chiến dịch "${campaignName}" đã được đưa vào Blacklist (Domain: ${data.data.domainBlacklisted}).\nQuét ngầm thành công ${data.data.sweptCount} chiến dịch.`);
+        loadAllData();
+      } else {
+        alert(`Lỗi: ${data.message}`);
+      }
+    } catch {
+      alert('Không thể thực hiện Quick Blacklist');
+    }
+  };
+
+  const handleDeleteBlacklist = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn xóa domain/URL này khỏi Blacklist?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/v1/cms/blacklist?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) loadAllData();
+    } catch {
+      alert('Không thể xóa khỏi Blacklist');
+    }
+  };
+
+  const handleImportGoogleSheetUrl = async () => {
+    if (!importSheetUrl) {
+      alert('Vui lòng nhập URL Google Sheet.');
+      return;
+    }
+    setIsImportingSheet(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('/api/v1/cms/blacklist/import-sheet-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ sheetUrl: importSheetUrl }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        alert(`📥 NẠP THÀNH CÔNG NGUYÊN SHEET GOOGLE!\n\n📊 Thống kê:\n- Đã nạp thành công: ${data.data.totalImported} domain/dự án cấm từ Google Sheet.\n- Tự động làm sạch: ${data.data.totalSweptCampaigns} chiến dịch affiliate bị ảnh hưởng.`);
+        setShowImportSheetModal(false);
+        loadAllData();
+      } else {
+        alert(`Lỗi nạp Google Sheet: ${data.message}`);
+      }
+    } catch {
+      alert('Không thể kết nối hoặc nạp Google Sheet');
+    } finally {
+      setIsImportingSheet(false);
+    }
+  };
+
+  const handleBatchImportGoogleSheet = async () => {
+    const token = localStorage.getItem('token');
+    const sampleSheetData = [
+      { projectName: 'dozarplati', websiteUrl: 'https://dozarplati.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'NordVPN', websiteUrl: 'https://nordvpn.com', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'finbo', websiteUrl: 'https://www.finbo.pl/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'nichescraper', websiteUrl: 'https://nichescraper.com/affiliate.php', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'alidropship', websiteUrl: 'https://affiliates.alidropship.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'supergrosz', websiteUrl: 'https://supergrosz.pl/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'smart pozyczka', websiteUrl: 'https://smartpozyczka.pl/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Hostinger', websiteUrl: 'https://hostinger.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'flowxo', websiteUrl: 'https://flowxo.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Scalenut', websiteUrl: 'https://www.scalenut.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'getresponse', websiteUrl: 'getresponse.com/vn/affiliate-programs', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'graphy', websiteUrl: 'https://graphy.com/partners', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Liquidweb', websiteUrl: 'liquidweb.com', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'iPage', websiteUrl: 'https://www.ipage.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Pixpa', websiteUrl: 'https://www.pixpa.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Bluehost', websiteUrl: 'https://www.bluehost.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Semrush', websiteUrl: 'https://www.semrush.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Wix', websiteUrl: 'https://vi.wix.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Grammarly', websiteUrl: 'https://www.grammarly.com/', reason: 'Bắt Ads-Không trả tiền' },
+      { projectName: 'Teachable', websiteUrl: 'https://teachable.com/', reason: 'Bắt Ads-Không trả tiền', blockedCountries: 'Bồ Đào Nha, Croatia, Ba Lan, Bỉ, Đức, Ý, Áo, Tây Ban Nha' },
+    ];
+
+    try {
+      const res = await fetch('/api/v1/cms/blacklist/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ items: sampleSheetData }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        alert(`📥 Nạp dữ liệu từ Google Sheet mẫu thành công!\n📊 Đã lưu ${data.data.totalImported} domain cấm và tự động làm sạch ${data.data.totalSweptCampaigns} chiến dịch.`);
+        loadAllData();
+      } else {
+        alert(`Lỗi: ${data.message}`);
+      }
+    } catch {
+      alert('Không thể nạp dữ liệu từ Google Sheet mẫu');
     }
   };
 
@@ -280,6 +485,94 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleOpenAiModal = (campaign?: any) => {
+    if (campaign) {
+      setAiModalCampaign(campaign);
+      setAiModalTopic(`Đánh Giá Chi Tiết ${campaign.name} - Tính Năng & Bảng Giá Mới Nhất 2026`);
+      setAiModalBaseUrl(campaign.baseUrl || campaign.base_url || '');
+      setAiModalProductUrl(campaign.productUrl || campaign.product_url || campaign.baseUrl || campaign.base_url || '');
+    } else {
+      setAiModalCampaign(null);
+      setAiModalTopic('');
+      setAiModalBaseUrl('');
+      setAiModalProductUrl('');
+    }
+    setShowAiGenerateModal(true);
+  };
+
+  const handleSelectCampaignForAiModal = (campaignIdStr: string) => {
+    if (!campaignIdStr) {
+      setAiModalCampaign(null);
+      setAiModalBaseUrl('');
+      setAiModalProductUrl('');
+      return;
+    }
+    const found = affiliateLinksList.find((c) => c.id === campaignIdStr || c._id === campaignIdStr);
+    if (found) {
+      setAiModalCampaign(found);
+      setAiModalTopic(`Đánh Giá Chi Tiết ${found.name} - Tính Năng & Bảng Giá Mới Nhất 2026`);
+      setAiModalBaseUrl(found.baseUrl || found.base_url || '');
+      setAiModalProductUrl(found.productUrl || found.product_url || found.baseUrl || found.base_url || '');
+    }
+  };
+
+  const handleGenerateAiArticle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsGeneratingAiArticle(true);
+    const token = localStorage.getItem('token');
+    try {
+      const finalBaseUrl = aiModalBaseUrl || aiModalCampaign?.baseUrl || aiModalCampaign?.base_url;
+      const finalProductUrl = aiModalProductUrl || aiModalCampaign?.productUrl || aiModalCampaign?.product_url || finalBaseUrl;
+
+      const res = await fetch('/api/v1/cms/ai/generate-article', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          campaignId: aiModalCampaign?.id,
+          customTopic: aiModalTopic,
+          customProductUrl: finalProductUrl,
+          customBaseUrl: finalBaseUrl,
+          customName: aiModalCampaign?.name,
+          language: aiModalLanguage,
+          userApiKey: aiModalApiKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        alert(`✨ TẠO BÀI VIẾT THÀNH CÔNG!\n\nTiêu đề: "${data.data.title}"\nTrạng thái: Lưu Nháp (Draft)\nĐã cào dữ liệu bằng Jina AI & Lọc link an toàn.`);
+        setShowAiGenerateModal(false);
+        loadAllData();
+        // Switch to Articles tab and open edit mode
+        setActiveTab('articles');
+        setEditingArticle({
+          id: data.data.articleId,
+          title: data.data.title,
+          slug: data.data.slug,
+          content: data.data.content,
+          excerpt: data.data.excerpt,
+          metaTitle: data.data.seo_meta?.meta_title || '',
+          metaDescription: data.data.seo_meta?.meta_description || '',
+          focusKeyword: data.data.seo_meta?.focus_keywords?.[0] || '',
+          keyTakeaways: Array.isArray(data.data.geo_data?.key_takeaways)
+            ? data.data.geo_data.key_takeaways.join('\n')
+            : data.data.geo_data?.key_takeaways || '',
+          entities: Array.isArray(data.data.geo_data?.entities)
+            ? data.data.geo_data.entities.join(', ')
+            : data.data.geo_data?.entities || '',
+          faqSchema: data.data.faqSchema || data.data.geo_data?.faq_list || [],
+          faqSchemaJsonld: data.data.geo_data?.faq_schema_jsonld || '',
+          status: 'draft',
+        });
+      } else {
+        alert(`Lỗi sinh bài viết AI: ${data.message}`);
+      }
+    } catch {
+      alert('Không thể kết nối API AI Generator');
+    } finally {
+      setIsGeneratingAiArticle(false);
+    }
+  };
+
   const handleAddAffiliateLink = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -290,6 +583,7 @@ export default function AdminDashboardPage() {
         body: JSON.stringify({
           name: newAffName,
           base_url: newAffUrl,
+          product_url: newAffProductUrl || newAffUrl,
           commission: newAffCommission,
           cookie: newAffCookie,
         }),
@@ -299,6 +593,7 @@ export default function AdminDashboardPage() {
         alert('Affiliate Campaign added successfully!');
         setNewAffName('');
         setNewAffUrl('');
+        setNewAffProductUrl('');
         loadAllData();
       } else {
         alert(data.message);
@@ -774,9 +1069,18 @@ export default function AdminDashboardPage() {
           <h2 className="text-2xl font-bold text-white mb-1">Content & Affiliate Placement Management</h2>
           <p className="text-slate-400 text-sm">Author articles, assign multi-level categories, and embed multi-position affiliate links.</p>
         </div>
-        <LuxuryButton onClick={() => setEditingArticle({})}>
-          <Plus size={18} /> Create New Article
-        </LuxuryButton>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => handleOpenAiModal()}
+            className="px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
+          >
+            <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
+          </button>
+          <LuxuryButton onClick={() => setEditingArticle({})}>
+            <Plus size={18} /> Create New Article
+          </LuxuryButton>
+        </div>
       </div>
 
       <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-sm">
@@ -860,6 +1164,11 @@ export default function AdminDashboardPage() {
 
   // Article Editor Form V5.1 (SEO & GEO Studio)
   const ArticleEditorForm = () => {
+    // ID sinh trước ở client cho bài mới (chưa có editingArticle.id), dùng để
+    // gắn link/nút affiliate có theo dõi ngay cả khi chưa bấm Save. Nếu bài
+    // được lưu, id này được gửi kèm để MongoDB dùng làm _id thật; nếu không
+    // bao giờ lưu thì id chỉ tồn tại tạm trong state và tự mất khi rời trang.
+    const [pendingId] = useState(() => editingArticle?.id || generateObjectId());
     const [title, setTitle] = useState(editingArticle?.title || '');
     const [slug, setSlug] = useState(editingArticle?.slug || '');
     const [excerpt, setExcerpt] = useState(editingArticle?.excerpt || '');
@@ -875,18 +1184,24 @@ export default function AdminDashboardPage() {
     // GEO States
     const [focusKeyword, setFocusKeyword] = useState(editingArticle?.focusKeyword || editingArticle?.focus_keyword || '');
     const [keyTakeawaysText, setKeyTakeawaysText] = useState<string>(
-      Array.isArray(editingArticle?.keyTakeaways || editingArticle?.key_takeaways)
+      typeof editingArticle?.keyTakeaways === 'string'
+        ? editingArticle.keyTakeaways
+        : Array.isArray(editingArticle?.keyTakeaways || editingArticle?.key_takeaways)
         ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
         : ''
     );
     const [entitiesText, setEntitiesText] = useState<string>(
-      Array.isArray(editingArticle?.entities)
+      typeof editingArticle?.entities === 'string'
+        ? editingArticle.entities
+        : Array.isArray(editingArticle?.entities)
         ? editingArticle.entities.join(', ')
         : ''
     );
     const [faqRows, setFaqRows] = useState<Array<{ question: string; answer: string }>>(
       Array.isArray(editingArticle?.faqSchema || editingArticle?.faq_schema) && (editingArticle?.faqSchema || editingArticle?.faq_schema).length > 0
         ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
+        : Array.isArray(editingArticle?.faq_list) && editingArticle.faq_list.length > 0
+        ? editingArticle.faq_list
         : [{ question: '', answer: '' }]
     );
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
@@ -959,6 +1274,13 @@ export default function AdminDashboardPage() {
 
     const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
+
+      const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
+      if (isContentEmpty) {
+        alert('Vui lòng nhập nội dung bài viết');
+        return;
+      }
+
       const token = localStorage.getItem('token');
 
       const takeawaysList = keyTakeawaysText
@@ -974,6 +1296,7 @@ export default function AdminDashboardPage() {
       const validFaq = faqRows.filter((f) => f.question.trim() && f.answer.trim());
 
       const payload = {
+        ...(editingArticle?.id ? {} : { id: pendingId }),
         title,
         slug,
         excerpt,
@@ -1151,39 +1474,12 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-slate-300">Article Content (Rich Text / HTML) *</label>
-                  <div className="flex space-x-1.5 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setContent((prev: string) => prev + ' **In Đậm** ')}
-                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
-                    >
-                      Bold
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setContent((prev: string) => prev + ' *In Nghiêng* ')}
-                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
-                    >
-                      Italic
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setContent((prev: string) => prev + '\n\n## Tiêu đề phụ (H2 chuẩn GEO)\n')}
-                      className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-bold"
-                    >
-                      + H2
-                    </button>
-                  </div>
-                </div>
-                <textarea
-                  rows={12}
+                <label className="text-xs font-semibold text-slate-300 mb-2 block">Article Content (Rich Text) *</label>
+                <RichTextEditor
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-300 font-mono text-xs focus:outline-none focus:border-amber-500 shadow-inner leading-relaxed"
-                  placeholder="Write article content here..."
-                  required
+                  onChange={setContent}
+                  articleId={pendingId}
+                  affiliateLinks={affiliateLinksList}
                 />
               </div>
             </div>
@@ -1528,8 +1824,15 @@ export default function AdminDashboardPage() {
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">Global Affiliate Campaigns</h2>
-          <p className="text-slate-400 text-sm">Manage central affiliate links, commission rates, and cookie windows.</p>
+          <p className="text-slate-400 text-sm">Manage central affiliate links, product landing pages for AI scraper, commission rates, and cookie windows.</p>
         </div>
+        <button
+          type="button"
+          onClick={() => handleOpenAiModal()}
+          className="px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
+        >
+          <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
+        </button>
       </div>
 
       <form onSubmit={handleAddAffiliateLink} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 backdrop-blur-sm">
@@ -1538,49 +1841,78 @@ export default function AdminDashboardPage() {
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Campaign / Platform Name</label>
+            <label className="block text-xs text-slate-400 mb-1">Campaign / Platform Name *</label>
             <input
               type="text"
               value={newAffName}
               onChange={(e) => setNewAffName(e.target.value)}
-              placeholder="e.g. Binance Exchange - Register"
+              placeholder="e.g. Binance Exchange, Scalenut AI..."
               required
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Base URL</label>
+            <label className="block text-xs text-slate-400 mb-1">Base Tracking URL (Affiliate Ref Link) *</label>
             <input
               type="url"
               value={newAffUrl}
-              onChange={(e) => setNewAffUrl(e.target.value)}
+              onChange={(e) => handleCheckAffUrl(e.target.value)}
               placeholder="https://binance.com/en/register?ref=123"
               required
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs transition-colors ${
+                affUrlBlacklistError?.isError
+                  ? 'border-rose-500 bg-rose-500/10 text-rose-300 focus:outline-none'
+                  : 'border-slate-800 text-white'
+              }`}
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Commission Rate</label>
+            <label className="block text-xs text-slate-400 mb-1">Product URL (Landing Page cho Jina AI Scraper)</label>
             <input
-              type="text"
-              value={newAffCommission}
-              onChange={(e) => setNewAffCommission(e.target.value)}
-              placeholder="40% Trading Fee or $25 CPA"
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
+              type="url"
+              value={newAffProductUrl}
+              onChange={(e) => setNewAffProductUrl(e.target.value)}
+              placeholder="https://binance.com hoặc https://scalenut.com"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-cyan-300 font-mono"
             />
+            <p className="text-[10px] text-slate-500 mt-1">Trang chủ sản phẩm không chứa ref code dùng để Jina AI cào dữ liệu làm nguyên liệu viết bài.</p>
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Cookie Lifetime</label>
-            <input
-              type="text"
-              value={newAffCookie}
-              onChange={(e) => setNewAffCookie(e.target.value)}
-              placeholder="30 Days / Lifetime"
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
-            />
+            <label className="block text-xs text-slate-400 mb-1">Commission Rate & Cookie Window</label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                value={newAffCommission}
+                onChange={(e) => setNewAffCommission(e.target.value)}
+                placeholder="30% Recurring"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+              />
+              <input
+                type="text"
+                value={newAffCookie}
+                onChange={(e) => setNewAffCookie(e.target.value)}
+                placeholder="30 Days"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+              />
+            </div>
           </div>
         </div>
-        <LuxuryButton type="submit" className="py-2 text-xs">
+
+        {affUrlBlacklistError?.isError && (
+          <div className="text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl flex items-start gap-2 animate-in fade-in">
+            <AlertTriangle size={18} className="shrink-0 text-rose-400 mt-0.5" />
+            <div>
+              <p>🛑 Không thể thêm link! Domain <strong>{affUrlBlacklistError.matchedDomain}</strong> (Dự án: {affUrlBlacklistError.projectName}) đã nằm trong Blacklist.</p>
+              <p className="text-[11px] font-normal text-rose-300/80 mt-0.5">Lý do: {affUrlBlacklistError.reason}</p>
+            </div>
+          </div>
+        )}
+
+        <LuxuryButton
+          type="submit"
+          disabled={affUrlBlacklistError?.isError}
+          className={`py-2 text-xs ${affUrlBlacklistError?.isError ? 'opacity-40 cursor-not-allowed' : ''}`}
+        >
           Save Affiliate Campaign
         </LuxuryButton>
       </form>
@@ -1592,14 +1924,28 @@ export default function AdminDashboardPage() {
               <th className="p-4 font-medium">Campaign Name</th>
               <th className="p-4 font-medium">Commission Rate</th>
               <th className="p-4 font-medium">Cookie Window</th>
-              <th className="p-4 font-medium">Base URL</th>
+              <th className="p-4 font-medium">Base Tracking URL</th>
               <th className="p-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="text-sm">
             {affiliateLinksList.map((link) => (
               <tr key={link.id} className="border-b border-slate-800 hover:bg-white/[0.02] transition-colors">
-                <td className="p-4 font-medium text-white">{link.name}</td>
+                <td className="p-4 font-medium text-white">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold">{link.name}</span>
+                    {link.status === 'blacklisted' && (
+                      <span className="bg-rose-500/10 text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-500/20">
+                        BLACKLISTED
+                      </span>
+                    )}
+                  </div>
+                  {link.productUrl && (
+                    <span className="text-[11px] text-cyan-400 font-mono truncate max-w-[180px] block opacity-80 mt-0.5">
+                      🌐 {link.productUrl}
+                    </span>
+                  )}
+                </td>
                 <td className="p-4">
                   <span className="text-emerald-400 font-medium bg-emerald-400/10 px-2.5 py-1 rounded-md text-xs border border-emerald-400/20">
                     {link.commission || 'N/A'}
@@ -1609,12 +1955,27 @@ export default function AdminDashboardPage() {
                   <Clock size={14} /> {link.cookie || '30 Days'}
                 </td>
                 <td className="p-4 max-w-[200px]">
-                  <code className="text-xs text-slate-400 bg-slate-950 px-2 py-1 rounded truncate block border border-slate-800">
+                  <code className="text-xs text-slate-400 bg-slate-950 px-2 py-1 rounded truncate block border border-slate-800 font-mono">
                     {link.baseUrl}
                   </code>
                 </td>
-                <td className="p-4 text-right">
-                  <button onClick={() => handleDeleteAffiliateLink(link.id)} className="p-2 text-slate-400 hover:text-red-400">
+                <td className="p-4 text-right flex justify-end gap-2 items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAiModal(link)}
+                    className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 font-bold rounded-lg shadow hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                    title="Sinh bài viết tự động bằng Gemini AI & Jina Scraper"
+                  >
+                    <Sparkles size={14} /> ✨ Tạo Bài AI
+                  </button>
+                  <button
+                    onClick={() => handleQuickBlacklist(link.id, link.name)}
+                    className="p-1.5 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg flex items-center gap-1 font-semibold transition-colors"
+                    title="Move to Blacklist"
+                  >
+                    <ShieldAlert size={14} /> Blacklist
+                  </button>
+                  <button onClick={() => handleDeleteAffiliateLink(link.id)} className="p-2 text-slate-400 hover:text-red-400" title="Delete Campaign">
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -1625,6 +1986,334 @@ export default function AdminDashboardPage() {
       </div>
     </div>
   );
+
+  // Link & Blacklist Management Center
+  const BlacklistView = () => {
+    const filteredBlacklist = blacklistList.filter((b) => {
+      const q = blSearchQuery.toLowerCase();
+      return (
+        (b.projectName || '').toLowerCase().includes(q) ||
+        (b.extractedDomain || '').toLowerCase().includes(q) ||
+        (b.reason || '').toLowerCase().includes(q)
+      );
+    });
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+              <ShieldAlert size={26} className="text-rose-500" /> Link Management & Blacklist Interceptor
+            </h2>
+            <p className="text-slate-400 text-sm">
+              Tự động bóc tách Domain gốc, đánh chặn link lừa đảo/bùng hoa hồng thời gian thực và làm sạch dữ liệu bài viết.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowImportSheetModal(true)}
+              className="px-4 py-2.5 rounded-xl font-bold text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <FileSpreadsheet size={16} /> 📥 Nạp Cả Sheet Google (Tự Động 100%)
+            </button>
+            <LuxuryButton onClick={() => setShowAddBlacklistModal(true)} className="py-2.5 px-4 text-xs">
+              <Plus size={16} /> Thêm Domain Cấm
+            </LuxuryButton>
+          </div>
+        </div>
+
+        {/* Sub-Tabs */}
+        <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3">
+          <button
+            type="button"
+            onClick={() => setActiveBlacklistTab('repository')}
+            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
+              activeBlacklistTab === 'repository'
+                ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <ShieldAlert size={16} /> Tab 1: Danh sách Blacklist ({blacklistList.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveBlacklistTab('rules')}
+            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
+              activeBlacklistTab === 'rules'
+                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+          >
+            <Sliders size={16} /> Tab 2: Cấu hình Quy tắc Chặn
+          </button>
+        </div>
+
+        {activeBlacklistTab === 'repository' && (
+          <div className="space-y-4">
+            {/* Search Filter */}
+            <div className="flex items-center justify-between gap-4 bg-slate-900/50 border border-slate-800 p-4 rounded-2xl backdrop-blur-sm">
+              <div className="relative flex-1 max-w-md">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  value={blSearchQuery}
+                  onChange={(e) => setBlSearchQuery(e.target.value)}
+                  placeholder="Tìm kiếm theo tên dự án, domain, lý do..."
+                  className="w-full bg-slate-950 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-rose-500"
+                />
+              </div>
+              <span className="text-xs text-slate-500 font-mono">Hiển thị {filteredBlacklist.length} / {blacklistList.length} domain cấm</span>
+            </div>
+
+            {/* Table */}
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-sm">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                    <th className="p-4 font-medium">Tên Dự Án & URL Gốc</th>
+                    <th className="p-4 font-medium">Root Domain Tự Bóc Tách</th>
+                    <th className="p-4 font-medium">Quy Tắc</th>
+                    <th className="p-4 font-medium">Lý Do Chặn</th>
+                    <th className="p-4 font-medium">Quốc Gia Giới Hạn</th>
+                    <th className="p-4 font-medium text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="text-xs">
+                  {filteredBlacklist.length > 0 ? (
+                    filteredBlacklist.map((item) => (
+                      <tr key={item.id} className="border-b border-slate-800 hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4">
+                          <p className="font-bold text-white">{item.projectName || 'Chưa đặt tên'}</p>
+                          <span className="text-slate-500 font-mono text-[11px] truncate max-w-[200px] block">{item.websiteUrl}</span>
+                        </td>
+                        <td className="p-4">
+                          <span className="bg-rose-500/10 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-md font-mono font-bold">
+                            {item.extractedDomain}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${item.matchType === 'domain' ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20' : 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/20'}`}>
+                            {item.matchType === 'domain' ? 'Domain Wildcard' : 'Exact URL'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-slate-300 max-w-[220px]">
+                          {item.reason}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex flex-wrap gap-1 max-w-[180px]">
+                            {item.blockedCountries && item.blockedCountries.length > 0 ? (
+                              item.blockedCountries.map((c: string, idx: number) => (
+                                <span key={idx} className="bg-slate-800 text-slate-300 border border-slate-700 text-[10px] px-1.5 py-0.5 rounded">
+                                  {c}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-slate-500 text-[10px]">Tất cả quốc gia</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button onClick={() => handleDeleteBlacklist(item.id)} className="p-2 text-slate-400 hover:text-rose-400" title="Xóa khỏi Blacklist">
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-500">
+                        Chưa có domain cấm nào trong Blacklist. Bấm "Nạp Cả Sheet Google" để nạp tự động toàn bộ!
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeBlacklistTab === 'rules' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-3">
+              <div className="flex items-center gap-2 text-amber-400 font-bold">
+                <ShieldAlert size={20} />
+                <h3>Quy Tắc 1: Chặn Theo Domain (Khuyên Dùng)</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Khi thêm domain (ví dụ: <code className="text-amber-300">badsite.com</code>), hệ thống sẽ tự động bóc tách root domain và đánh chặn tất cả các link con như <code className="text-slate-300">badsite.com/register</code>, <code className="text-slate-300">sub.badsite.com</code>.
+              </p>
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-emerald-400 font-mono">
+                ✓ Trạng thái: Đang hoạt động tự động 100%
+              </div>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-3">
+              <div className="flex items-center gap-2 text-cyan-400 font-bold">
+                <Sliders size={20} />
+                <h3>Quy Tắc 2: Chặn Chính Xác URL (Exact Match)</h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Chỉ chặn chính xác đường dẫn cụ thể được khai báo trong hệ thống. Thích hợp khi 1 trang cụ thể bị lỗi nhưng toàn bộ domain gốc vẫn hoạt động bình thường.
+              </p>
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-cyan-400 font-mono">
+                ✓ Trạng thái: Hỗ trợ tùy chọn khi thêm thủ công
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Nạp Tự Động Từ Google Sheet URL */}
+        {showImportSheetModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-lg shadow-2xl space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <FileSpreadsheet size={20} className="text-cyan-400" /> Nạp Tự Động Toàn Bộ 1 Sheet Google
+                </h3>
+                <button onClick={() => setShowImportSheetModal(false)} className="text-slate-400 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Đường Dẫn Google Sheet (Public / Cho phép xem) *
+                  </label>
+                  <input
+                    type="url"
+                    value={importSheetUrl}
+                    onChange={(e) => setImportSheetUrl(e.target.value)}
+                    placeholder="https://docs.google.com/spreadsheets/d/1HNAJ6F.../edit#gid=802654639"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-cyan-300 font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    💡 Hệ thống sẽ tự động bóc tách file CSV từ Google Sheet, đọc từng hàng, bóc tách root domain và lưu hàng loạt vào MongoDB.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-xs text-slate-400 space-y-1">
+                  <p className="text-slate-200 font-bold">Cấu trúc các cột tự động nhận diện:</p>
+                  <p>• Cột A: Tên Dự Án (ví dụ: NordVPN)</p>
+                  <p>• Cột B: Website URL (ví dụ: https://nordvpn.com)</p>
+                  <p>• Cột C: Lý do cấm (ví dụ: Bắt Ads - Không trả tiền)</p>
+                  <p>• Cột H: Quốc gia cấm (ví dụ: Bồ Đào Nha, Ba Lan...)</p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowImportSheetModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  disabled={isImportingSheet}
+                  onClick={handleImportGoogleSheetUrl}
+                  className="px-5 py-2.5 rounded-xl font-bold text-xs bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20"
+                >
+                  {isImportingSheet ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin"></div>
+                      <span>Đang nạp toàn bộ Sheet...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} /> Bắt Đầu Nạp Nhanh 100%
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Thêm Domain Blacklist Thủ Công */}
+        {showAddBlacklistModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-lg shadow-2xl">
+              <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <ShieldAlert size={18} className="text-rose-500" /> Thêm Domain / Link Vào Blacklist
+                </h3>
+                <button onClick={() => setShowAddBlacklistModal(false)} className="text-slate-400 hover:text-white">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={handleSaveBlacklist} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Tên Dự Án / Platform Name</label>
+                  <input
+                    type="text"
+                    value={blProjectName}
+                    onChange={(e) => setBlProjectName(e.target.value)}
+                    placeholder="e.g. NordVPN, Scalenut..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Website URL Hoặc Domain Cấm *</label>
+                  <input
+                    type="text"
+                    value={blWebsiteUrl}
+                    onChange={(e) => setBlWebsiteUrl(e.target.value)}
+                    placeholder="https://badsite.com/register hoặc badsite.com"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-rose-500 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Lý Do Chặn *</label>
+                  <input
+                    type="text"
+                    value={blReason}
+                    onChange={(e) => setBlReason(e.target.value)}
+                    placeholder="Bắt Ads - Không trả tiền, Sàn lừa đảo..."
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Quốc Gia Bị Giới Hạn / Cấm</label>
+                  <input
+                    type="text"
+                    value={blBlockedCountries}
+                    onChange={(e) => setBlBlockedCountries(e.target.value)}
+                    placeholder="Phân cách bằng dấu phẩy: Bồ Đào Nha, Ba Lan, Đức..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1">Quy Tắc Đánh Chặn</label>
+                  <select
+                    value={blMatchType}
+                    onChange={(e: any) => setBlMatchType(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+                  >
+                    <option value="domain">Chặn Toàn Bộ Root Domain & Subdomain (Wildcard)</option>
+                    <option value="exact_url">Chặn Chính Xác URL Này</option>
+                  </select>
+                </div>
+                <div className="pt-2 flex justify-end gap-3">
+                  <button type="button" onClick={() => setShowAddBlacklistModal(false)} className="px-4 py-2 text-xs text-slate-400 hover:text-white">
+                    Hủy
+                  </button>
+                  <LuxuryButton type="submit" className="py-2 px-5 text-xs bg-rose-600 hover:bg-rose-500 text-white">
+                    Lưu Vào Blacklist & Sweeper Ngầm
+                  </LuxuryButton>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Categories & Sub-Categories View
   const CategoriesView = () => (
@@ -2428,6 +3117,7 @@ export default function AdminDashboardPage() {
     if (activeTab === 'categories' && currentUser.role === 'admin') return <CategoriesView />;
     if (activeTab === 'users' && currentUser.role === 'admin') return <UsersView />;
     if (activeTab === 'links' && currentUser.role === 'admin') return <LinksView />;
+    if (activeTab === 'blacklist' && currentUser.role === 'admin') return <BlacklistView />;
     if (activeTab === 'settings' && currentUser.role === 'admin') return <SettingsView />;
 
     return <div className="text-slate-500 flex items-center justify-center h-64 text-sm">Under Construction...</div>;
@@ -2484,6 +3174,7 @@ export default function AdminDashboardPage() {
                   <NavItem id="subscribers" icon={Mail} label="Subscriber Leads" requiredRole="admin" />
                   <NavItem id="categories" icon={FolderTree} label="Categories & Sub-Cats" requiredRole="admin" />
                   <NavItem id="users" icon={Users} label="Team & Creators" requiredRole="admin" />
+                  <NavItem id="blacklist" icon={ShieldAlert} label="Link & Blacklist Center" requiredRole="admin" />
                   <NavItem id="links" icon={LinkIcon} label="Affiliate Campaigns" requiredRole="admin" />
                   <NavItem id="settings" icon={Settings} label="Global SEO & System" requiredRole="admin" />
                 </>
@@ -2532,6 +3223,142 @@ export default function AdminDashboardPage() {
               <div className="max-w-7xl mx-auto">{renderContent()}</div>
             </div>
           </main>
+        </div>
+      )}
+
+      {/* Modal Sinh Bài Viết Tự Động Bằng Gemini AI & Jina Scraper */}
+      {showAiGenerateModal && (
+        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-xl shadow-2xl space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Sparkles size={20} className="text-cyan-400" /> Tự Động Sinh Bài Viết SEO & GEO V5.3 (Gemini 2.5 Flash)
+              </h3>
+              <button onClick={() => setShowAiGenerateModal(false)} className="text-slate-400 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleGenerateAiArticle} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Chọn Chiến Dịch Affiliate (Hoặc Nhập URL)</label>
+                <select
+                  value={aiModalCampaign?.id || ''}
+                  onChange={(e) => handleSelectCampaignForAiModal(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+                >
+                  <option value="">-- Tự Nhập URL / Tên Bài Viết Thủ Công --</option>
+                  {affiliateLinksList.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.baseUrl})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Chủ Đề / Tên Bài Viết Cần Sinh *</label>
+                <input
+                  type="text"
+                  value={aiModalTopic}
+                  onChange={(e) => setAiModalTopic(e.target.value)}
+                  placeholder="e.g. Đánh Giá Scalenut AI 2026 - Công Cụ SEO AI Tốt Nhất?"
+                  required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyan-500 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Base Tracking URL (Link Affiliate Ref) *</label>
+                  <input
+                    type="url"
+                    value={aiModalBaseUrl}
+                    onChange={(e) => setAiModalBaseUrl(e.target.value)}
+                    placeholder="https://refersion.com/register?ref=123"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Product URL (Landing Page Cào Data Jina AI)</label>
+                  <input
+                    type="url"
+                    value={aiModalProductUrl}
+                    onChange={(e) => setAiModalProductUrl(e.target.value)}
+                    placeholder="https://refersion.com"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-cyan-300 font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Ngôn Ngữ Bài Viết</label>
+                  <select
+                    value={aiModalLanguage}
+                    onChange={(e: any) => setAiModalLanguage(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+                  >
+                    <option value="vi-VN">Tiếng Việt (vi-VN)</option>
+                    <option value="en-US">English (en-US)</option>
+                  </select>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Gemini API Key (Chính thức)</label>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
+                    >
+                      👉 Lấy Key Miễn Phí (aistudio.google.com)
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    value={aiModalApiKey}
+                    onChange={(e) => setAiModalApiKey(e.target.value)}
+                    placeholder="Dán API Key dạng AIzaSy... vào đây"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-amber-300 font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+                <p className="text-slate-200 font-bold flex items-center gap-1.5">
+                  ⚙️ Tiến trình xử lý 4 bước tự động:
+                </p>
+                <p>1. Check Blacklist Interceptor real-time bảo vệ URL.</p>
+                <p>2. Cào landing page bằng Jina AI Reader (<code className="text-cyan-300">r.jina.ai</code>).</p>
+                <p>3. Gemini 2.5 Flash sinh bài viết chuẩn SEO/GEO + JSON Schema Enforcement.</p>
+                <p>4. Post-Sanitization Link Checker tự động lọc & lưu nháp (Draft) vào Database.</p>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowAiGenerateModal(false)} className="px-4 py-2 text-xs text-slate-400 hover:text-white">
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isGeneratingAiArticle}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20"
+                >
+                  {isGeneratingAiArticle ? (
+                    <>
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin"></div>
+                      <span>Đang Cào & Sinh Bài AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} /> Bắt Đầu Sinh Bài AI 1-Click
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
