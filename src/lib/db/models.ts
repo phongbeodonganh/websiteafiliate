@@ -200,11 +200,17 @@ const ClickLogSchema = new Schema<IClickLog>({
 export interface ISubscriber extends Document {
   email: string;
   subscribed_at: Date;
+  email_status?: 'sent' | 'opened';
+  last_email_id?: string;
+  opened_at?: Date;
 }
 
 const SubscriberSchema = new Schema<ISubscriber>({
   email: { type: String, required: true, unique: true },
-  subscribed_at: { type: Date, default: Date.now }
+  subscribed_at: { type: Date, default: Date.now },
+  email_status: { type: String, enum: ['sent', 'opened'], default: 'sent' },
+  last_email_id: { type: String },
+  opened_at: { type: Date }
 });
 
 // 9. Setting

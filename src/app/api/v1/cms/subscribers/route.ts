@@ -17,6 +17,8 @@ export async function GET(req: Request) {
       id: s._id.toString(),
       email: s.email,
       subscribedAt: s.subscribed_at,
+      emailStatus: s.email_status || 'sent',
+      openedAt: s.opened_at,
     }));
 
     const totalCount = list.length;
@@ -35,6 +37,7 @@ export async function GET(req: Request) {
           totalSubscribers: totalCount,
           countToday,
           countThisWeek,
+          openedCount: list.filter((s) => s.emailStatus === 'opened').length,
         },
       },
     });

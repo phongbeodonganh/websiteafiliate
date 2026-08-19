@@ -26,22 +26,21 @@ export async function POST(req: Request) {
 
     await connectToDatabase();
     const existing = await SubscriberModel.findOne({ email: cleanEmail });
-
-    if (existing) {
-      return NextResponse.json({
-        status: 'success',
-        message: 'You are already subscribed to our exclusive research briefings!',
-      });
-    }
-
-    const subscriber = await SubscriberModel.create({ email: cleanEmail });
+    const subscriber = existing ?? await SubscriberModel.create({ email: cleanEmail });
 
     try {
-      await sendInsiderWelcomeEmail(cleanEmail);
-    } catch (emailError) {
-      await SubscriberModel.findByIdAndDelete(subscriber._id).catch((rollbackError) => {
-        console.error('Subscriber rollback error:', rollbackError);
+      const emailResult = await sendInsiderWelcomeEmail(cleanEmail);
+      await SubscriberModel.findByIdAndUpdate(subscriber._id, {
+        email_status: 'sent',
+        last_email_id: emailResult.id,
+        $unset: { opened_at: 1 },
       });
+    } catch (emailError) {
+      if (!existing) {
+        await SubscriberModel.findByIdAndDelete(subscriber._id).catch((rollbackError) => {
+          console.error('Subscriber rollback error:', rollbackError);
+        });
+      }
       console.error('Welcome email error:', emailError);
       return NextResponse.json(
         { status: 'error', message: 'We could not send the confirmation email. Please try again.' },
