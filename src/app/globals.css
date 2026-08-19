@@ -426,3 +426,26 @@ input[type="submit"]:active,
   text-decoration: underline;
   font-weight: 600;
 }
+
+/* ── Rich Text Editor (admin) — căn ảnh & highlight tìm kiếm ── */
+.img-align-left {
+    float: left;
+    margin: 0.25rem 1rem 0.5rem 0;
+}
+.img-align-right {
+    float: right;
+    margin: 0.25rem 0 0.5rem 1rem;
+}
+.img-align-center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.search-result {
+    background-color: rgba(251, 191, 36, 0.35);
+    border-radius: 2px;
+}
+.search-result-current {
+    background-color: rgba(251, 191, 36, 0.75);
+    border-radius: 2px;
+}
