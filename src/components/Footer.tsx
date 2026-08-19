@@ -42,7 +42,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
             <h4 className="text-slate-900 font-bold text-sm mb-4">Quick Links</h4>
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/admin/login" className="hover:text-[#0056B3] transition-colors flex items-center gap-1">CMS Login <ExternalLink className="w-3 h-3" /></Link></li>
-              <li><Link href="/" className="hover:text-[#0056B3] transition-colors">Tech &amp; Finance News</Link></li>
+              <li><Link href="/" className="hover:text-[#0056B3] transition-colors">AIDEALSUK</Link></li>
               <li><Link href="/figma-tech-finance-news/affiliates" className="hover:text-[#0056B3] transition-colors">Affiliate Deals</Link></li>
             </ul>
           </div>

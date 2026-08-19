@@ -917,15 +917,14 @@ export default function AdminDashboardPage() {
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                        idx === 0
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : idx === 1
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${idx === 0
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : idx === 1
                           ? 'bg-slate-300/20 text-slate-300'
                           : idx === 2
-                          ? 'bg-amber-700/20 text-amber-600'
-                          : 'bg-slate-800 text-slate-500'
-                      }`}
+                            ? 'bg-amber-700/20 text-amber-600'
+                            : 'bg-slate-800 text-slate-500'
+                        }`}
                     >
                       #{idx + 1}
                     </div>
@@ -1032,13 +1031,12 @@ export default function AdminDashboardPage() {
                 </td>
                 <td className="p-4">
                   <span
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 w-max ${
-                      u.role === 'admin'
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : u.role === 'editor'
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 w-max ${u.role === 'admin'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : u.role === 'editor'
                         ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                         : 'bg-slate-800 text-slate-300 border border-slate-700'
-                    }`}
+                      }`}
                   >
                     {u.role === 'admin' && <Shield size={12} />}
                     {u.role.toUpperCase()}
@@ -1047,9 +1045,8 @@ export default function AdminDashboardPage() {
                 <td className="p-4">
                   <span className="flex items-center gap-2 text-xs">
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        u.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-600'
-                      }`}
+                      className={`w-2 h-2 rounded-full ${u.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-600'
+                        }`}
                     ></span>
                     <span className={u.status === 'active' ? 'text-slate-300' : 'text-slate-500'}>
                       {u.status === 'active' ? 'Active' : 'Inactive'}
@@ -1203,11 +1200,10 @@ export default function AdminDashboardPage() {
                 )}
                 <td className="p-4">
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 w-max uppercase tracking-wider ${
-                      art.status === 'published'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700'
-                    }`}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 w-max uppercase tracking-wider ${art.status === 'published'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      }`}
                   >
                     {art.status === 'published' ? <CheckCircle2 size={12} /> : <CircleDashed size={12} />}
                     {art.status === 'published' ? 'Published' : 'Draft'}
@@ -1331,22 +1327,22 @@ export default function AdminDashboardPage() {
       typeof editingArticle?.keyTakeaways === 'string'
         ? editingArticle.keyTakeaways
         : Array.isArray(editingArticle?.keyTakeaways || editingArticle?.key_takeaways)
-        ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
-        : ''
+          ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
+          : ''
     );
     const [entitiesText, setEntitiesText] = useState<string>(
       typeof editingArticle?.entities === 'string'
         ? editingArticle.entities
         : Array.isArray(editingArticle?.entities)
-        ? editingArticle.entities.join(', ')
-        : ''
+          ? editingArticle.entities.join(', ')
+          : ''
     );
     const [faqRows, setFaqRows] = useState<Array<{ question: string; answer: string }>>(
       Array.isArray(editingArticle?.faqSchema || editingArticle?.faq_schema) && (editingArticle?.faqSchema || editingArticle?.faq_schema).length > 0
         ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
         : Array.isArray(editingArticle?.faq_list) && editingArticle.faq_list.length > 0
-        ? editingArticle.faq_list
-        : [{ question: '', answer: '' }]
+          ? editingArticle.faq_list
+          : [{ question: '', answer: '' }]
     );
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
@@ -1401,7 +1397,7 @@ export default function AdminDashboardPage() {
             return;
           }
         }
-      } catch {}
+      } catch { }
       setKeyTakeawaysText(
         `- Phân tích giải pháp cho bài viết "${title || 'AI Insights'}".\n- Tích hợp mô hình Generative Engine mới nhất.\n- Tối ưu hóa quy trình tự động hóa.`
       );
@@ -1904,44 +1900,41 @@ export default function AdminDashboardPage() {
                   );
 
                   return (
-                  <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
-                    <p className="text-xs font-bold text-white truncate">{link.name}</p>
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => togglePlacement(link.id, 'top_cta')}
-                        className={`flex-1 border text-[10px] font-semibold py-1 rounded ${
-                          topActive
+                    <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
+                      <p className="text-xs font-bold text-white truncate">{link.name}</p>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => togglePlacement(link.id, 'top_cta')}
+                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${topActive
                             ? 'bg-amber-500/30 text-amber-300 border-amber-400'
                             : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
-                        }`}
-                      >
-                        + Top CTA
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => togglePlacement(link.id, 'middle_comparison')}
-                        className={`flex-1 border text-[10px] font-semibold py-1 rounded ${
-                          middleActive
+                            }`}
+                        >
+                          + Top CTA
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePlacement(link.id, 'middle_comparison')}
+                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${middleActive
                             ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400'
                             : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-                        }`}
-                      >
-                        + Middle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => togglePlacement(link.id, 'footer_banner')}
-                        className={`flex-1 border text-[10px] font-semibold py-1 rounded ${
-                          footerActive
+                            }`}
+                        >
+                          + Middle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePlacement(link.id, 'footer_banner')}
+                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${footerActive
                             ? 'bg-purple-500/30 text-purple-300 border-purple-400'
                             : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/30'
-                        }`}
-                      >
-                        + Footer
-                      </button>
+                            }`}
+                        >
+                          + Footer
+                        </button>
+                      </div>
                     </div>
-                  </div>
                   );
                 })}
               </div>
@@ -1989,44 +1982,44 @@ export default function AdminDashboardPage() {
           onClick={(e) => e.stopPropagation()}
         >
           <nav className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            NEXUS<span className="text-amber-400 font-light">FINANCE</span>
-          </div>
-          <button
-            onClick={onBack}
-            className="text-sm text-slate-400 hover:text-white flex items-center gap-1 border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
-          >
-            Close Preview
-          </button>
-        </div>
-      </nav>
+            <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+              <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                NEXUS<span className="text-amber-400 font-light">FINANCE</span>
+              </div>
+              <button
+                onClick={onBack}
+                className="text-sm text-slate-400 hover:text-white flex items-center gap-1 border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
+              >
+                Close Preview
+              </button>
+            </div>
+          </nav>
 
-      <article className="max-w-3xl mx-auto px-6 py-16">
-        <div className="mb-10 text-center">
-          <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">In-Depth Analysis</div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{article.title}</h1>
-          <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
-            <span>By <strong>{article.authorName || 'Global Analyst'}</strong></span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} views
-            </span>
-          </div>
-        </div>
+          <article className="max-w-3xl mx-auto px-6 py-16">
+            <div className="mb-10 text-center">
+              <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">In-Depth Analysis</div>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{article.title}</h1>
+              <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
+                <span>By <strong>{article.authorName || 'Global Analyst'}</strong></span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} views
+                </span>
+              </div>
+            </div>
 
-        {article.thumbnailUrl && (
-          <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-slate-800 mb-10">
-            <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
-          </div>
-        )}
+            {article.thumbnailUrl && (
+              <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-slate-800 mb-10">
+                <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
+              </div>
+            )}
 
-        <div
-          className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif"
-          dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(article.content) }}
-        />
-      </article>
+            <div
+              className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif"
+              dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(article.content) }}
+            />
+          </article>
         </div>
       </div>
     );
@@ -2073,11 +2066,10 @@ export default function AdminDashboardPage() {
               onChange={(e) => handleCheckAffUrl(e.target.value)}
               placeholder="https://binance.com/en/register?ref=123"
               required
-              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs transition-colors ${
-                affUrlBlacklistError?.isError
-                  ? 'border-rose-500 bg-rose-500/10 text-rose-300 focus:outline-none'
-                  : 'border-slate-800 text-white'
-              }`}
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs transition-colors ${affUrlBlacklistError?.isError
+                ? 'border-rose-500 bg-rose-500/10 text-rose-300 focus:outline-none'
+                : 'border-slate-800 text-white'
+                }`}
             />
           </div>
           <div>
@@ -2242,22 +2234,20 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={() => setActiveBlacklistTab('repository')}
-            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-              activeBlacklistTab === 'repository'
-                ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-            }`}
+            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${activeBlacklistTab === 'repository'
+              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
           >
             <ShieldAlert size={16} /> Tab 1: Danh sách Blacklist ({blacklistList.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveBlacklistTab('rules')}
-            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-              activeBlacklistTab === 'rules'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-            }`}
+            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${activeBlacklistTab === 'rules'
+              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
           >
             <Sliders size={16} /> Tab 2: Cấu hình Quy tắc Chặn
           </button>
@@ -2865,22 +2855,20 @@ export default function AdminDashboardPage() {
         <button
           type="button"
           onClick={() => setSettingsSection('appearance')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-            settingsSection === 'appearance'
-              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-          }`}
+          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${settingsSection === 'appearance'
+            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
         >
           <Palette size={16} /> UI Appearance & Colors
         </button>
         <button
           type="button"
           onClick={() => setSettingsSection('seo_geo')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-            settingsSection === 'seo_geo'
-              ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-          }`}
+          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${settingsSection === 'seo_geo'
+            ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
         >
           <Globe size={16} /> SEO & GEO AI Engine
         </button>
@@ -3343,11 +3331,10 @@ export default function AdminDashboardPage() {
     return (
       <button
         onClick={() => navigate({ tab: id })}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium text-sm cursor-pointer ${
-          isActive
-            ? 'bg-gradient-to-r from-amber-500/15 to-transparent text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]'
-            : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-        }`}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium text-sm cursor-pointer ${isActive
+          ? 'bg-gradient-to-r from-amber-500/15 to-transparent text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]'
+          : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+          }`}
       >
         <Icon size={18} className={isActive ? 'text-amber-400' : 'text-slate-500'} /> {label}
       </button>

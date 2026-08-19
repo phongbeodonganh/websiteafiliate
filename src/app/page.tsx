@@ -3,7 +3,7 @@ import TechFinanceNewsClient from "./figma-tech-finance-news/news-client";
 import { getHomepageArticles } from "@/lib/homepage-articles";
 
 export const metadata: Metadata = {
-  title: "Tech & Finance News",
+  title: "AIDEALSUK - Technology News",
   description: "Latest technology and finance articles from AIDEALSUK.",
 };
 

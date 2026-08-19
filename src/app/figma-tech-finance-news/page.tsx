@@ -21,7 +21,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const canonicalUrl = `${baseUrl}/figma-tech-finance-news`;
 
   return {
-    title: "Tech & Finance News",
+    title: "AIDEALSUK - Technology News",
     description: "Latest technology and finance articles from AIDEALSUK.",
     alternates: { canonical: canonicalUrl },
     ...(q ? { robots: { index: false, follow: true } } : {}),
