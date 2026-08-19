@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
+import PublicMotion from "@/components/PublicMotion";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -13,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
     const ogImg = sysSettings?.ogImageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
 
     return {
+      applicationName: "AIDEALSUK",
       title: {
         default: siteTitle,
         template: `%s | ${siteTitle}`,
@@ -34,12 +36,20 @@ export async function generateMetadata(): Promise<Metadata> {
         type: "website",
         images: [{ url: ogImg, width: 1200, height: 630, alt: siteTitle }],
       },
-      icons: sysSettings?.favicon_url ? [{ rel: "icon", url: sysSettings.favicon_url }] : undefined,
+      icons: {
+        icon: sysSettings?.favicon_url || "/favicon/favicon.png",
+        shortcut: sysSettings?.favicon_url || "/favicon/favicon.png",
+      },
     };
   } catch (error) {
     return {
+      applicationName: "AIDEALSUK",
       title: "AIDEALSUK",
       description: "Your Trusted Source for AI Tool Reviews, Tech News & Exclusive Affiliate Deals.",
+      icons: {
+        icon: "/favicon/favicon.png",
+        shortcut: "/favicon/favicon.png",
+      },
     };
   }
 }
@@ -100,6 +110,7 @@ export default async function RootLayout({
         )}
       </head>
       <body className="min-h-full flex flex-col bg-[#F8F9FA] text-slate-700 font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B]">
+        <PublicMotion />
         {children}
       </body>
     </html>

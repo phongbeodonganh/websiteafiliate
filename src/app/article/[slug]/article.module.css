@@ -127,7 +127,26 @@
   border-collapse: collapse;
   display: block;
   overflow-x: auto;
+  table-layout: auto;
   width: 100%;
+}
+
+.articleContent :is(th, td) {
+  border: 1px solid #d7d7d7;
+  box-sizing: border-box;
+  min-width: calc(10ch + 28px);
+  overflow-wrap: break-word;
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  width: auto;
+  word-break: normal;
+}
+
+.articleContent th {
+  background: #f3f4f6;
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .articleContent pre {

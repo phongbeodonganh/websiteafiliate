@@ -189,9 +189,14 @@ input[type="submit"]:active,
   outline-offset: 3px;
 }
 
-/* Public editorial motion. Motion is opt-in; content is never held invisible. */
+/* Keep motion elements at their tween start state before hydration/observation. */
+[data-motion]:not([data-motion-visible="true"]) {
+  opacity: 0;
+  transform: scale(0);
+}
+
 .public-motion-ready [data-motion][data-motion-visible="true"] {
-  animation: public-motion-pop 340ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: public-motion-pop 255ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
   animation-delay: var(--motion-delay, 0ms);
 }
 
@@ -204,13 +209,13 @@ input[type="submit"]:active,
 }
 
 @keyframes public-motion-pop {
-  0% { opacity: 0; transform: translate3d(0, 8px, 0) scale(0.955); }
+  0% { opacity: 0; transform: translate3d(0, 8px, 0) scale(0); }
   72% { opacity: 1; transform: translate3d(0, 0, 0) scale(1.008); }
   100% { opacity: 1; transform: none; }
 }
 
 @keyframes public-motion-pop-soft {
-  0% { opacity: 0; transform: scale(0.98); }
+  0% { opacity: 0; transform: scale(0); }
   100% { opacity: 1; transform: none; }
 }
 
@@ -339,10 +344,13 @@ input[type="submit"]:active,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  [data-motion]:not([data-motion-visible="true"]),
   .public-motion-ready [data-motion],
   .public-motion-ready [data-motion] img {
     animation: none;
     transition: none;
+    opacity: 1;
+    transform: none;
   }
 
   .affiliate-sheet-backdrop,

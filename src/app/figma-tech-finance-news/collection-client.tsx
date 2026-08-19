@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Clock, Eye, Loader2, ShieldCheck, Star } from 'lucide-react';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
-import PublicMotion from '@/components/PublicMotion';
 import EditorialBackdrop from '@/components/EditorialBackdrop';
 import PublicArticleImage, { ARTICLE_PLACEHOLDER } from '@/components/PublicArticleImage';
 import EditorialHeader from '@/components/EditorialHeader';
@@ -162,7 +161,6 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
 
   return (
     <main className={styles.page}>
-      <PublicMotion />
       <EditorialBackdrop section={config.title} />
       <EditorialHeader initialSearchQuery={activeQuery} />
 

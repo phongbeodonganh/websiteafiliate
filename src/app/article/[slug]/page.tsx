@@ -9,9 +9,9 @@ import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
-import PublicMotion from '@/components/PublicMotion';
 import EditorialBackdrop from '@/components/EditorialBackdrop';
 import PublicArticleImage from '@/components/PublicArticleImage';
+import ArticleContent from '@/components/ArticleContent';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -147,7 +147,6 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
   return (
     <div className={styles.page}>
-      <PublicMotion />
       <EditorialBackdrop section={categoryName || 'ARTICLE'} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
@@ -178,7 +177,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
           </div>
           {keyTakeaways.length > 0 && <section className={styles.takeaways} data-motion="rise"><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
-          <div className={styles.articleContent} dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }} />
+          <ArticleContent className={styles.articleContent} html={sanitizeArticleContent(doc.content)} />
 
           {placements.length > 0 && <section className={styles.placements} data-motion="rise">
             <h2>Recommended Offers</h2>

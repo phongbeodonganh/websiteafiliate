@@ -53,18 +53,26 @@ export default function CategoryArticleSections() {
     const target = triggerRef.current;
     if (!target || started) return;
 
+    const startLoading = () => setStarted(true);
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setStarted(true);
+          startLoading();
           observer.disconnect();
         }
       },
-      { rootMargin: '500px 0px' },
+      { rootMargin: '1500px 0px' },
     );
 
     observer.observe(target);
-    return () => observer.disconnect();
+    window.addEventListener('scroll', startLoading, { passive: true, once: true });
+
+    if (window.scrollY > 0) startLoading();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', startLoading);
+    };
   }, [started]);
 
   useEffect(() => {
