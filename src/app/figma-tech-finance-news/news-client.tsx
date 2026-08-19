@@ -8,7 +8,6 @@ import TopPicksWidget from "@/components/TopPicksWidget";
 import CategoryArticleSections from "@/components/CategoryArticleSections";
 import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
-import PublicMotion from "@/components/PublicMotion";
 import EditorialBackdrop from "@/components/EditorialBackdrop";
 import PublicArticleImage, { ARTICLE_PLACEHOLDER } from "@/components/PublicArticleImage";
 import styles from "./page.module.css";
@@ -165,7 +164,6 @@ export default function TechFinanceNewsClient({
 
   return (
     <main className={styles.page}>
-      <PublicMotion />
       <EditorialBackdrop section="NEWSROOM" />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
@@ -275,7 +273,7 @@ export default function TechFinanceNewsClient({
         <LeadCapture variant="editorial" />
       </div>
 
-      <div className={styles.categorySections} data-motion="rise">
+      <div className={styles.categorySections}>
         <CategoryArticleSections />
       </div>
 

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
+import PublicMotion from "@/components/PublicMotion";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -100,6 +101,7 @@ export default async function RootLayout({
         )}
       </head>
       <body className="min-h-full flex flex-col bg-[#F8F9FA] text-slate-700 font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B]">
+        <PublicMotion />
         {children}
       </body>
     </html>

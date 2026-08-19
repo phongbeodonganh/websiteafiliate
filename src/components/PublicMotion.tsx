@@ -23,7 +23,7 @@ export default function PublicMotion() {
         (entry.target as HTMLElement).dataset.motionVisible = 'true';
         intersectionObserver.unobserve(entry.target);
       }),
-      { rootMargin: '0px 0px -6% 0px', threshold: 0.01 },
+      { rootMargin: '0px 0px 75% 0px', threshold: 0.01 },
     );
 
     const observe = (scope: ParentNode) => {
@@ -46,6 +46,9 @@ export default function PublicMotion() {
     return () => {
       intersectionObserver.disconnect();
       mutationObserver.disconnect();
+      document.querySelectorAll<HTMLElement>('[data-motion-observed="true"]').forEach((element) => {
+        delete element.dataset.motionObserved;
+      });
       root.classList.remove('public-motion-ready');
     };
   }, []);
