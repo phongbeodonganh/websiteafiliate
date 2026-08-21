@@ -15,6 +15,7 @@ import ArticleContent from '@/components/ArticleContent';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
+import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
 
 export const revalidate = 0;
@@ -36,19 +37,28 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     SettingModel.findOne(),
   ]);
   const siteTitle = settings?.site_title || 'AIDEALSUK';
-  if (!article) return { title: `Article Not Found | ${siteTitle}` };
+  if (!article) return { title: 'Article Not Found', robots: { index: false, follow: false } };
   const title = article.meta_title || article.title;
   const description = article.meta_description || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
-  const baseUrl = settings?.canonicalUrl || 'https://aidealsuk.com';
+  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  const canonicalUrl = `${baseUrl}/article/${article.slug}`;
+  const socialImage = normalizeHttpUrl(article.thumbnail_url, normalizeHttpUrl(settings?.ogImageUrl, DEFAULT_OG_IMAGE));
   return {
-    title: `${title} | ${siteTitle}`,
+    title,
     description,
-    alternates: { canonical: `${baseUrl}/article/${article.slug}` },
+    alternates: { canonical: canonicalUrl },
     openGraph: {
-      title, description, url: `${baseUrl}/article/${article.slug}`, siteName: siteTitle,
-      locale: 'en_US', type: 'article',
+      title, description, url: canonicalUrl, siteName: siteTitle,
+      locale: normalizeLocale(settings?.hreflang), type: 'article',
       publishedTime: article.created_at ? new Date(article.created_at).toISOString() : undefined,
-      images: article.thumbnail_url ? [{ url: article.thumbnail_url, width: 1200, height: 630, alt: title }] : [],
+      modifiedTime: article.updated_at ? new Date(article.updated_at).toISOString() : undefined,
+      images: [{ url: socialImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [socialImage],
     },
   };
 }
@@ -116,17 +126,14 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     ...(doc.thumbnail_url ? { image: [doc.thumbnail_url] } : {}), datePublished: doc.created_at,
     dateModified: doc.updated_at || doc.created_at,
     ...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
-    publisher: { '@type': 'Organization', name: 'AIDEALSUK' },
+    mainEntityOfPage: `${normalizeSiteUrl(settings?.canonicalUrl)}/article/${doc.slug}`,
+    publisher: { '@type': 'Organization', name: settings?.site_title || 'AIDEALSUK' },
   };
-  const faqSchemaData = Array.isArray(doc.faq_schema) && doc.faq_schema.length ? {
-    '@context': 'https://schema.org', '@type': 'FAQPage',
-    mainEntity: doc.faq_schema.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })),
-  } : null;
 
   // SEO-04: BreadcrumbList — Home > Category (nếu bài có category) > Bài viết.
   // Trang bài viết hiện chỉ populate category_id (không có sub_category), nên
   // breadcrumb chỉ đi tới đúng cấp dữ liệu thực sự có sẵn.
-  const baseUrl = (settings?.canonicalUrl || 'https://aidealsuk.com').replace(/\/$/, '');
+  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
   const breadcrumbItems = [
     { name: 'Home', url: baseUrl },
     ...(categoryName && categorySlug
@@ -148,9 +155,8 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   return (
     <div className={styles.page}>
       <EditorialBackdrop section={categoryName || 'ARTICLE'} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }} />
       <EditorialHeader />
       <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 

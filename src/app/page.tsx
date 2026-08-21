@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import TechFinanceNewsClient from "./news-client";
 import { getHomepageArticles } from "@/lib/homepage-articles";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "AIDEALSUK - Technology News",
+export const metadata: Metadata = createPageMetadata({
+  title: "Technology News",
   description: "Latest technology and finance articles from AIDEALSUK.",
-};
+  path: "/",
+});
 
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

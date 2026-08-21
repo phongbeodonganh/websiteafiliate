@@ -4,48 +4,79 @@ import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
 import PublicMotion from "@/components/PublicMotion";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_OG_IMAGE,
+  DEFAULT_SITE_NAME,
+  normalizeLocale,
+  normalizeHttpUrl,
+  normalizeSiteUrl,
+  sanitizeStoredJsonLd,
+} from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
     await connectToDatabase();
     const sysSettings = await SettingModel.findOne();
-    const siteTitle = sysSettings?.site_title || "AIDEALSUK";
-    const desc = sysSettings?.metaDescription || "Discover high-paying AI affiliate programs, comprehensive AI tool reviews, and expert monetization strategies.";
-    const ogImg = sysSettings?.ogImageUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop";
+    const siteTitle = sysSettings?.site_title || DEFAULT_SITE_NAME;
+    const desc = sysSettings?.metaDescription || DEFAULT_DESCRIPTION;
+    const ogImg = normalizeHttpUrl(sysSettings?.ogImageUrl, DEFAULT_OG_IMAGE);
+    const baseUrl = normalizeSiteUrl(sysSettings?.canonicalUrl);
+    const locale = normalizeLocale(sysSettings?.hreflang);
 
     return {
-      applicationName: "AIDEALSUK",
+      metadataBase: new URL(baseUrl),
+      applicationName: siteTitle,
       title: {
         default: siteTitle,
         template: `%s | ${siteTitle}`,
       },
       description: desc,
-      keywords: sysSettings?.focusKeywords ? sysSettings.focusKeywords.split(',').map((k) => k.trim()) : ["ai affiliate", "ai tools", "jasper ai", "elevenlabs"],
       alternates: {
-        canonical: sysSettings?.canonicalUrl || "/",
-        languages: {
-          [sysSettings?.hreflang || "en-US"]: "/",
-        },
+        canonical: "/",
       },
       openGraph: {
         title: siteTitle,
         description: desc,
-        url: sysSettings?.canonicalUrl || "https://aidealsuk.com",
+        url: "/",
         siteName: siteTitle,
-        locale: sysSettings?.hreflang || "en_US",
+        locale,
         type: "website",
         images: [{ url: ogImg, width: 1200, height: 630, alt: siteTitle }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: siteTitle,
+        description: desc,
+        images: [ogImg],
       },
       icons: {
         icon: sysSettings?.favicon_url || "/favicon/favicon.png",
         shortcut: sysSettings?.favicon_url || "/favicon/favicon.png",
       },
     };
-  } catch (error) {
+  } catch {
     return {
-      applicationName: "AIDEALSUK",
-      title: "AIDEALSUK",
-      description: "Your Trusted Source for AI Tool Reviews, Tech News & Exclusive Affiliate Deals.",
+      metadataBase: new URL(normalizeSiteUrl()),
+      applicationName: DEFAULT_SITE_NAME,
+      title: { default: DEFAULT_SITE_NAME, template: `%s | ${DEFAULT_SITE_NAME}` },
+      description: DEFAULT_DESCRIPTION,
+      alternates: { canonical: "/" },
+      openGraph: {
+        title: DEFAULT_SITE_NAME,
+        description: DEFAULT_DESCRIPTION,
+        url: "/",
+        siteName: DEFAULT_SITE_NAME,
+        locale: "en_US",
+        type: "website",
+        images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: DEFAULT_SITE_NAME }],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: DEFAULT_SITE_NAME,
+        description: DEFAULT_DESCRIPTION,
+        images: [DEFAULT_OG_IMAGE],
+      },
       icons: {
         icon: "/favicon/favicon.png",
         shortcut: "/favicon/favicon.png",
@@ -70,7 +101,7 @@ export default async function RootLayout({
   try {
     await connectToDatabase();
     sysSettings = await SettingModel.findOne();
-  } catch (e) { }
+  } catch { }
 
   const geoRegion = sysSettings?.geo_region_name || "US-NY";
   const geoPlace = sysSettings?.geo_placename || "New York";
@@ -80,6 +111,7 @@ export default async function RootLayout({
   const accentColor = sysSettings?.accent_color || "#000000";
   const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
+  const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);
 
   return (
     <html lang={sysSettings?.hreflang || "en"} className="h-full antialiased dark">
@@ -102,10 +134,10 @@ export default async function RootLayout({
             ${customCss}
           `
         }} />
-        {schemaJsonld && (
+        {safeSchemaJsonld && (
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: schemaJsonld }}
+            dangerouslySetInnerHTML={{ __html: safeSchemaJsonld }}
           />
         )}
       </head>
