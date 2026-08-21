@@ -152,7 +152,7 @@ export default function TechFinanceNewsClient({
     setError("");
     if (activeQuery) {
       setLoading(true);
-      router.push('/figma-tech-finance-news');
+      router.push('/');
     }
   }
 
@@ -216,7 +216,7 @@ export default function TechFinanceNewsClient({
                 <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
               </article>
             ))}
-            <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/hottest">VIEW ALL HOTTEST ARTICLES</Link>
+            <Link className={styles.sectionViewAll} href="/hottest">VIEW ALL HOTTEST ARTICLES</Link>
           </section>
 
           <section className={styles.editorial} aria-labelledby="editorial-title" data-motion="rise">
@@ -243,7 +243,7 @@ export default function TechFinanceNewsClient({
                 ))}
               </div>
             )}
-            <Link className={styles.sectionViewAll} href="/figma-tech-finance-news/editorial-picks">VIEW ALL EDITORIAL PICKS</Link>
+            <Link className={styles.sectionViewAll} href="/editorial-picks">VIEW ALL EDITORIAL PICKS</Link>
           </section>
 
           <aside className={styles.latest} aria-labelledby="latest-title" data-motion="rise" style={{ '--motion-delay': '70ms' } as React.CSSProperties}>
@@ -260,13 +260,13 @@ export default function TechFinanceNewsClient({
                 </article>
               ))}
             </div>
-            <Link className={styles.blackButton} href="/figma-tech-finance-news/latest">VIEW ALL LATEST ARTICLES</Link>
+            <Link className={styles.blackButton} href="/latest">VIEW ALL LATEST ARTICLES</Link>
           </aside>
         </div>
       )}
 
       <div className={styles.affiliateSection} data-motion="rise">
-        <TopPicksWidget variant="editorial" viewAllHref="/figma-tech-finance-news/affiliates" />
+        <TopPicksWidget variant="editorial" viewAllHref="/affiliates" />
       </div>
 
       <div className={styles.leadCapture} data-motion="fade">

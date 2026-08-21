@@ -19,7 +19,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || searchParams.get('q') || '');
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isHome = pathname === '/' || pathname === '/figma-tech-finance-news';
+  const isHome = pathname === '/';
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -40,9 +40,9 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   const handleSearch = () => {
     const trimmed = searchQuery.trim();
     if (trimmed) {
-      router.push(`/figma-tech-finance-news?q=${encodeURIComponent(trimmed)}`);
+      router.push(`/?q=${encodeURIComponent(trimmed)}`);
     } else {
-      router.push('/figma-tech-finance-news');
+      router.push('/');
     }
   };
 

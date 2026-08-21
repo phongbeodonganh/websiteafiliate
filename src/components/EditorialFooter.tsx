@@ -27,8 +27,8 @@ function loadCategories() {
 
 /**
  * Unified editorial footer used across every public-facing route:
- *   - /figma-tech-finance-news  (home)
- *   - /figma-tech-finance-news/latest | hottest | editorial-picks | affiliates | category/[slug]
+ *   - /  (home)
+ *   - /latest | hottest | editorial-picks | affiliates | category/[slug]
  *   - /article/[slug]
  *
  * Provides trust signals (About / Privacy / Terms / Contact), category
@@ -127,22 +127,22 @@ export default function EditorialFooter() {
           <h4 style={colHeadingStyle}>Quick Links</h4>
           <ul style={listStyle}>
             <li>
-              <Link href="/figma-tech-finance-news/latest" style={linkStyle}>
+              <Link href="/latest" style={linkStyle}>
                 Latest Articles
               </Link>
             </li>
             <li>
-              <Link href="/figma-tech-finance-news/hottest" style={linkStyle}>
+              <Link href="/hottest" style={linkStyle}>
                 Hottest Articles
               </Link>
             </li>
             <li>
-              <Link href="/figma-tech-finance-news/editorial-picks" style={linkStyle}>
+              <Link href="/editorial-picks" style={linkStyle}>
                 Editorial Picks
               </Link>
             </li>
             <li>
-              <Link href="/figma-tech-finance-news/affiliates" style={linkStyle}>
+              <Link href="/affiliates" style={linkStyle}>
                 Affiliate Deals
               </Link>
             </li>
@@ -156,7 +156,7 @@ export default function EditorialFooter() {
             {categories.slice(0, 5).map((cat) => (
               <li key={cat.id}>
                 <Link
-                  href={`/figma-tech-finance-news/category/${cat.slug}`}
+                  href={`/category/${cat.slug}`}
                   style={linkStyle}
                 >
                   {cat.name}

@@ -37,11 +37,18 @@ export async function POST(req: Request) {
       );
     }
 
-    await ClickLogModel.create({
-      article_id: article._id,
-      affiliate_link_id: affiliateLink._id,
-      ip_address: getClientIp(req),
-    });
+    await Promise.all([
+      ClickLogModel.create({
+        article_id: article._id,
+        affiliate_link_id: affiliateLink._id,
+        ip_address: getClientIp(req),
+      }),
+      AffiliateLinkModel.findByIdAndUpdate(
+        affiliateLink._id,
+        { $inc: { click_count: 1 } },
+        { new: true, strict: false }
+      ),
+    ]);
 
     return NextResponse.json({
       status: 'success',

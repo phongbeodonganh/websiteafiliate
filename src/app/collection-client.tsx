@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Clock, Eye, Loader2, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, CalendarDays, Clock, Eye, Loader2, MousePointerClick, ShieldCheck, Star } from 'lucide-react';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialBackdrop from '@/components/EditorialBackdrop';
 import PublicArticleImage, { ARTICLE_PLACEHOLDER } from '@/components/PublicArticleImage';
@@ -34,12 +34,28 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatDateTime(dateStr?: string) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 interface Affiliate {
   id: string;
   name: string;
   commission: string;
   cookie: string;
   isTopPick: boolean;
+  clickCount?: number;
+  click_count?: number;
+  createdAt?: string;
 }
 
 interface Pagination {
@@ -91,6 +107,8 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
+  const [affiliateSort, setAffiliateSort] = useState<'latest' | 'clicks' | 'commission' | 'cookie'>('latest');
+
   const categoryLabel = categorySlug
     ? categorySlug.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
     : '';
@@ -104,6 +122,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
     if (kind === 'editorial') params.set('tab', 'hot');
     if (kind === 'hottest') params.set('tab', 'popular');
     if (kind === 'category' && categorySlug) params.set('category_slug', categorySlug);
+    if (kind === 'affiliates') params.set('sort', affiliateSort);
     if (activeQuery) params.set('q', activeQuery);
     const endpoint = kind === 'affiliates' ? '/api/v1/public/affiliates' : '/api/v1/public/articles';
 
@@ -127,13 +146,33 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
       });
 
     return () => controller.abort();
-  }, [activeQuery, categorySlug, kind]);
+  }, [activeQuery, categorySlug, kind, affiliateSort]);
 
   function clearSearch() {
     setError('');
     if (activeQuery) setLoading(true);
     setActiveQuery('');
   }
+
+  const handleSortChange = (newSort: 'latest' | 'clicks' | 'commission' | 'cookie') => {
+    if (newSort === affiliateSort) return;
+    setLoading(true);
+    setAffiliateSort(newSort);
+  };
+
+  const handleAffiliateClick = (id: string) => {
+    setAffiliates((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              clickCount: (item.clickCount || item.click_count || 0) + 1,
+              click_count: (item.clickCount || item.click_count || 0) + 1,
+            }
+          : item
+      )
+    );
+  };
 
   async function viewMore() {
     if (!pagination.hasMore || loadingMore) return;
@@ -142,6 +181,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
     if (kind === 'editorial') params.set('tab', 'hot');
     if (kind === 'hottest') params.set('tab', 'popular');
     if (kind === 'category' && categorySlug) params.set('category_slug', categorySlug);
+    if (kind === 'affiliates') params.set('sort', affiliateSort);
     if (activeQuery) params.set('q', activeQuery);
     const endpoint = kind === 'affiliates' ? '/api/v1/public/affiliates' : '/api/v1/public/articles';
 
@@ -176,6 +216,22 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
           <p className={styles.eyebrow}>{config.eyebrow}</p>
           <h1>{config.title}</h1>
           <p>{config.description}</p>
+          {kind === 'affiliates' && (
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-semibold uppercase tracking-wider text-neutral-500">Sort by:</span>
+              <select
+                aria-label="Sort affiliate deals"
+                value={affiliateSort}
+                onChange={(e) => handleSortChange(e.target.value as 'latest' | 'clicks' | 'commission' | 'cookie')}
+                className="h-8 border border-neutral-300 bg-white px-2.5 py-1 text-xs font-bold uppercase text-black outline-none cursor-pointer rounded"
+              >
+                <option value="latest">Latest Uploaded</option>
+                <option value="clicks">Most Clicked</option>
+                <option value="commission">Highest Commission (% Sale)</option>
+                <option value="cookie">Longest Cookie Window</option>
+              </select>
+            </div>
+          )}
         </header>
 
         {activeQuery && !loading && (
@@ -185,7 +241,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
           </div>
         )}
 
-        <div className={styles.collectionContent}>
+        <div className={`${styles.collectionContent} ${kind === 'affiliates' ? styles.affiliateCollectionContent : ''}`}>
           <div className={styles.collectionMain}>
             {error && <p className={styles.collectionError}>{error}</p>}
             {!loading && !error && articles.length === 0 && affiliates.length === 0 && (
@@ -211,15 +267,19 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
             )}
 
             {kind === 'affiliates' && (
-              <div className={styles.collectionGrid}>
+              <div className={`${styles.collectionGrid} ${styles.affiliateCollectionGrid}`}>
             {affiliates.map((affiliate, index) => (
               <article className={`${styles.affiliateCard} clickable-card`} key={affiliate.id} data-motion="scale" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
-                <a className="card-stretched-link" href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored" aria-label={`View affiliate deal for ${affiliate.name}`} />
-                <div className={styles.affiliateRank}><Star size={12} fill="currentColor" /> {affiliate.isTopPick ? 'TOP PICK' : `PARTNER ${index + 1}`}</div>
+                <a className="card-stretched-link" href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored" aria-label={`View affiliate deal for ${affiliate.name}`} onClick={() => handleAffiliateClick(affiliate.id)} />
+                {affiliate.isTopPick && (
+                  <div className={styles.affiliateRank}><Star size={12} fill="currentColor" /> TOP PICK</div>
+                )}
                 <h2>{affiliate.name}</h2>
                 <p><ShieldCheck size={15} /> Commission: <strong>{affiliate.commission}</strong></p>
                 <p><Clock size={15} /> Cookie window: <strong>{affiliate.cookie}</strong></p>
-                <a href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored">View deal <ArrowRight size={15} /></a>
+                <p><MousePointerClick size={15} /> Total clicks: <strong>{(affiliate.clickCount || affiliate.click_count || 0).toLocaleString()}</strong></p>
+                <p><CalendarDays size={15} /> Uploaded: <strong>{formatDateTime(affiliate.createdAt) || 'Unknown'}</strong></p>
+                <a href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="nofollow sponsored" onClick={() => handleAffiliateClick(affiliate.id)}>View deal <ArrowRight size={15} /></a>
               </article>
             ))}
               </div>
@@ -233,7 +293,7 @@ export default function CollectionClient({ kind, categorySlug }: { kind: Collect
             )}
           </div>
 
-          <VerticalAffiliateSidebar />
+          {kind !== 'affiliates' && <VerticalAffiliateSidebar />}
         </div>
       </div>
 

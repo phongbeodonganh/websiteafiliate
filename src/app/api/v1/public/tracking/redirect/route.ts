@@ -31,11 +31,18 @@ export async function GET(req: Request) {
       return NextResponse.redirect(fallbackUrl);
     }
 
-    await ClickLogModel.create({
-      ...(article ? { article_id: article._id } : {}),
-      affiliate_link_id: affiliateLink._id,
-      ip_address: getClientIp(req),
-    });
+    await Promise.all([
+      ClickLogModel.create({
+        ...(article ? { article_id: article._id } : {}),
+        affiliate_link_id: affiliateLink._id,
+        ip_address: getClientIp(req),
+      }),
+      AffiliateLinkModel.findByIdAndUpdate(
+        affiliateLink._id,
+        { $inc: { click_count: 1 } },
+        { new: true, strict: false }
+      ),
+    ]);
 
     const blacklistCheck = await checkUrlAgainstBlacklist(affiliateLink.base_url);
     if (affiliateLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {

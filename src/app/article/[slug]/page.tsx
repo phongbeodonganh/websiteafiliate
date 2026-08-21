@@ -130,7 +130,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const breadcrumbItems = [
     { name: 'Home', url: baseUrl },
     ...(categoryName && categorySlug
-      ? [{ name: categoryName, url: `${baseUrl}/figma-tech-finance-news/category/${categorySlug}` }]
+      ? [{ name: categoryName, url: `${baseUrl}/category/${categorySlug}` }]
       : []),
     { name: doc.title, url: `${baseUrl}/article/${doc.slug}` },
   ];
@@ -157,7 +157,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       <main className={styles.layout}>
         <article className={styles.articleBox}>
           {categoryName && (categorySlug
-            ? <Link className={styles.category} href={`/figma-tech-finance-news/category/${categorySlug}`}>{categoryName}</Link>
+            ? <Link className={styles.category} href={`/category/${categorySlug}`}>{categoryName}</Link>
             : <p className={styles.category}>{categoryName}</p>)}
           <h1>{doc.title}</h1>
           <div className="flex min-w-0 flex-wrap items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
@@ -201,7 +201,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           {latestArticles.length > 0 && <section className={styles.latestNews}>
             <p>Recently Published</p><h2>Latest News</h2>
             <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
-            <Link className={styles.latestAll} href="/figma-tech-finance-news/latest">View all latest <ArrowRight size={14} /></Link>
+            <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
           </section>}
         </div>
       </main>

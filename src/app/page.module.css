@@ -721,6 +721,14 @@
   min-width: 0;
 }
 
+.affiliateCollectionContent {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.affiliateCollectionGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .collectionMain {
   min-width: 0;
 }

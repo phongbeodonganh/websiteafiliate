@@ -25,7 +25,7 @@ export default function CategorySelector({ placement }: { placement: 'header' | 
   const router = useRouter();
   const pathname = usePathname();
   const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const currentSlug = pathname.match(/\/figma-tech-finance-news\/category\/([^/]+)/)?.[1] || '';
+  const currentSlug = pathname.match(/\/category\/([^/]+)/)?.[1] || '';
 
   useEffect(() => {
     let active = true;
@@ -38,7 +38,7 @@ export default function CategorySelector({ placement }: { placement: 'header' | 
   function selectCategory(event: ChangeEvent<HTMLSelectElement>) {
     const slug = event.target.value;
     if (!slug) return;
-    router.push(`/figma-tech-finance-news/category/${encodeURIComponent(slug)}`);
+    router.push(`/category/${encodeURIComponent(slug)}`);
   }
 
   return (

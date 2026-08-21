@@ -23,12 +23,14 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
   const editorial = variant === 'editorial';
 
   useEffect(() => {
-    fetch('/api/v1/public/top-picks')
+    fetch('/api/v1/public/affiliates?sort=clicks&limit=4')
       .then((response) => response.json())
       .then((data) => {
-        if (data.status === 'success') setPicks(data.data);
+        if (data.status === 'success' && Array.isArray(data.data)) {
+          setPicks(data.data.slice(0, 4));
+        }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,7 +48,7 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
         <div className="flex items-center gap-2">
           <Award className="w-5 h-5 text-black" />
           <h2 className="text-xl md:text-2xl font-bold text-black uppercase font-['Plus_Jakarta_Sans']">
-            Top Recommended AI Deals (Editor&apos;s Choice)
+            Hottest Affiliate Deals
           </h2>
         </div>
         <span

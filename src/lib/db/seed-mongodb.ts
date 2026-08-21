@@ -214,7 +214,10 @@ export async function seedMongoDB() {
     name: 'HeyGen Avatar Presenters',
     base_url: 'https://heygen.com/?sid=affiliate202',
     commission: '20% Recurring Commission',
+    commission_rate: 20,
     cookie: '30 Days',
+    cookie_days: 30,
+    click_count: 0,
     is_top_pick: true,
   });
 
@@ -222,23 +225,32 @@ export async function seedMongoDB() {
     name: 'Jasper AI Copywriter',
     base_url: 'https://jasper.ai/?fpr=affiliate123',
     commission: '30% Recurring Commission',
+    commission_rate: 30,
     cookie: '30 Days',
+    cookie_days: 30,
+    click_count: 0,
     is_top_pick: true,
   });
 
   const affElevenLabs = await AffiliateLinkModel.create({
     name: 'ElevenLabs Voice AI',
     base_url: 'https://elevenlabs.io/?from=affiliate456',
-    commission: '30% Recurring Commission',
-    cookie: '60 Days',
+    commission: '50% Recurring Commission',
+    commission_rate: 50,
+    cookie: '90 Days',
+    cookie_days: 90,
+    click_count: 0,
     is_top_pick: true,
   });
 
   const affCursor = await AffiliateLinkModel.create({
     name: 'Cursor AI Code Editor',
     base_url: 'https://cursor.com/?ref=affiliate789',
-    commission: '20% Recurring Commission',
+    commission: '15% Recurring Commission',
+    commission_rate: 15,
     cookie: '30 Days',
+    cookie_days: 30,
+    click_count: 0,
     is_top_pick: true,
   });
 
@@ -246,7 +258,10 @@ export async function seedMongoDB() {
     name: 'Surfer SEO AI',
     base_url: 'https://surferseo.com/?fpr=affiliate101',
     commission: '25% Recurring Commission',
+    commission_rate: 25,
     cookie: '60 Days',
+    cookie_days: 60,
+    click_count: 0,
     is_top_pick: true,
   });
 

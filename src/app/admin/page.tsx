@@ -2130,6 +2130,7 @@ export default function AdminDashboardPage() {
               <th className="p-4 font-medium">Campaign Name</th>
               <th className="p-4 font-medium">Commission Rate</th>
               <th className="p-4 font-medium">Cookie Window</th>
+              <th className="p-4 font-medium">Total Clicks</th>
               <th className="p-4 font-medium">Base Tracking URL</th>
               <th className="p-4 font-medium text-right">Actions</th>
             </tr>
@@ -2159,6 +2160,11 @@ export default function AdminDashboardPage() {
                 </td>
                 <td className="p-4 text-amber-400 text-xs flex items-center gap-1.5">
                   <Clock size={14} /> {link.cookie || '30 Days'}
+                </td>
+                <td className="p-4">
+                  <span className="text-sky-400 font-medium bg-sky-400/10 px-2.5 py-1 rounded-md text-xs border border-sky-400/20 inline-flex items-center gap-1">
+                    <MousePointerClick size={13} /> {(link.clickCount || link.click_count || 0).toLocaleString()}
+                  </span>
                 </td>
                 <td className="p-4 max-w-[200px]">
                   <code className="text-xs text-slate-400 bg-slate-950 px-2 py-1 rounded truncate block border border-slate-800 font-mono">

@@ -22,7 +22,7 @@ export async function sendInsiderWelcomeEmail(email: string) {
       '',
       'You are now subscribed to our weekly AI tool reviews, automation case studies, and selected partner offers.',
       '',
-      `Read the latest stories: ${siteUrl}/figma-tech-finance-news`,
+      `Read the latest stories: ${siteUrl}`,
       '',
       'You received this email because you subscribed on our website.',
     ].join('\n'),
