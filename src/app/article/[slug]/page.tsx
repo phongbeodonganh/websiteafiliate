@@ -1,18 +1,21 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Eye } from 'lucide-react';
+import { ArrowRight, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
-import AffiliateTracker from '@/components/AffiliateTracker';
+import AffiliateRecommendationSheet from '@/components/AffiliateRecommendationSheet';
 import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
+import EditorialBackdrop from '@/components/EditorialBackdrop';
+import PublicArticleImage from '@/components/PublicArticleImage';
+import ArticleContent from '@/components/ArticleContent';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
+import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
 
 export const revalidate = 0;
@@ -34,19 +37,28 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     SettingModel.findOne(),
   ]);
   const siteTitle = settings?.site_title || 'AIDEALSUK';
-  if (!article) return { title: `Article Not Found | ${siteTitle}` };
+  if (!article) return { title: 'Article Not Found', robots: { index: false, follow: false } };
   const title = article.meta_title || article.title;
   const description = article.meta_description || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
-  const baseUrl = settings?.canonicalUrl || 'https://aidealsuk.com';
+  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  const canonicalUrl = `${baseUrl}/article/${article.slug}`;
+  const socialImage = normalizeHttpUrl(article.thumbnail_url, normalizeHttpUrl(settings?.ogImageUrl, DEFAULT_OG_IMAGE));
   return {
-    title: `${title} | ${siteTitle}`,
+    title,
     description,
-    alternates: { canonical: `${baseUrl}/article/${article.slug}` },
+    alternates: { canonical: canonicalUrl },
     openGraph: {
-      title, description, url: `${baseUrl}/article/${article.slug}`, siteName: siteTitle,
-      locale: 'en_US', type: 'article',
+      title, description, url: canonicalUrl, siteName: siteTitle,
+      locale: normalizeLocale(settings?.hreflang), type: 'article',
       publishedTime: article.created_at ? new Date(article.created_at).toISOString() : undefined,
-      images: article.thumbnail_url ? [{ url: article.thumbnail_url, width: 1200, height: 630, alt: title }] : [],
+      modifiedTime: article.updated_at ? new Date(article.updated_at).toISOString() : undefined,
+      images: [{ url: socialImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [socialImage],
     },
   };
 }
@@ -54,10 +66,13 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const { slug } = await params;
   await connectToDatabase();
-  const article = await ArticleModel.findOne({ slug, status: 'published' })
-    .populate('author_id', 'name username avatar')
-    .populate('category_id', 'name slug')
-    .populate('affiliate_placements.affiliate_link_id', 'name commission cookie');
+  const [article, settings] = await Promise.all([
+    ArticleModel.findOne({ slug, status: 'published' })
+      .populate('author_id', 'name username avatar')
+      .populate('category_id', 'name slug')
+      .populate('affiliate_placements.affiliate_link_id', 'name commission cookie'),
+    SettingModel.findOne(),
+  ]);
   if (!article) notFound();
 
   article.view_count += 1;
@@ -111,53 +126,72 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     ...(doc.thumbnail_url ? { image: [doc.thumbnail_url] } : {}), datePublished: doc.created_at,
     dateModified: doc.updated_at || doc.created_at,
     ...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
-    publisher: { '@type': 'Organization', name: 'AIDEALSUK' },
+    mainEntityOfPage: `${normalizeSiteUrl(settings?.canonicalUrl)}/article/${doc.slug}`,
+    publisher: { '@type': 'Organization', name: settings?.site_title || 'AIDEALSUK' },
   };
-  const faqSchemaData = Array.isArray(doc.faq_schema) && doc.faq_schema.length ? {
-    '@context': 'https://schema.org', '@type': 'FAQPage',
-    mainEntity: doc.faq_schema.map((faq) => ({ '@type': 'Question', name: faq.question, acceptedAnswer: { '@type': 'Answer', text: faq.answer } })),
-  } : null;
+
+  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  const breadcrumbItems = [
+    { name: 'Home', url: baseUrl },
+    ...(categoryName && categorySlug
+      ? [{ name: categoryName, url: `${baseUrl}/category/${categorySlug}` }]
+      : []),
+    { name: doc.title, url: `${baseUrl}/article/${doc.slug}` },
+  ];
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
 
   return (
     <div className={styles.page}>
-      <AffiliateTracker />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      {faqSchemaData && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchemaData) }} />}
+      <EditorialBackdrop section={categoryName || 'ARTICLE'} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }} />
       <EditorialHeader />
+      <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 
       <main className={styles.layout}>
         <article className={styles.articleBox}>
           {categoryName && (categorySlug
-            ? <Link className={styles.category} href={`/figma-tech-finance-news/category/${categorySlug}`}>{categoryName}</Link>
+            ? <Link className={styles.category} href={`/category/${categorySlug}`}>{categoryName}</Link>
             : <p className={styles.category}>{categoryName}</p>)}
           <h1>{doc.title}</h1>
-          <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
+          <div className="flex min-w-0 flex-wrap items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
             <div className="w-9 h-9 rounded-full bg-black text-white font-bold flex items-center justify-center text-sm shadow-sm">
-              {((doc.author_id as any)?.name || (doc.author_id as any)?.username || 'A')[0].toUpperCase()}
+              {(authorName || 'A')[0].toUpperCase()}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="font-bold text-slate-900 m-0 leading-tight">
-                By {(doc.author_id as any)?.name || (doc.author_id as any)?.username || 'AIDEALSUK Editorial'}
+                By {authorName || 'AIDEALSUK Editorial'}
               </p>
               <p className="text-xs text-slate-500 m-0 mt-0.5">
                 Published on {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} &middot; {doc.view_count || 0} views
               </p>
             </div>
           </div>
-          {doc.thumbnail_url && <div className={styles.heroImage}><Image src={doc.thumbnail_url} alt={doc.title} fill priority sizes="(max-width: 900px) 100vw, 760px" /></div>}
-          {keyTakeaways.length > 0 && <section className={styles.takeaways}><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
-          <div className={styles.articleContent} dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(doc.content) }} />
+          <div className={`${styles.heroImage} public-article-image-frame`} data-motion="fade">
+            <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
+          </div>
+          {keyTakeaways.length > 0 && <section className={styles.takeaways} data-motion="rise"><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
+          <ArticleContent className={styles.articleContent} html={sanitizeArticleContent(doc.content)} />
 
-          {placements.length > 0 && <section className={styles.placements}>
+          {placements.length > 0 && <section className={styles.placements} data-motion="rise">
             <h2>Recommended Offers</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
             </div>
           </section>}
 
-          {relatedArticles.length > 0 && <section className={styles.related}>
+          {relatedArticles.length > 0 && <section className={styles.related} data-motion="rise">
             <div className={styles.relatedHeading}><p>Continue Reading</p><h2>Related Articles</h2></div>
-            <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={styles.relatedCard}>
+            <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={`${styles.relatedCard} clickable-card`}>
               <div className={styles.relationLabels}>{related.sameAuthor && <span>Same author</span>}{related.sameCategory && <span>Same category</span>}</div>
               <h3>{related.title}</h3><p><span><Eye size={13} /> {related.viewCount} views</span><ArrowRight size={14} /></p>
             </Link>)}</div>
@@ -165,12 +199,12 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           <SocialShare title={doc.title} />
         </article>
 
-        <div className={styles.rightRail}>
+        <div className={styles.rightRail} data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
           <VerticalAffiliateSidebar hideWhenEmpty sticky={false} />
           {latestArticles.length > 0 && <section className={styles.latestNews}>
             <p>Recently Published</p><h2>Latest News</h2>
             <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
-            <Link className={styles.latestAll} href="/figma-tech-finance-news/latest">View all latest <ArrowRight size={14} /></Link>
+            <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
           </section>}
         </div>
       </main>

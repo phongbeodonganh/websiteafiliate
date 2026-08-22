@@ -23,6 +23,20 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/figma-tech-finance-news',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/figma-tech-finance-news/:path*',
+        destination: '/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

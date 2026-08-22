@@ -55,6 +55,8 @@ export interface IAffiliateLink extends Document {
   commission?: string;
   cookie?: string;
   isTopPick: boolean;
+  clickCount?: number;
+  click_count?: number;
   createdAt: Date;
 }
 
@@ -183,6 +185,7 @@ const AffiliateLinkSchema = new Schema<IAffiliateLink>(
     commission: { type: String },
     cookie: { type: String },
     isTopPick: { type: Boolean, default: false, required: true },
+    clickCount: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
   },
   opts

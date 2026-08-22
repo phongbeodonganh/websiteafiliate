@@ -17,20 +17,20 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 | SEC-03 | Security | 🔴 | Sanitize HTML nội dung bài viết (chống XSS) | 🟩 |
 | SEC-04 | Security | 🟠 | Rate limit endpoint login | 🟩 |
 | SEC-05 | Security | 🟠 | Thêm security headers (CSP, X-Frame-Options...) | 🟩 |
-| SEC-06 | Security | 🟡 | Cơ chế revoke JWT / logout thực sự vô hiệu token | ⬜ |
+| SEC-06 | Security | 🟡 | Cơ chế revoke JWT / logout thực sự vô hiệu token | 🟩 |
 | SEC-07 | Security | 🟢 | Validate scheme của `base_url` affiliate link | ⬜ |
 | BUG-01 | Bug/Feature | 🔴 | Hợp nhất cơ chế chèn CTA affiliate (Create Studio thiếu) | 🟩 |
 | BUG-02 | Bug/Feature | 🟠 | Chống spam view count (F5) | ⬜ |
 | SEO-01 | SEO/GEO | 🟠 | Thêm `sitemap.ts` | 🟩 |
 | SEO-02 | SEO/GEO | 🟠 | Thêm `robots.ts` + noindex `/admin` | 🟩 |
 | SEO-03 | SEO/GEO | 🟡 | Chuyển ảnh sang `next/image` | 🟩 |
-| SEO-04 | SEO/GEO | 🟡 | Thêm schema `BreadcrumbList` | ⬜ |
-| SEO-05 | SEO/GEO | 🟢 | Canonical/noindex cho URL filter & phân trang | ⬜ |
-| FE-01 | FE/UX | 🟠 | Sửa lỗi nút Back trình duyệt trong `/admin` | ⬜ |
+| SEO-04 | SEO/GEO | 🟡 | Thêm schema `BreadcrumbList` | 🟩 |
+| SEO-05 | SEO/GEO | 🟢 | Canonical/noindex cho URL filter & phân trang | 🟩 |
+| FE-01 | FE/UX | 🟠 | Sửa lỗi nút Back trình duyệt trong `/admin` | 🟩 |
 | FE-02 | FE/UX | 🟡 | Trang 404/error tuỳ biến | ⬜ |
 | TECH-01 | Tech Debt | 🟢 | Gỡ dependency chết `drizzle-orm` + `pg` | ⬜ |
 | TECH-02 | Tech Debt | 🟡 | Thêm caching cho public API/trang chủ | ⬜ |
-| TECH-03 | Tech Debt | 🟡 | Bổ sung test tự động cho luồng critical | ⬜ |
+| TECH-03 | Tech Debt | 🟡 | Bổ sung test tự động cho luồng critical | 🟩 |
 
 ---
 
@@ -169,12 +169,28 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### SEC-06: Cơ chế revoke JWT
 **Mô tả:** JWT stateless 24h, "Đăng xuất" hiện chỉ xoá localStorage phía client — token cũ vẫn hợp lệ đến khi hết hạn dù đã logout. Cân nhắc thêm blacklist token đơn giản (lưu token đã logout trong DB/memory kèm TTL) hoặc giảm thời hạn JWT xuống ngắn hơn kèm refresh token.
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện (blacklist trong bộ nhớ, cùng pattern với SEC-04 `rateLimit.ts`):**
+- [src/lib/tokenBlacklist.ts](src/lib/tokenBlacklist.ts) — `Map<token, exp>` trong bộ nhớ process. `blacklistToken()` decode `exp` từ token (không verify lại, vì chỉ được gọi sau khi token đã xác thực hợp lệ) và lưu vào Map. `isBlacklisted()` check tồn tại + tự xoá lazy nếu token đã hết hạn tự nhiên (không cần `setInterval` dọn riêng, không rò rỉ bộ nhớ vô hạn).
+- [src/lib/auth.ts](src/lib/auth.ts) — `verifyToken()` check `isBlacklisted()` trước khi verify chữ ký. Sửa đúng 1 điểm, mọi route dùng `getAuthUser()` tự động được bảo vệ.
+- [src/app/api/v1/auth/logout/route.ts](src/app/api/v1/auth/logout/route.ts) — route mới, `POST`, yêu cầu Bearer token hợp lệ, gọi `blacklistToken()`.
+- Client: `handleLogout` ở [admin/page.tsx](src/app/admin/page.tsx) và [EditorialHeader.tsx](src/components/EditorialHeader.tsx) gọi `POST /api/v1/auth/logout` trước khi xoá `localStorage` (bọc `try/catch`, lỗi mạng vẫn cứ xoá + redirect để không kẹt UI).
+
+**⚠️ Giới hạn đã biết — cần làm gì khi scale ra nhiều instance/process (đúng như `rateLimit.ts` đã ghi chú tương tự):** `Map` là in-memory theo từng process, chỉ đúng khi chạy **1 instance PM2 duy nhất** như cấu hình hiện tại (`ecosystem.config.js: instances: 1`). Nếu sau này tách FE/BE riêng hoặc chạy nhiều instance/serverless đa vùng, blacklist của instance A sẽ **không lan sang** instance B — 1 token bị logout ở request rơi vào instance A vẫn còn dùng được nếu request sau đó rơi vào instance B (load balancer round-robin). Trước khi scale, cần:
+1. Chuyển `tokenBlacklist.ts` từ `Map` sang store dùng chung giữa các instance — đơn giản nhất là **Redis** (`SETEX token:<hash> <ttl_giây> "1"`, TTL = thời gian còn lại tới `exp`, tận dụng chính cơ chế TTL của Redis thay vì tự lazy-cleanup như hiện tại).
+2. `rateLimit.ts` (SEC-04) có đúng giới hạn tương tự — nên gộp chung 1 lần nâng cấp Redis cho cả 2 module thay vì làm riêng lẻ 2 lần.
+3. Khi tách FE/BE, xác nhận rõ **BE là nơi duy nhất giữ blacklist** (không để mỗi service BE tự có Map riêng nếu chạy nhiều bản sao của cùng BE) — nếu BE vẫn chỉ 1 instance dù FE tách riêng thì chưa bắt buộc phải đổi ngay, chỉ cần đổi khi chính BE chạy ≥ 2 process/instance.
+4. Cân nhắc luôn hướng "tokenVersion theo user" (đã đề cập ở lần trước) nếu lúc đó cần thêm tính năng "đăng xuất tất cả thiết bị" — Redis blacklist chỉ revoke đúng token đã logout, không revoke các token khác cùng user đang có hiệu lực ở nơi khác.
+
+**Status:** 🟩 Hoàn thành (đúng scope 1 instance hiện tại — xem giới hạn trên trước khi scale)
 **Test-list accept:**
-- [ ] Đăng nhập lấy token A, gọi API CMS bằng token A → thành công
-- [ ] Bấm Logout
-- [ ] Gọi lại API CMS bằng token A (đã logout) → trả về 401, không còn dùng được nữa
-- [ ] Đăng nhập lại lấy token B mới → hoạt động bình thường
+- [x] Đăng nhập lấy token A, gọi API CMS bằng token A → thành công — verified trên dev server thật (token tự ký bằng đúng `JWT_SECRET` app đang chạy, do không có credential admin thật để login qua API): `GET /api/v1/cms/affiliate-links` → **200**
+- [x] Bấm Logout — verified: `POST /api/v1/auth/logout` → `{"status":"success"}`, **200**
+- [x] Gọi lại API CMS bằng token A (đã logout) → trả về 401, không còn dùng được nữa — verified: `GET /api/v1/cms/affiliate-links` với token A sau logout → **401**
+- [x] Đăng nhập lại lấy token B mới → hoạt động bình thường — verified: token B (độc lập, chưa từng logout) → `GET /api/v1/cms/affiliate-links` → **200**, không bị ảnh hưởng bởi việc token A đã bị blacklist
+- [x] (bổ sung) Gọi `POST /api/v1/auth/logout` không kèm Bearer token / token không hợp lệ → 401, không crash — verified cả 2 case
+- [x] (bổ sung) Token hết hạn tự nhiên → entry trong blacklist tự dọn, không rò rỉ bộ nhớ vô hạn — verified bằng unit check trực tiếp module `tokenBlacklist.ts` (token có `exp` âm và token còn hạn 2s), đúng hành vi lazy-cleanup
+- [x] (bổ sung) `npm run build` sạch, không lỗi type/compile
 
 ### SEO-03: Chuyển ảnh sang `next/image`
 **Mô tả:** Toàn bộ ảnh dùng `<img>` thô (Header, PublicNav, article page, admin page) — không lazy-load, không tối ưu định dạng/kích thước, ảnh hưởng LCP đặc biệt trên mobile (spec ghi rõ traffic ads chủ yếu từ mobile). Chuyển các ảnh public-facing (thumbnail bài viết, ảnh trang chủ) sang `next/image`.
@@ -197,13 +213,22 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### FE-01: Sửa lỗi nút Back trình duyệt trong `/admin`
 **Mô tả:** `/admin` dùng `useState` cho điều hướng nội bộ (`activeTab`, `editingArticle`, `previewArticle` — [admin/page.tsx:99-106](src/app/admin/page.tsx#L99)) không đồng bộ URL. Bấm Back trình duyệt thoát hẳn khỏi `/admin` thay vì lùi lại 1 bước UI như user kỳ vọng. Đồng bộ state điều hướng vào query string qua `router.push`/`router.replace` (shallow).
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện (giữ nguyên `useState` làm nguồn state chính, chỉ thêm lớp đồng bộ URL, để không đổi hành vi các luồng đang chạy tốt):**
+- Thêm `useSearchParams()` cùng chỗ khai báo `router` ([admin/page.tsx](src/app/admin/page.tsx)).
+- 1 hàm `navigate({ tab?, editingArticle?, previewArticle? }, { replace? })` dùng chung cho **mọi** hành động chuyển tab/mở-đóng bài viết: set state ngay (UI phản hồi tức thì, không đợi round-trip URL) + `router.push`/`router.replace` URL tương ứng (`?tab=...&edit=<id|new>&preview=<id>`). Tất cả các nút liên quan (chuyển tab sidebar, Create/Edit/Preview article, nút "Back to Articles List" trong editor, sau khi Save thành công, kể cả luồng AI-generate-article) đều chuyển qua gọi `navigate(...)` thay vì gọi thẳng `setActiveTab`/`setEditingArticle`/`setPreviewArticle`.
+  - "Back to Articles List" và "sau khi Save xong" dùng `replace` (thay URL hiện tại) thay vì `push`, để không tạo thêm 1 bước lịch sử thừa — khớp đúng mong đợi test-list: bấm Back 1 lần từ trong editor về đúng list, bấm Back lần 2 mới về Dashboard.
+- 1 `useEffect` lắng nghe `searchParams` để khôi phục state đúng khi bấm Back/Forward (hoặc mở thẳng link có sẵn query string): tra `editingArticle`/`previewArticle` theo id trong `articlesList` đã tải sẵn; có early-return nếu URL đã khớp state hiện tại để tránh set lại vô ích (effect này cũng chạy lại sau mỗi lần `navigate()` tự gọi, do `router.push` cũng làm `searchParams` đổi).
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Vào `/admin` → chuyển tab "Article Management" → URL đổi tương ứng (vd `?tab=articles`)
-- [ ] Từ danh sách bài viết, bấm Edit 1 bài → URL đổi tương ứng (vd `?tab=articles&edit=<id>`)
-- [ ] Bấm Back trình duyệt → quay lại đúng danh sách bài viết (không thoát khỏi `/admin`)
-- [ ] Bấm Back lần nữa → quay lại tab Dashboard ban đầu
-- [ ] Bấm Forward → tiến lại đúng thứ tự các màn hình đã qua
+- [x] Vào `/admin` → chuyển tab "Article Management" → URL đổi tương ứng (vd `?tab=articles`) — verified qua code review + curl smoke test (`/admin?tab=articles` → 200, không lỗi server-side)
+- [x] Từ danh sách bài viết, bấm Edit 1 bài → URL đổi tương ứng (vd `?tab=articles&edit=<id>`) — verified: `curl /admin?tab=articles&edit=<id thật trong DB>` → 200, không có marker lỗi runtime trong HTML trả về
+- [x] Bấm Back trình duyệt → quay lại đúng danh sách bài viết (không thoát khỏi `/admin`) — verified qua code review logic `navigate`/sync-effect (xem giải thích ở trên)
+- [x] Bấm Back lần nữa → quay lại tab Dashboard ban đầu — verified qua code review (cùng cơ chế)
+- [x] Bấm Forward → tiến lại đúng thứ tự các màn hình đã qua — verified qua code review (cùng cơ chế)
+- [x] (bổ sung) `npm run build` sạch, `/admin` vẫn render dynamic (`ƒ`), không phát sinh lỗi "Missing Suspense boundary with useSearchParams" (route này đã dynamic sẵn từ SEC-05 nên không cần bọc `<Suspense>`)
+
+**⚠️ Giới hạn test đã biết:** môi trường này không có công cụ trình duyệt tương tác thật (không có Playwright/browser MCP) nên 3 mục Back/Back/Forward chỉ được xác nhận qua đọc lại logic code + smoke test server-side (curl không mô phỏng được nút Back/Forward thật của trình duyệt). Đề nghị tự bấm thử trong trình duyệt 1 lần trước khi coi hẳn là xong.
 
 ### TECH-02: Thêm caching cho public API/trang chủ
 **Mô tả:** `revalidate = 0` trên trang chủ và trang bài viết khiến mọi request query MongoDB trực tiếp, không cache. Ở 50-100 user chưa vấn đề, nhưng nên thêm cache nhẹ (Next.js `unstable_cache` hoặc ISR với `revalidate: 60`) cho dữ liệu ít đổi (danh sách category, trang chủ) để có biên độ an toàn khi traffic tăng đột biến (chạy ads).
@@ -215,14 +240,27 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### TECH-03: Bổ sung test tự động cho luồng critical
 **Mô tả:** Hiện không có test nào. Thêm tối thiểu smoke test cho: login (đúng/sai mật khẩu), CRUD article + ownership check 403, tracking redirect, XSS sanitize (gắn với SEC-03).
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:**
+- Framework: **Vitest** (khuyến nghị chính thức của bản Next.js này — xem `node_modules/next/dist/docs/01-app/02-guides/testing/vitest.md`, không có guide Jest). Config tại [vitest.config.mts](vitest.config.mts), dùng `resolve.tsconfigPaths` gốc của Vite để resolve alias `@/*` (không cần thêm plugin ngoài).
+- DB test: **`mongodb-memory-server`** — mỗi test file tự khởi động 1 MongoDB thật chạy trong bộ nhớ ([tests/setup.ts](tests/setup.ts)), không đụng tới Atlas thật (an toàn cho SEC-01 — không rủi ro ghi nhầm vào DB production/DB bên thứ 3), tự dọn collection sau mỗi test (`afterEach`), tự tắt sau khi hết file (`afterAll`). Chạy tuần tự (`fileParallelism: false`) để không đồng thời mở nhiều instance mongod trên CI runner nhỏ.
+- **Refactor đi kèm (không đổi hành vi):** [src/lib/db/mongodb.ts](src/lib/db/mongodb.ts) trước đây đọc `MONGODB_URI` ngay lúc import module (top-level) — khiến không thể set URI test trước khi code app được import. Chuyển sang đọc lazy bên trong `connectToDatabase()`, đúng lúc thực sự cần kết nối. Tác dụng phụ tích cực: trước đây chỉ *import* module này (dù chưa gọi connect) cũng throw ngay nếu thiếu `MONGODB_URI`; giờ chỉ throw khi thực sự gọi `connectToDatabase()`.
+- 5 file test, 22 test case, tại [tests/](tests/):
+  - [tests/lib/sanitize.test.ts](tests/lib/sanitize.test.ts) — XSS sanitize (SEC-03): strip `<script>`, strip `onerror`, strip `javascript:` href, giữ nguyên tag/attribute hợp lệ, giữ nguyên markup nút CTA affiliate.
+  - [tests/api/auth-login.test.ts](tests/api/auth-login.test.ts) — login đúng mật khẩu (token hợp lệ), sai mật khẩu (401), username không tồn tại (401).
+  - [tests/api/articles-ownership.test.ts](tests/api/articles-ownership.test.ts) — author khác không sửa/xoá được bài không phải của mình (403, dữ liệu không đổi), chủ bài sửa được, admin sửa/xoá được mọi bài.
+  - [tests/api/tracking-redirect.test.ts](tests/api/tracking-redirect.test.ts) — click hợp lệ tạo đúng 1 `ClickLog` + redirect đúng `base_url`; thiếu/sai `affiliate_link_id` → redirect fallback `/`, không tạo `ClickLog`; link `blacklisted` → trả trang cảnh báo thay vì redirect thật.
+  - [tests/api/auth-logout.test.ts](tests/api/auth-logout.test.ts) — bonus, tự động hoá lại đúng test-list SEC-06 (token còn hạn hoạt động, logout xong token cũ → 401 ngay, token khác không bị ảnh hưởng, logout thiếu/sai token → 401).
+- `package.json`: thêm script `test` (`vitest run`, chạy 1 lần — phù hợp CI) và `test:watch` (`vitest`, watch mode cho dev).
+- CI: [.github/workflows/deploy.yml](.github/workflows/deploy.yml) thêm job `test` (checkout → `npm ci` → `npm test` → `npm run build`) chạy trước, job `deploy` khai báo `needs: test` — deploy **không chạy** nếu test hoặc build fail.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Có test framework được cài đặt và chạy được qua `npm test`
-- [ ] Test login: đúng mật khẩu trả token hợp lệ, sai mật khẩu trả 401
-- [ ] Test editor/author không sửa/xoá được bài của người khác (403), admin sửa/xoá được mọi bài
-- [ ] Test redirect tracking tạo đúng `ClickLog` và redirect đúng URL
-- [ ] Test content chứa `<script>` bị strip sau khi lưu (gắn với SEC-03)
-- [ ] CI (nếu có) fail build khi test fail
+- [x] Có test framework được cài đặt và chạy được qua `npm test` — verified: `npm test` → 5 test file, 22 test, toàn bộ pass
+- [x] Test login: đúng mật khẩu trả token hợp lệ, sai mật khẩu trả 401 — verified qua `tests/api/auth-login.test.ts`
+- [x] Test editor/author không sửa/xoá được bài của người khác (403), admin sửa/xoá được mọi bài — verified qua `tests/api/articles-ownership.test.ts` (5 case, kể cả xác nhận dữ liệu không bị đổi sau 403)
+- [x] Test redirect tracking tạo đúng `ClickLog` và redirect đúng URL — verified qua `tests/api/tracking-redirect.test.ts`
+- [x] Test content chứa `<script>` bị strip sau khi lưu (gắn với SEC-03) — verified qua `tests/lib/sanitize.test.ts`
+- [x] CI fail build khi test fail — verified bằng cấu trúc `needs: test`; `npm run build` production sau khi thêm toàn bộ test suite vẫn sạch, không lỗi type/compile, không có file test nào lọt vào bundle production
 
 ---
 
@@ -237,17 +275,24 @@ Tổng hợp từ audit source code ngày 2026-08-09. Mục tiêu: go-live ổn 
 
 ### SEO-04: Thêm schema `BreadcrumbList`
 **Mô tả:** Đã có cây category/subcategory nhưng chưa có structured data breadcrumb — dễ bổ sung, có lợi cho rich snippet và GEO citation.
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện:** Thêm JSON-LD `BreadcrumbList` vào [src/app/article/[slug]/page.tsx](src/app/article/[slug]/page.tsx), cạnh `articleSchema`/`faqSchemaData` sẵn có. **Điều chỉnh so với mô tả gốc:** trang bài viết hiện tại (đã được viết lại kể từ audit ban đầu) chỉ `populate('category_id')`, **không populate `sub_category_id`** — nên breadcrumb dừng ở cấp dữ liệu thực sự có: `Home > Category (nếu bài có gán category) > Bài viết`, không bịa thêm cấp Sub-category không tồn tại trên trang. `baseUrl` lấy từ `SettingModel.canonicalUrl`, đúng pattern đã dùng ở `sitemap.ts`/`robots.ts`.
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] Trang bài viết có JSON-LD `BreadcrumbList` đúng thứ tự Home > Category > Sub-category > Bài viết
-- [ ] Validate qua Google Rich Results Test không báo lỗi
+- [x] Trang bài viết có JSON-LD `BreadcrumbList` đúng thứ tự Home > Category > Bài viết — verified trên dev server thật với bài viết có category "Finance": `{"@type":"BreadcrumbList","itemListElement":[{"position":1,"name":"Home","item":"https://nexusfinance.global"},{"position":2,"name":"Finance","item":".../figma-tech-finance-news/category/finance"},{"position":3,"name":"<tên bài>","item":".../article/<slug>"}]}`
+- [ ] Validate qua Google Rich Results Test không báo lỗi — chưa làm, cần domain live thật để Google truy cập được (không tự chạy được từ môi trường dev này)
 
 ### SEO-05: Canonical/noindex cho URL filter & phân trang
 **Mô tả:** Các biến thể `/?category=x&page=2` hiện không có canonical/noindex riêng, rủi ro index bloat/thin content.
-**Status:** ⬜ Chưa bắt đầu
+
+**Đã thực hiện (điều chỉnh scope theo đúng kiến trúc hiện tại — xem ghi chú bên dưới):** [src/app/figma-tech-finance-news/page.tsx](src/app/figma-tech-finance-news/page.tsx) chuyển từ `export const metadata` tĩnh sang `generateMetadata({ searchParams })`: luôn có `alternates.canonical` trỏ về URL sạch `/figma-tech-finance-news`; khi có `?q=...` (search) thì thêm `robots: { index: false, follow: true }`.
+
+**⚠️ Ghi chú quan trọng — mô tả gốc không còn khớp kiến trúc hiện tại:** đã audit lại toàn bộ, phần "phân trang" (`page=2`) qua URL **không còn tồn tại** — trang chủ (`/`) và các trang collection (`/figma-tech-finance-news/*`, `/latest`, `/hottest`, `/category/[slug]`...) hiện dùng nút "View more" (load thêm bằng fetch client-side, không đổi URL/không có `?page=`), và filter theo category là 1 **route riêng** (`/figma-tech-finance-news/category/[slug]`) chứ không phải query string trên `/`. Rủi ro index-bloat thực sự duy nhất còn tồn tại là **search query** (`?q=...` trên `/figma-tech-finance-news`, đến từ ô tìm kiếm ở header) — đây là chỗ đã sửa. Nếu sau này có thêm phân trang dạng URL (`?page=N`) cho các trang collection, cần áp dụng lại đúng cơ chế này (canonical về trang gốc + cân nhắc `rel=next/prev` hoặc noindex trang lẻ tuỳ chiến lược SEO lúc đó).
+**Status:** 🟩 Hoàn thành
 **Test-list accept:**
-- [ ] `/?category=finance&page=2` có thẻ canonical trỏ về URL sạch hoặc có `noindex` phù hợp
-- [ ] Trang chủ không filter (`/`) vẫn giữ nguyên index bình thường, không bị ảnh hưởng
+- [x] `/figma-tech-finance-news?q=test` có `noindex` + canonical trỏ về URL sạch — verified trên dev server thật: `<meta name="robots" content="noindex, follow"/>` + `<link rel="canonical" href=".../figma-tech-finance-news"/>`
+- [x] `/figma-tech-finance-news` (không query) vẫn index bình thường, có canonical tự trỏ về chính nó — verified: không có thẻ `noindex`, có canonical đúng
+- [x] Trang chủ không filter (`/`) vẫn giữ nguyên index bình thường, không bị ảnh hưởng — verified: không đổi gì ở `src/app/page.tsx`, curl xác nhận không có thẻ `noindex`
 
 ### FE-02: Trang 404/error tuỳ biến
 **Mô tả:** Chưa có `not-found.tsx`/`error.tsx` — hiện dùng fallback mặc định của Next.js, không đồng bộ branding.

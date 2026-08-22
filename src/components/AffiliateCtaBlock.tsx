@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Star } from 'lucide-react';
 
 interface AffiliateCtaLink {
   id: string;
@@ -22,14 +22,21 @@ const POSITION_LABELS: Record<string, string> = {
   footer_banner: 'Special Deal',
 };
 
-export default function AffiliateCtaBlock({ articleId, link, positionLabel, variant = 'editorial' }: AffiliateCtaBlockProps) {
+export default function AffiliateCtaBlock({ articleId, link, positionLabel }: AffiliateCtaBlockProps) {
   const labelText = POSITION_LABELS[positionLabel] || 'Editor Pick';
 
   return (
-    <div className="group relative flex flex-col justify-between border border-neutral-300 bg-white p-5">
+    <div className="clickable-card group relative flex cursor-pointer flex-col justify-between border border-neutral-300 bg-white p-5" data-motion="scale">
+      <a
+        href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`}
+        className="card-stretched-link"
+        rel="nofollow sponsored"
+        target="_blank"
+        aria-label={`Claim affiliate offer from ${link.name}`}
+      />
       {/* Top Tag & Rating */}
       <div>
-        <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 mb-3">
           <span className="bg-black text-white text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5">
             {labelText}
           </span>
@@ -53,11 +60,11 @@ export default function AffiliateCtaBlock({ articleId, link, positionLabel, vari
 
         {/* Benefits / Deal Specs */}
         <div className="border-t border-b border-neutral-100 py-2.5 mb-4 space-y-1 text-xs text-neutral-600">
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
             <span>Commission:</span>
             <strong className="text-black font-bold">{link.commission || 'Up to 50% Off'}</strong>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
             <span>Guarantee:</span>
             <strong className="text-black font-semibold">{link.cookie || '30-Day Cookie'}</strong>
           </div>
@@ -67,8 +74,6 @@ export default function AffiliateCtaBlock({ articleId, link, positionLabel, vari
       {/* High-Converting Black Button */}
       <a
         href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`}
-        data-affiliate-id={link.id}
-        data-article-id={articleId}
         className="affiliate-btn w-full inline-flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider py-3 transition-colors text-center"
         rel="nofollow sponsored"
         target="_blank"

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ClickLogModel, AffiliateLinkModel, ArticleModel } from '@/lib/db/models';
@@ -5,47 +6,59 @@ import { getClientIp, appendSubId } from '@/lib/utils';
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { article_id, affiliate_link_id } = body;
+    const { article_id: articleId, affiliate_link_id: affiliateLinkId } = await req.json();
 
-    if (!article_id || !affiliate_link_id) {
+    if (!articleId || !affiliateLinkId) {
       return NextResponse.json(
         { status: 'error', message: 'Thiếu article_id hoặc affiliate_link_id' },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    if (!mongoose.isValidObjectId(articleId) || !mongoose.isValidObjectId(affiliateLinkId)) {
+      return NextResponse.json(
+        { status: 'error', message: 'ID bài viết hoặc affiliate link không hợp lệ' },
+        { status: 400 },
       );
     }
 
     await connectToDatabase();
-    const ipAddress = getClientIp(req);
+    const [article, affiliateLink] = await Promise.all([
+      ArticleModel.findById(articleId),
+      AffiliateLinkModel.findById(affiliateLinkId),
+    ]);
 
-    await ClickLogModel.create({
-      article_id,
-      affiliate_link_id,
-      ip_address: ipAddress,
-    });
-
-    const article = await ArticleModel.findById(article_id);
-    const affLink = await AffiliateLinkModel.findById(affiliate_link_id);
-
-    if (!affLink) {
+    // Validate both references before inserting, so ClickLog never contains
+    // records pointing at missing articles or affiliate links.
+    if (!article || !affiliateLink) {
       return NextResponse.json(
-        { status: 'error', message: 'Không tìm thấy affiliate link' },
-        { status: 404 }
+        { status: 'error', message: 'Không tìm thấy bài viết hoặc affiliate link' },
+        { status: 404 },
       );
     }
 
-    const subId = article ? article.slug : `art_${article_id}`;
-    const destinationUrl = appendSubId(affLink.base_url, subId);
+    await Promise.all([
+      ClickLogModel.create({
+        article_id: article._id,
+        affiliate_link_id: affiliateLink._id,
+        ip_address: getClientIp(req),
+      }),
+      AffiliateLinkModel.findByIdAndUpdate(
+        affiliateLink._id,
+        { $inc: { click_count: 1 } },
+        { new: true, strict: false }
+      ),
+    ]);
 
     return NextResponse.json({
       status: 'success',
-      redirect_url: destinationUrl,
+      redirect_url: appendSubId(affiliateLink.base_url, article.slug),
     });
   } catch (error) {
     console.error('Click tracking error:', error);
     return NextResponse.json(
       { status: 'error', message: 'Lỗi ghi nhận lượt click' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

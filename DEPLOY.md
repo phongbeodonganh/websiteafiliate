@@ -166,6 +166,12 @@ server {
     listen 80;
     server_name aidealsuk.com www.aidealsuk.com;
 
+    # Mặc định Nginx chỉ cho phép body request tối đa 1MB — thấp hơn cả giới hạn
+    # 5MB app tự áp cho upload ảnh (src/app/api/v1/cms/upload/route.ts), nên phải
+    # nới ở đây, nếu không mọi upload ảnh > ~1MB sẽ bị Nginx chặn thẳng bằng 413
+    # trước khi tới được Next.js (app không kịp trả lỗi JSON rõ ràng của riêng nó).
+    client_max_body_size 10m;
+
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -198,6 +204,8 @@ sudo certbot --nginx -d aidealsuk.com -d www.aidealsuk.com
 ```
 
 Certbot tự sửa file Nginx để redirect HTTP → HTTPS và tự gia hạn cert định kỳ.
+
+> ⚠️ Certbot thường **tách file thành 2 block riêng**: block `listen 80` gốc (giờ chỉ redirect sang HTTPS) và 1 block **`listen 443 ssl` mới do Certbot tự sinh** — chứa toàn bộ `location`/`proxy_pass` thật. Directive `client_max_body_size` thêm ở bước 8 nằm trong block 80 sẽ **không tự áp dụng** sang block 443 mới này (mỗi block Nginx độc lập trừ khi đặt ở cấp `http {}`). Sau khi chạy Certbot, mở lại `/etc/nginx/sites-available/websiteafiliate`, xác nhận `client_max_body_size 10m;` có mặt trong **cả 2 block**, rồi `sudo nginx -t && sudo systemctl reload nginx`. Kiểm tra nhanh bằng `sudo nginx -T | grep -B5 client_max_body_size` — phải thấy directive xuất hiện ở cả block 80 và 443.
 
 ## 10. Firewall (ufw)
 
@@ -238,6 +246,22 @@ pm2 reload websiteafiliate
 ```
 
 `pm2 reload` (thay vì `restart`) giúp zero-downtime khi cập nhật.
+
+### 12b. Tự động hoá bằng GitHub Actions (khuyến nghị)
+
+Thay vì SSH tay mỗi lần, workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) chạy qua SSH mỗi khi push lên `feature/namdt25-develop` (hoặc bấm chạy tay qua tab Actions → "Run workflow"): `git fetch` + `git reset --hard origin/feature/namdt25-develop` (đồng bộ đúng y hệt code trên remote, bỏ qua mọi thay đổi cục bộ còn sót lại trên VPS) → `npm install` → `npm run build` → `pm2 reload websiteafiliate`.
+
+Cần cấu hình 1 lần trên GitHub repo, mục **Settings → Secrets and variables → Actions**:
+
+| Secret | Giá trị |
+|---|---|
+| `SSH_HOST` | `103.90.225.161` |
+| `SSH_USER` | `deploy` |
+| `SSH_PRIVATE_KEY` | private key riêng cho CI (không dùng key cá nhân) — tạo bằng `ssh-keygen -t ed25519 -f ~/.ssh/gh_deploy_key -N ""`, rồi thêm public key (`gh_deploy_key.pub`) vào `~/.ssh/authorized_keys` của user `deploy` trên VPS |
+
+Nếu `git reset`/`npm install`/`npm run build` lỗi, workflow dừng ngay (nhờ `set -e`) và **không** chạy `pm2 reload` — production vẫn giữ bản build cũ, không bị deploy dở dang.
+
+> Lưu ý: `git reset --hard` sẽ xoá sạch mọi thay đổi cục bộ chưa commit trong `~/websiteafiliate` trên VPS (kể cả `.env.local`? — **không**, `.env.local` nằm ngoài git nên an toàn, chỉ các file *có trong git* mới bị reset). Vì vậy đừng sửa tay code hoặc chạy `npm install` thủ công trực tiếp trong thư mục này trên VPS — mọi thay đổi cục bộ sẽ mất ở lần deploy tiếp theo. Cần thử gì thì làm ở nhánh riêng rồi push, đừng sửa trực tiếp trên server.
 
 ---
 

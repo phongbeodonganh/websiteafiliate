@@ -27,8 +27,8 @@ function loadCategories() {
 
 /**
  * Unified editorial footer used across every public-facing route:
- *   - /figma-tech-finance-news  (home)
- *   - /figma-tech-finance-news/latest | hottest | editorial-picks | affiliates | category/[slug]
+ *   - /  (home)
+ *   - /latest | hottest | editorial-picks | affiliates | category/[slug]
  *   - /article/[slug]
  *
  * Provides trust signals (About / Privacy / Terms / Contact), category
@@ -61,6 +61,7 @@ export default function EditorialFooter() {
     >
       {/* ── Main grid ─────────────────────────────────────────────── */}
       <div
+        className="editorial-footer-grid"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -73,7 +74,7 @@ export default function EditorialFooter() {
         {/* Col 1 — Brand */}
         <div style={{ gridColumn: 'span 1' }}>
           <Link
-            href="/figma-tech-finance-news"
+            href="/"
             style={{
               color: '#ffffff',
               fontSize: 26,
@@ -126,22 +127,22 @@ export default function EditorialFooter() {
           <h4 style={colHeadingStyle}>Quick Links</h4>
           <ul style={listStyle}>
             <li>
-              <Link href="/figma-tech-finance-news/latest" style={linkStyle}>
+              <Link href="/latest" style={linkStyle}>
                 Latest Articles
               </Link>
             </li>
             <li>
-              <Link href="/figma-tech-finance-news/hottest" style={linkStyle}>
+              <Link href="/hottest" style={linkStyle}>
                 Hottest Articles
               </Link>
             </li>
             <li>
-              <Link href="/figma-tech-finance-news/editorial-picks" style={linkStyle}>
+              <Link href="/editorial-picks" style={linkStyle}>
                 Editorial Picks
               </Link>
             </li>
             <li>
-              <Link href="/figma-tech-finance-news/affiliates" style={linkStyle}>
+              <Link href="/affiliates" style={linkStyle}>
                 Affiliate Deals
               </Link>
             </li>
@@ -155,7 +156,7 @@ export default function EditorialFooter() {
             {categories.slice(0, 5).map((cat) => (
               <li key={cat.id}>
                 <Link
-                  href={`/figma-tech-finance-news/category/${cat.slug}`}
+                  href={`/category/${cat.slug}`}
                   style={linkStyle}
                 >
                   {cat.name}
@@ -205,6 +206,7 @@ export default function EditorialFooter() {
 
       {/* ── Affiliate disclaimer ──────────────────────────────────── */}
       <div
+        className="editorial-footer-disclosure"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -228,6 +230,7 @@ export default function EditorialFooter() {
 
       {/* ── Copyright bar ─────────────────────────────────────────── */}
       <div
+        className="editorial-footer-copyright"
         style={{
           maxWidth: 1440,
           margin: '0 auto',
@@ -250,13 +253,30 @@ export default function EditorialFooter() {
       {/* ── Responsive overrides ──────────────────────────────────── */}
       <style>{`
         @media (max-width: 900px) {
-          footer > div:first-child {
+          .editorial-footer-grid {
             grid-template-columns: repeat(2, 1fr) !important;
+            padding: 40px 24px 0 !important;
+          }
+          .editorial-footer-disclosure,
+          .editorial-footer-copyright {
+            padding-left: 24px !important;
+            padding-right: 24px !important;
           }
         }
         @media (max-width: 560px) {
-          footer > div:first-child {
+          .editorial-footer-grid {
             grid-template-columns: 1fr !important;
+            gap: 32px !important;
+            padding: 36px 16px 0 !important;
+          }
+          .editorial-footer-disclosure,
+          .editorial-footer-copyright {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+          .editorial-footer-copyright {
+            align-items: flex-start !important;
+            flex-direction: column !important;
           }
         }
       `}</style>

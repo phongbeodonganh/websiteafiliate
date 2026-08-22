@@ -1,8 +1,15 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #020617;
   --foreground: #f8fafc;
+  --editorial-canvas: #f5f5f2;
+  --editorial-surface: #ffffff;
+  --editorial-ink: #111111;
+  --editorial-copy: #2d2d2b;
+  --editorial-muted: #6f706c;
+  --editorial-divider: #e2e2de;
 }
 
 body {
@@ -44,13 +51,16 @@ body, p, span, li, a, button, input, select, textarea {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: #090d16;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
@@ -62,6 +72,7 @@ body, p, span, li, a, button, input, select, textarea {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -104,4 +115,324 @@ a.btn:active,
 input[type="submit"]:active,
 [role="button"]:active {
   transform: translateY(0px) scale(0.98) !important;
+}
+
+
+.public-article-image,
+.public-article-image-frame {
+  background: #ececea url('/illustration-gallery-icon_53876-27002.avif') center / cover no-repeat;
+}
+
+.public-article-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Makes a card's primary link cover the full card without nesting anchors. */
+.card-stretched-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.card-stretched-link:focus-visible {
+  outline: none;
+}
+
+/* Keep real links/buttons above the card overlay so their hover area stays local. */
+.clickable-card :is(a, button):not(.card-stretched-link) {
+  position: relative;
+  z-index: 2;
+}
+
+.clickable-card {
+  max-width: 100%;
+  min-width: 0;
+  transform: translateY(0) scale(0.99);
+  transform-origin: center;
+  transition:
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+  will-change: transform;
+}
+
+.clickable-card:hover,
+.clickable-card:focus-within {
+  transform: translateY(-3px) scale(1);
+}
+
+.clickable-card:active {
+  transform: translateY(-1px) scale(0.985);
+  transition-duration: 80ms;
+}
+
+.clickable-card:has(.card-stretched-link:focus-visible) {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+/* Keep motion elements at their tween start state before hydration/observation. */
+[data-motion]:not([data-motion-visible="true"]) {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.public-motion-ready [data-motion][data-motion-visible="true"] {
+  animation: public-motion-pop 255ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--motion-delay, 0ms);
+}
+
+.public-motion-ready [data-motion="fade"][data-motion-visible="true"] {
+  animation-name: public-motion-pop-soft;
+}
+
+.public-motion-ready [data-motion="scale"][data-motion-visible="true"] {
+  animation-name: public-motion-pop;
+}
+
+@keyframes public-motion-pop {
+  0% { opacity: 0; transform: translate3d(0, 8px, 0) scale(0); }
+  72% { opacity: 1; transform: translate3d(0, 0, 0) scale(1.008); }
+  100% { opacity: 1; transform: none; }
+}
+
+@keyframes public-motion-pop-soft {
+  0% { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: none; }
+}
+
+.affiliate-sheet-backdrop { animation: affiliate-sheet-fade 180ms ease-out both; }
+.affiliate-sheet-panel { animation: affiliate-sheet-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes affiliate-sheet-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Quiet print-inspired decoration for public editorial routes. */
+.editorial-backdrop {
+  position: fixed;
+  inset: 82px 0 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.editorial-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(17, 17, 17, 0.012) 0, rgba(17, 17, 17, 0.012) 1px, transparent 1px, transparent 4px),
+    repeating-linear-gradient(90deg, rgba(17, 17, 17, 0.008) 0, rgba(17, 17, 17, 0.008) 1px, transparent 1px, transparent 7px);
+}
+
+.editorial-backdrop-grid {
+  position: relative;
+  width: min(100% - 64px, 1440px);
+  height: 100%;
+  margin: 0 auto;
+  border-inline: 1px solid rgba(17, 17, 17, 0.055);
+}
+
+.editorial-backdrop-grid::before {
+  content: "";
+  position: absolute;
+  top: 26px;
+  right: 0;
+  left: 0;
+  border-top: 1px solid rgba(17, 17, 17, 0.045);
+}
+
+.editorial-backdrop-rail,
+.editorial-backdrop-issue {
+  position: absolute;
+  color: rgba(17, 17, 17, 0.32);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+}
+
+.editorial-backdrop-rail {
+  top: 54px;
+  left: -27px;
+  transform: rotate(180deg);
+}
+
+.editorial-backdrop-issue {
+  top: 54px;
+  right: -27px;
+}
+
+.editorial-backdrop-folio {
+  position: absolute;
+  right: 18px;
+  bottom: 24px;
+  color: rgba(17, 17, 17, 0.025);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 220px;
+  font-weight: 800;
+  line-height: 0.8;
+}
+
+@media (max-width: 1100px) {
+  .editorial-backdrop-grid {
+    width: calc(100% - 32px);
+  }
+
+  .editorial-backdrop-rail,
+  .editorial-backdrop-issue,
+  .editorial-backdrop-folio {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .editorial-backdrop {
+    top: 70px;
+  }
+
+  .editorial-backdrop-grid {
+    width: 100%;
+    border-inline: 0;
+  }
+
+  .editorial-backdrop-grid::before { display: none; }
+}
+
+@keyframes affiliate-sheet-up {
+  from { opacity: 0; transform: translate3d(0, 24px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (min-width: 1024px) {
+  .affiliate-sheet-panel { animation-name: affiliate-sheet-in-right; }
+  @keyframes affiliate-sheet-in-right {
+    from { opacity: 0; transform: translate3d(28px, 0, 0); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+.public-motion-ready [data-motion] img {
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.public-motion-ready [data-motion].clickable-card:hover img,
+.public-motion-ready [data-motion].clickable-card:focus-within img {
+  transform: scale(1.025);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-motion]:not([data-motion-visible="true"]),
+  .public-motion-ready [data-motion],
+  .public-motion-ready [data-motion] img {
+    animation: none;
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .affiliate-sheet-backdrop,
+  .affiliate-sheet-panel {
+    animation: none;
+  }
+
+  .clickable-card,
+  .clickable-card:hover,
+  .clickable-card:focus-within,
+  .clickable-card:active {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* TipTap WYSIWYG Editor Styles */
+.custom-editor-content p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.custom-editor-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 0.35rem;
+}
+
+.custom-editor-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fbbf24;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.custom-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.custom-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.custom-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+.custom-editor-content blockquote {
+  border-left: 4px solid #38bdf8;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #94a3b8;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.custom-editor-content strong {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.custom-editor-content a {
+  color: #38bdf8;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+/* ── Rich Text Editor (admin) — căn ảnh & highlight tìm kiếm ── */
+.img-align-left {
+    float: left;
+    margin: 0.25rem 1rem 0.5rem 0;
+}
+.img-align-right {
+    float: right;
+    margin: 0.25rem 0 0.5rem 1rem;
+}
+.img-align-center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+.search-result {
+    background-color: rgba(251, 191, 36, 0.35);
+    border-radius: 2px;
+}
+.search-result-current {
+    background-color: rgba(251, 191, 36, 0.75);
+    border-radius: 2px;
 }

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 
 // 1. User
 export interface IUser extends Document {
@@ -65,18 +66,53 @@ const SubCategorySchema = new Schema<ISubCategory>({
 export interface IAffiliateLink extends Document {
   name: string;
   base_url: string;
+  product_url?: string;
   commission?: string;
+  commission_rate?: number;
   cookie?: string;
+  cookie_days?: number;
   is_top_pick: boolean;
+  status: 'active' | 'inactive' | 'blacklisted';
+  click_count: number;
   created_at: Date;
 }
 
 const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   name: { type: String, required: true },
   base_url: { type: String, required: true },
+  product_url: { type: String, default: '' },
   commission: { type: String },
+  commission_rate: { type: Number, default: 0 },
   cookie: { type: String },
+  cookie_days: { type: Number, default: 0 },
   is_top_pick: { type: Boolean, default: false },
+  status: { type: String, enum: ['active', 'inactive', 'blacklisted'], default: 'active' },
+  click_count: { type: Number, default: 0 },
+  created_at: { type: Date, default: Date.now }
+});
+
+// 4.5 Blacklist
+export interface IBlacklist extends Document {
+  project_name?: string;
+  website_url: string;
+  extracted_domain: string;
+  match_type: 'domain' | 'exact_url';
+  reason: string;
+  blocked_countries?: string[];
+  status: 'active' | 'inactive';
+  created_by?: mongoose.Types.ObjectId;
+  created_at: Date;
+}
+
+const BlacklistSchema = new Schema<IBlacklist>({
+  project_name: { type: String },
+  website_url: { type: String, required: true },
+  extracted_domain: { type: String, required: true, index: true },
+  match_type: { type: String, enum: ['domain', 'exact_url'], default: 'domain' },
+  reason: { type: String, required: true },
+  blocked_countries: [{ type: String }],
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  created_by: { type: Schema.Types.ObjectId, ref: 'User' },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -89,7 +125,7 @@ export interface IArticle extends Document {
   slug: string;
   excerpt?: string;
   content: string;
-  status: 'draft' | 'published';
+  status: 'generating' | 'draft' | 'published' | 'failed';
   is_featured: boolean;
   view_count: number;
   revenue: number;
@@ -113,7 +149,7 @@ const ArticleSchema = new Schema<IArticle>({
   slug: { type: String, required: true, unique: true },
   excerpt: { type: String },
   content: { type: String, required: true },
-  status: { type: String, enum: ['draft', 'published'], default: 'draft' },
+  status: { type: String, enum: ['generating', 'draft', 'published', 'failed'], default: 'draft' },
   is_featured: { type: Boolean, default: false },
   view_count: { type: Number, default: 0 },
   revenue: { type: Number, default: 0 },
@@ -171,11 +207,17 @@ const ClickLogSchema = new Schema<IClickLog>({
 export interface ISubscriber extends Document {
   email: string;
   subscribed_at: Date;
+  email_status?: 'sent' | 'opened';
+  last_email_id?: string;
+  opened_at?: Date;
 }
 
 const SubscriberSchema = new Schema<ISubscriber>({
   email: { type: String, required: true, unique: true },
-  subscribed_at: { type: Date, default: Date.now }
+  subscribed_at: { type: Date, default: Date.now },
+  email_status: { type: String, enum: ['sent', 'opened'], default: 'sent' },
+  last_email_id: { type: String },
+  opened_at: { type: Date }
 });
 
 // 9. Setting
@@ -242,8 +284,53 @@ export const UserModel: Model<IUser> = mongoose.models.User || mongoose.model<IU
 export const CategoryModel: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
 export const SubCategoryModel: Model<ISubCategory> = mongoose.models.SubCategory || mongoose.model<ISubCategory>('SubCategory', SubCategorySchema);
 export const AffiliateLinkModel: Model<IAffiliateLink> = mongoose.models.AffiliateLink || mongoose.model<IAffiliateLink>('AffiliateLink', AffiliateLinkSchema);
+export const BlacklistModel: Model<IBlacklist> = mongoose.models.Blacklist || mongoose.model<IBlacklist>('Blacklist', BlacklistSchema);
 export const ArticleModel: Model<IArticle> = mongoose.models.Article || mongoose.model<IArticle>('Article', ArticleSchema);
 export const ArticleAffiliateRelationModel: Model<IArticleAffiliateRelation> = mongoose.models.ArticleAffiliateRelation || mongoose.model<IArticleAffiliateRelation>('ArticleAffiliateRelation', ArticleAffiliateRelationSchema);
 export const ClickLogModel: Model<IClickLog> = mongoose.models.ClickLog || mongoose.model<IClickLog>('ClickLog', ClickLogSchema);
 export const SubscriberModel: Model<ISubscriber> = mongoose.models.Subscriber || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema);
 export const SettingModel: Model<ISetting> = mongoose.models.Setting || mongoose.model<ISetting>('Setting', SettingSchema);
+
+export async function syncAffiliateNumericFields() {
+  try {
+    // Step 1: Aggregate real click counts from ClickLog for every affiliate link
+    const clickCounts: { _id: mongoose.Types.ObjectId; count: number }[] =
+      await ClickLogModel.aggregate([
+        { $match: { affiliate_link_id: { $exists: true, $ne: null } } },
+        { $group: { _id: '$affiliate_link_id', count: { $sum: 1 } } },
+      ]);
+
+    // Build a map for O(1) lookup: affiliateLinkId -> realCount
+    const countMap = new Map<string, number>(
+      clickCounts.map(({ _id, count }) => [_id.toString(), count])
+    );
+
+    // Step 2: Update every AffiliateLink in bulk
+    const allLinks = await AffiliateLinkModel.find({}, '_id commission cookie click_count commission_rate cookie_days');
+
+    const bulkOps = allLinks.flatMap((link) => {
+      const realCount = countMap.get(link._id.toString()) ?? link.click_count ?? 0;
+      const commissionRate = parseCommissionRate(link.commission);
+      const cookieDays = parseCookieDays(link.cookie);
+      const setDoc: Record<string, number> = {};
+
+      if (link.click_count !== realCount) setDoc.click_count = realCount;
+      if (link.commission_rate !== commissionRate) setDoc.commission_rate = commissionRate;
+      if (link.cookie_days !== cookieDays) setDoc.cookie_days = cookieDays;
+      if (Object.keys(setDoc).length === 0) return [];
+
+      return [{
+        updateOne: {
+          filter: { _id: link._id },
+          update: { $set: setDoc },
+        },
+      }];
+    });
+
+    if (bulkOps.length > 0) {
+      await AffiliateLinkModel.bulkWrite(bulkOps, { ordered: false });
+    }
+  } catch (err) {
+    console.error('Error syncing affiliate numeric fields:', err);
+  }
+}

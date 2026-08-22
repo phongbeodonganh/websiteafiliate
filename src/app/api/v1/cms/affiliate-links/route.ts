@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -20,10 +21,15 @@ export async function GET(req: Request) {
         name: doc.name,
         baseUrl: doc.base_url,
         base_url: doc.base_url,
+        productUrl: doc.product_url || doc.base_url,
+        product_url: doc.product_url || doc.base_url,
         commission: doc.commission,
         cookie: doc.cookie,
         isTopPick: doc.is_top_pick,
         is_top_pick: doc.is_top_pick,
+        status: doc.status || 'active',
+        clickCount: doc.click_count || 0,
+        click_count: doc.click_count || 0,
         createdAt: doc.created_at,
       };
     });
@@ -48,21 +54,29 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, base_url, commission, cookie, is_top_pick, isTopPick } = body;
+    const { name, base_url, baseUrl, product_url, productUrl, commission, cookie, is_top_pick, isTopPick } = body;
+    const finalBaseUrl = base_url || baseUrl;
+    const finalProductUrl = product_url || productUrl || finalBaseUrl;
 
-    if (!name || !base_url) {
+    if (!name || !finalBaseUrl) {
       return NextResponse.json(
         { status: 'error', message: 'Vui lòng nhập Tên chiến dịch và Link gốc' },
         { status: 400 }
       );
     }
 
+    const finalCommission = commission || 'N/A';
+    const finalCookie = cookie || '30 ngày';
+
     await connectToDatabase();
     const newLink = await AffiliateLinkModel.create({
       name,
-      base_url,
-      commission: commission || 'N/A',
-      cookie: cookie || '30 ngày',
+      base_url: finalBaseUrl,
+      product_url: finalProductUrl,
+      commission: finalCommission,
+      commission_rate: parseCommissionRate(finalCommission),
+      cookie: finalCookie,
+      cookie_days: parseCookieDays(finalCookie),
       is_top_pick: is_top_pick !== undefined ? is_top_pick : (isTopPick !== undefined ? isTopPick : false),
     });
 
@@ -74,10 +88,14 @@ export async function POST(req: Request) {
           name: newLink.name,
           baseUrl: newLink.base_url,
           base_url: newLink.base_url,
+          productUrl: newLink.product_url,
+          product_url: newLink.product_url,
           commission: newLink.commission,
           cookie: newLink.cookie,
           isTopPick: newLink.is_top_pick,
           is_top_pick: newLink.is_top_pick,
+          clickCount: newLink.click_count || 0,
+          click_count: newLink.click_count || 0,
           createdAt: newLink.created_at,
         },
       },
