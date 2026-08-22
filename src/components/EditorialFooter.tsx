@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import CategorySelector from '@/components/CategorySelector';
+import ScrollToTop from '@/components/ScrollToTop';
 
 const BRAND = 'AIDEALSUK';
 const YEAR = new Date().getFullYear();
@@ -246,7 +247,7 @@ export default function EditorialFooter() {
           © {YEAR} {BRAND}. All Rights Reserved.
         </p>
         <p style={{ fontSize: 11, color: '#444', margin: 0 }}>
-          Built with ❤️ for the AI community
+          AIDEALSUK built with ❤️ for the AI community
         </p>
       </div>
 
@@ -280,6 +281,7 @@ export default function EditorialFooter() {
           }
         }
       `}</style>
+      <ScrollToTop />
     </footer>
   );
 }

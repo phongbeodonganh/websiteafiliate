@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
 import AffiliateRecommendationSheet from '@/components/AffiliateRecommendationSheet';
+import EditorVerdict from '@/components/EditorVerdict';
+import StickyMobileBar from '@/components/StickyMobileBar';
 import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import EditorialHeader from '@/components/EditorialHeader';
@@ -98,6 +100,10 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       },
     }));
 
+  // Separate first placement for Editor's Verdict (mid-article)
+  const verdictPlacement = placements[0] || null;
+  const remainingPlacements = placements.slice(1);
+
   const relationFilters = [
     ...(authorId ? [{ author_id: authorId }] : []),
     ...(categoryId ? [{ category_id: categoryId }] : []),
@@ -157,6 +163,21 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       <EditorialHeader />
       <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 
+      {/* ── Visible Breadcrumb Navigation (SEO + UX) ── */}
+      <div className={styles.breadcrumbBar}>
+        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          {categoryName && categorySlug && (
+            <>
+              <span className={styles.breadcrumbSep} aria-hidden="true">&rsaquo;</span>
+              <Link href={`/category/${categorySlug}`}>{categoryName}</Link>
+            </>
+          )}
+          <span className={styles.breadcrumbSep} aria-hidden="true">&rsaquo;</span>
+          <span className={styles.breadcrumbCurrent}>{doc.title}</span>
+        </nav>
+      </div>
+
       <main className={styles.layout}>
         <article className={styles.articleBox}>
           {categoryName && (categorySlug
@@ -176,18 +197,32 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               </p>
             </div>
           </div>
-          <div className={`${styles.heroImage} public-article-image-frame`} data-motion="fade">
+          <figure className={`${styles.heroImage} public-article-image-frame`} data-motion="fade">
             <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
-          </div>
+          </figure>
           {keyTakeaways.length > 0 && <section className={styles.takeaways} data-motion="rise"><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
+
           <ArticleContent className={styles.articleContent} html={sanitizeArticleContent(doc.content)} />
 
-          {placements.length > 0 && <section className={styles.placements} data-motion="rise">
-            <h2>Recommended Offers</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {placements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
-            </div>
-          </section>}
+          {/* ── Editor's Verdict — inline mid-article recommendation ── */}
+          {verdictPlacement && (
+            <EditorVerdict
+              articleId={articleId}
+              toolName={verdictPlacement.link.name}
+              affiliateLinkId={verdictPlacement.link.id}
+              commission={verdictPlacement.link.commission}
+            />
+          )}
+
+          {/* ── Remaining affiliate offers (as <aside>) ── */}
+          {remainingPlacements.length > 0 && (
+            <aside className={styles.placements} aria-label="Affiliate recommendations" data-motion="rise">
+              <h2>Recommended Offers</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {remainingPlacements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+              </div>
+            </aside>
+          )}
 
           {relatedArticles.length > 0 && <section className={styles.related} data-motion="rise">
             <div className={styles.relatedHeading}><p>Continue Reading</p><h2>Related Articles</h2></div>
@@ -199,15 +234,24 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
           <SocialShare title={doc.title} />
         </article>
 
-        <div className={styles.rightRail} data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
+        <aside className={styles.rightRail} role="complementary" aria-label="Sidebar" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
           <VerticalAffiliateSidebar hideWhenEmpty sticky={false} />
           {latestArticles.length > 0 && <section className={styles.latestNews}>
             <p>Recently Published</p><h2>Latest News</h2>
             <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
             <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
           </section>}
-        </div>
+        </aside>
       </main>
+
+      {/* ── Sticky mobile CTA bar (dismissible) ── */}
+      {verdictPlacement && (
+        <StickyMobileBar
+          toolName={verdictPlacement.link.name}
+          trackingUrl={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${verdictPlacement.link.id}`}
+        />
+      )}
+
       <EditorialFooter />
     </div>
   );
