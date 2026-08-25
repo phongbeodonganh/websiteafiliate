@@ -51,7 +51,7 @@ export default function EditorialFooter() {
   return (
     <footer
       style={{
-        borderTop: '4px solid #0056B3',
+        borderTop: '4px solid #111111',
         background: '#111111',
         color: '#ffffff',
         fontFamily: "'Inter', sans-serif",

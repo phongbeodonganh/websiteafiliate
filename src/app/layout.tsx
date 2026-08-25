@@ -53,6 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
       icons: {
         icon: sysSettings?.favicon_url || "/favicon/favicon.png",
         shortcut: sysSettings?.favicon_url || "/favicon/favicon.png",
+        apple: sysSettings?.favicon_url || "/favicon/favicon.png",
       },
     };
   } catch {
@@ -80,6 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
       icons: {
         icon: "/favicon/favicon.png",
         shortcut: "/favicon/favicon.png",
+        apple: "/favicon/favicon.png",
       },
     };
   }
