@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mail, Sparkles, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2, AlertCircle, Loader2, Check, ShieldCheck, Mail } from 'lucide-react';
 
 interface LeadCaptureProps {
   variant?: 'default' | 'editorial';
 }
 
-export default function LeadCapture({ variant = 'default' }: LeadCaptureProps) {
+export default function LeadCapture({ variant = 'editorial' }: LeadCaptureProps) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
-  const editorial = variant === 'editorial';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,78 +36,118 @@ export default function LeadCapture({ variant = 'default' }: LeadCaptureProps) {
         setMessage({ text: data.message || 'Subscription failed.', type: 'error' });
       }
     } catch {
-      setMessage({ text: 'Network connection error.', type: 'error' });
+      setMessage({ text: 'Network connection error. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section data-motion="fade" className={editorial
-      ? 'relative overflow-hidden bg-[#111111] border border-[#222222] px-8 py-12 lg:px-14 lg:py-16 text-white shadow-md'
-      : 'my-16 relative rounded-[2.5rem] overflow-hidden bg-white border border-slate-100 p-8 lg:p-14 shadow-xl shadow-slate-200/50'}>
-      {/* Soft Glow */}
-      {!editorial && <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50/60 rounded-full blur-[100px] pointer-events-none"></div>}
+    <section
+      id="newsletter-section"
+      data-motion="fade"
+      className="my-16 relative overflow-hidden bg-[#111111] border border-white/15 p-8 sm:p-12 lg:p-14 text-white shadow-2xl transition-all duration-300"
+    >
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+        {/* ── Left Column: Value Proposition & Editorial Summary ── */}
+        <div className="lg:col-span-7 space-y-5">
+          <div className="inline-flex items-center gap-2 border border-white/20 bg-white/5 px-3.5 py-1 text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-300">
+            <span>Weekly Intelligence Dispatch</span>
+          </div>
 
-      <div className="max-w-3xl mx-auto text-center space-y-6 relative z-10">
-        <div className={editorial
-          ? 'inline-flex items-center gap-2 border border-white px-4 py-1.5 text-xs font-semibold uppercase tracking-widest'
-          : 'inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#0056B3] text-xs font-semibold uppercase tracking-widest'}>
-          <Sparkles size={14} /> VIP AI Insider Research Newsletter
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
+            Stay Ahead of the AI Industry With Direct Weekly Insights
+          </h2>
+
+          <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed max-w-xl font-sans">
+            Join <strong className="text-white font-semibold">35,000+ tech leaders, founders &amp; developers</strong> receiving zero-noise tool audits, workflow blueprints, and exclusive editorial deal alerts.
+          </p>
+
+          {/* Key Editorial Highlights Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs text-neutral-300 border-t border-white/10">
+            <div className="flex items-center gap-2">
+              <Check size={14} className="text-neutral-400 shrink-0" />
+              <span>Zero-Noise Audits</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check size={14} className="text-neutral-400 shrink-0" />
+              <span>Exclusive Deals</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check size={14} className="text-neutral-400 shrink-0" />
+              <span>100% Free Access</span>
+            </div>
+          </div>
         </div>
 
-        <h2 className={`text-3xl md:text-5xl font-extrabold leading-tight ${editorial ? 'text-white' : 'text-slate-900'}`}>
-          Get Cutting-Edge AI Tools & Automation Case Studies <span className={editorial ? 'underline underline-offset-8' : 'bg-clip-text text-transparent bg-gradient-to-r from-[#0056B3] via-indigo-600 to-[#4F46E5]'}>Delivered Weekly</span>
-        </h2>
-
-        <p className={`${editorial ? 'text-neutral-300' : 'text-slate-600'} text-sm md:text-base max-w-xl mx-auto leading-relaxed`}>
-          Join 25,000+ creators, marketers, and developers receiving zero-noise AI tool reviews, prompt frameworks, and exclusive partner discounts directly to their inbox.
-        </p>
-
-        {message ? (
-          <div
-            className={`p-4 border text-sm font-medium flex items-center justify-center gap-2 ${
-              editorial
-                ? 'border-white bg-white text-black'
-                : message.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : 'bg-red-50 border-red-200 text-red-700'
-            }`}
-          >
-            <CheckCircle2 size={18} /> {message.text}
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <div className="relative flex-1">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your work email address..."
-                required
-                className={editorial
-                  ? 'w-full bg-white border border-white pl-12 pr-4 py-3.5 text-sm text-black placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black'
-                  : 'w-full bg-slate-50 border border-slate-200 rounded-full pl-12 pr-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0056B3] focus:bg-white shadow-inner'}
-              />
+        {/* ── Right Column: Interactive Subscription Form Card ── */}
+        <div className="lg:col-span-5 bg-black/60 border border-white/20 p-6 sm:p-8 space-y-4 relative shadow-xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-white uppercase tracking-wider">
+              <Mail size={15} className="text-neutral-400" />
+              <span>Join Insider List</span>
             </div>
-            {/* Coral Orange (#FF6B6B) CTA Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className={editorial
-                ? 'px-8 py-3.5 border border-white bg-white text-black font-bold text-sm hover:-translate-y-0.5 hover:scale-[1.02] disabled:opacity-50 transition-transform duration-150 flex items-center justify-center gap-2 cursor-pointer shrink-0'
-                : 'px-8 py-3.5 rounded-full bg-[#FF6B6B] hover:bg-[#ff5252] text-white font-bold text-sm hover:scale-105 shadow-md shadow-rose-500/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0'}
-            >
-              {loading ? 'Joining...' : 'Join Insider List'}
-              <ArrowRight size={16} />
-            </button>
-          </form>
-        )}
+            <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Free Dispatch</span>
+          </div>
 
-        <div className={`flex items-center justify-center gap-2 text-xs font-medium pt-2 ${editorial ? 'text-neutral-400' : 'text-slate-500'}`}>
-          <ShieldCheck size={14} className={editorial ? 'text-white' : 'text-[#20C997]'} />
-          <span>No Spam. Unsubscribe at any time. Your email is 100% confidential.</span>
+          {message ? (
+            <div
+              className={`p-4 border text-xs font-mono font-bold tracking-wide flex items-center justify-center gap-2 transition-all animate-in fade-in zoom-in-95 duration-200 ${
+                message.type === 'success'
+                  ? 'border-emerald-400 bg-emerald-950/40 text-emerald-300'
+                  : 'border-rose-400 bg-rose-950/40 text-rose-300'
+              }`}
+            >
+              {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <span>{message.text}</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div
+                className={`relative flex items-center bg-black border transition-all duration-300 ${
+                  focused
+                    ? 'border-white ring-2 ring-white/20 shadow-[0_0_25px_rgba(255,255,255,0.15)] bg-neutral-950'
+                    : 'border-white/20 hover:border-white/40'
+                }`}
+              >
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder="Enter your work email address..."
+                  required
+                  className="w-full bg-transparent px-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none font-medium transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full group relative overflow-hidden bg-white text-black font-extrabold text-xs uppercase tracking-wider py-3 transition-all duration-200 hover:bg-neutral-200 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer border border-white"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin text-black" />
+                    <span>Subscribing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Subscribe Now</span>
+                    <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-500 pt-1 border-t border-white/10">
+            <span className="flex items-center gap-1">
+              <ShieldCheck size={13} className="text-neutral-400" /> Confidential
+            </span>
+            <span>Unsubscribe Anytime</span>
+          </div>
         </div>
       </div>
     </section>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, KeyboardEvent, Suspense, useRef } from 'react';
-import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X, Sparkles, TrendingUp, Compass } from 'lucide-react';
+import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X, Sparkles, TrendingUp, Compass, Mail } from 'lucide-react';
 import CategorySelector from '@/components/CategorySelector';
 import { BRAND_NAME } from '@/lib/brand';
 
@@ -23,6 +23,24 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isHome = pathname === '/';
+
+  const handleSubscribeClick = () => {
+    const el = document.getElementById('newsletter-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        const input = el.querySelector<HTMLInputElement>('input[type="email"]');
+        if (input) {
+          input.focus();
+        }
+      }, 450);
+    } else {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -188,12 +206,12 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           </nav>
         </div>
 
-        {/* ── Center: Prominent Large Search Bar (Clean, no inner awkward button) ── */}
-        <div className="hidden md:flex flex-1 max-w-[500px] items-center mx-2 lg:mx-6">
-          <div className={`relative flex w-full items-center h-[42px] rounded-lg border bg-black/70 px-3.5 transition-all duration-200 ${
+        {/* ── Center: Prominent Large Search Bar with Dynamic Micro-Interactions ── */}
+        <div className="hidden md:flex flex-1 max-w-[480px] lg:max-w-[540px] focus-within:max-w-[620px] items-center mx-2 lg:mx-6 transition-all duration-300 ease-out">
+          <div className={`group relative flex w-full items-center h-[42px] rounded-lg border bg-black/80 px-3.5 transition-all duration-300 ${
             searchFocused
-              ? 'border-[#0D766E] ring-2 ring-[#0D766E]/25 shadow-[0_0_20px_rgba(13,118,110,0.25)]'
-              : 'border-white/20 hover:border-white/35'
+              ? 'border-[#0D766E] ring-2 ring-[#0D766E]/40 shadow-[0_0_25px_rgba(13,118,110,0.35)] scale-[1.01] bg-black'
+              : 'border-white/20 hover:border-white/45 hover:bg-black/90 hover:shadow-[0_0_15px_rgba(255,255,255,0.06)]'
           }`}>
             <button
               type="button"
@@ -201,7 +219,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
               aria-label="Submit search"
               className="mr-2 text-neutral-400 hover:text-white transition-colors focus:outline-none"
             >
-              <Search className={`w-4 h-4 transition-colors ${searchFocused ? 'text-[#0D766E]' : 'text-neutral-400'}`} />
+              <Search className={`w-4 h-4 transition-all duration-300 ${searchFocused ? 'text-[#0D766E] scale-110 rotate-12' : 'text-neutral-400 group-hover:text-white group-hover:scale-105'}`} />
             </button>
             <input
               ref={inputRef}
@@ -212,28 +230,40 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
               onKeyDown={handleKeyDown}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              className="bg-transparent border-0 text-white placeholder-neutral-500 text-xs font-medium w-full outline-none"
+              className="bg-transparent border-0 text-white placeholder-neutral-500 text-xs font-medium w-full outline-none transition-all"
             />
             {searchQuery ? (
               <button
                 type="button"
                 onClick={clearSearch}
                 aria-label="Clear search"
-                className="text-neutral-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+                className="text-neutral-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all duration-200 hover:rotate-90"
               >
                 <X size={14} />
               </button>
             ) : (
-              <kbd className="hidden lg:inline-block text-[9px] font-mono text-neutral-500 bg-white/5 border border-white/10 px-1.5 py-0.5 rounded">
-                ⌘K
+              <kbd className="hidden lg:inline-flex items-center text-[10px] font-semibold font-mono tracking-wider text-neutral-300 bg-white/10 border border-white/20 px-2 py-0.5 rounded shadow-sm group-hover:border-white/40 group-hover:bg-white/15 transition-all whitespace-nowrap">
+                Ctrl + K
               </kbd>
             )}
           </div>
         </div>
 
-        {/* ── Right: Custom Dropdown & Auth Actions ── */}
+        {/* ── Right: Custom Dropdown, Subscribe CTA & Auth Actions ── */}
         <div className="hidden sm:flex min-w-0 shrink-0 items-center gap-3">
           <CategorySelector placement="header" />
+
+          {/* Prominent Subscribe CTA Button */}
+          <button
+            type="button"
+            onClick={handleSubscribeClick}
+            className="relative group overflow-hidden flex items-center gap-2 bg-[#FF6B6B] hover:bg-[#ff5252] text-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-md shadow-rose-500/25 transition-all duration-300 hover:scale-[1.04] active:scale-95 cursor-pointer border border-rose-400/40 shrink-0"
+            title="Subscribe to VIP AI Newsletter"
+          >
+            <span className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+            <Mail size={14} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            <span>Subscribe</span>
+          </button>
 
           {user ? (
             <div className="flex items-center gap-2 border-l border-white/10 pl-3">
