@@ -2,10 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, KeyboardEvent, Suspense } from 'react';
-import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { useState, useEffect, KeyboardEvent, Suspense, useRef } from 'react';
+import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X, Sparkles, TrendingUp, Compass, Mail } from 'lucide-react';
 import CategorySelector from '@/components/CategorySelector';
-import Button from '@/components/Button';
 import { BRAND_NAME } from '@/lib/brand';
 
 interface EditorialHeaderProps {
@@ -19,7 +18,49 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || searchParams.get('q') || '');
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isHome = pathname === '/' || pathname === '/figma-tech-finance-news';
+  const [scrolled, setScrolled] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const isHome = pathname === '/';
+
+  const handleSubscribeClick = () => {
+    const el = document.getElementById('newsletter-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => {
+        const input = el.querySelector<HTMLInputElement>('input[type="email"]');
+        if (input) {
+          input.focus();
+        }
+      }, 450);
+    } else {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Global Keyboard Shortcut (⌘K / Ctrl+K) to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -33,22 +74,29 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             setUser(data.data);
           }
         })
-        .catch(() => { });
+        .catch(() => {});
     }
   }, []);
 
   const handleSearch = () => {
     const trimmed = searchQuery.trim();
     if (trimmed) {
-      router.push(`/figma-tech-finance-news?q=${encodeURIComponent(trimmed)}`);
+      router.push(`/?q=${encodeURIComponent(trimmed)}`);
     } else {
-      router.push('/figma-tech-finance-news');
+      router.push('/');
     }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch();
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    if (searchParams.get('q')) {
+      router.push('/');
     }
   };
 
@@ -62,7 +110,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch {
-        // Mất mạng/API lỗi vẫn cứ đăng xuất phía client bình thường.
+        // Fallback cleanup
       }
     }
     localStorage.removeItem('token');
@@ -79,128 +127,200 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
   };
 
   return (
-    <header className="pointer-events-auto fixed isolate top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] shadow-[0_14px_34px_rgba(17,17,17,0.15)] flex items-center justify-between gap-3 px-4 sm:px-7 font-['Inter',system-ui,sans-serif]">
-      {/* ── Brand & Navigation Links ── */}
-      <div className="flex min-w-0 shrink-0 items-center gap-2 xl:gap-4">
-        {/* Brand Name -> Click to Home */}
-        <Link
-          href="/"
-          className="whitespace-nowrap text-xl font-extrabold tracking-tight text-white text-decoration-none transition-colors hover:text-gray-200 sm:text-2xl xl:text-3xl font-['Plus_Jakarta_Sans',sans-serif]"
-        >
-          {BRAND_NAME}
-        </Link>
-
-        {!isHome && (
-          <Button
-            onClick={handleBack}
-            variant="headerOutline"
-            size="headerNav"
-            leadingIcon={<ArrowLeft size={15} />}
-            className="w-10 sm:w-[88px]"
-            aria-label="Go back to the previous page"
-            title="Back"
-          >
-            <span className="hidden sm:inline">Back</span>
-          </Button>
-        )}
-
-        {/* Home Button */}
-        <Button
-          onClick={() => router.push('/')}
-          variant="headerOutline"
-          size="headerNav"
-          leadingIcon={<Home size={14} />}
-          className="hidden md:inline-flex"
-        >
-          <span>Home</span>
-        </Button>
+    <header
+      className={`pointer-events-auto fixed isolate top-0 left-0 right-0 z-[1000] transition-all duration-300 ${
+        scrolled
+          ? 'bg-[#111111]/95 backdrop-blur-md border-b border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.35)]'
+          : 'bg-[#111111] border-b border-[#222222] shadow-[0_10px_30px_rgba(0,0,0,0.2)]'
+      }`}
+    >
+      {/* ── Top Micro-Ticker Bar (Signature Editorial Detail) ── */}
+      <div className="hidden sm:flex items-center justify-between px-6 py-1 bg-black/40 border-b border-white/5 text-[11px] font-mono text-neutral-400">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0D766E] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0D766E]"></span>
+          </span>
+          <span className="font-semibold text-white tracking-wider">LIVE EDITION</span>
+          <span className="text-neutral-600">|</span>
+          <span className="text-neutral-300">UK AI & Tech Intelligence Platform</span>
+        </div>
+        <div className="flex items-center gap-4 text-xs font-sans text-neutral-400">
+          <Link href="/hottest" className="hover:text-white transition-colors flex items-center gap-1">
+            <TrendingUp size={11} className="text-[#0D766E]" /> Hottest Deals
+          </Link>
+          <Link href="/editorial-picks" className="hover:text-white transition-colors flex items-center gap-1">
+            <Sparkles size={11} className="text-amber-400" /> Editor&apos;s Choice
+          </Link>
+        </div>
       </div>
 
-      {/* ── Center: Search Bar ── */}
-      <div className="hidden h-[44px] w-[280px] min-w-0 items-center rounded-lg border-2 border-white bg-[#111111] px-3 shadow-[0_8px_18px_rgba(17,17,17,0.09)] xl:flex 2xl:w-[320px]">
-        <Search className="text-white shrink-0 w-5 h-5 mr-2" />
-        <input
-          type="text"
-          placeholder="Search news..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="bg-transparent border-0 text-white placeholder-gray-400 text-sm w-full outline-none"
-        />
+      {/* ── Main Navigation Bar ── */}
+      <div className={`mx-auto max-w-[1536px] flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
+        scrolled ? 'h-[62px] md:h-[68px]' : 'h-[68px] md:h-[76px]'
+      }`}>
+        {/* ── Brand Logo & Quick Nav ── */}
+        <div className="flex min-w-0 shrink-0 items-center gap-3 lg:gap-5">
+          <Link
+            href="/"
+            className="flex items-center gap-2 group text-decoration-none"
+          >
+            <span className="whitespace-nowrap text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-neutral-200 transition-colors">
+              {BRAND_NAME}
+            </span>
+            <span className="hidden xl:inline-block bg-[#0D766E] text-white text-[9px] font-extrabold uppercase px-1.5 py-0.5 tracking-widest font-mono">
+              UK
+            </span>
+          </Link>
+
+          {!isHome && (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex items-center gap-1.5 border border-white/20 bg-white/5 text-neutral-200 px-3 py-1.5 text-xs font-bold uppercase transition-all hover:bg-white/10 hover:border-white/40"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={13} />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+          )}
+
+          {/* Quick Nav Links */}
+          <nav className="hidden lg:flex items-center gap-4 border-l border-white/10 pl-4 text-xs font-bold uppercase tracking-wider text-neutral-300">
+            <Link
+              href="/"
+              className={`flex items-center gap-1.5 transition-colors hover:text-white ${
+                pathname === '/' ? 'text-white border-b-2 border-[#0D766E] pb-0.5' : ''
+              }`}
+            >
+              <Home size={13} /> Home
+            </Link>
+            <Link
+              href="/latest"
+              className={`flex items-center gap-1.5 transition-colors hover:text-white ${
+                pathname === '/latest' ? 'text-white border-b-2 border-[#0D766E] pb-0.5' : ''
+              }`}
+            >
+              <Compass size={13} /> Latest
+            </Link>
+          </nav>
+        </div>
+
+        {/* ── Center: Prominent Large Search Bar with Dynamic Micro-Interactions ── */}
+        <div className="hidden md:flex flex-1 max-w-[480px] lg:max-w-[540px] focus-within:max-w-[620px] items-center mx-2 lg:mx-6 transition-all duration-300 ease-out">
+          <div className={`group relative flex w-full items-center h-[42px] rounded-lg border bg-black/80 px-3.5 transition-all duration-300 ${
+            searchFocused
+              ? 'border-[#0D766E] ring-2 ring-[#0D766E]/40 shadow-[0_0_25px_rgba(13,118,110,0.35)] scale-[1.01] bg-black'
+              : 'border-white/20 hover:border-white/45 hover:bg-black/90 hover:shadow-[0_0_15px_rgba(255,255,255,0.06)]'
+          }`}>
+            <button
+              type="button"
+              onClick={handleSearch}
+              aria-label="Submit search"
+              className="mr-2 text-neutral-400 hover:text-white transition-colors focus:outline-none"
+            >
+              <Search className={`w-4 h-4 transition-all duration-300 ${searchFocused ? 'text-[#0D766E] scale-110 rotate-12' : 'text-neutral-400 group-hover:text-white group-hover:scale-105'}`} />
+            </button>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search AI news, tools & editorial reviews..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className="bg-transparent border-0 text-white placeholder-neutral-500 text-xs font-medium w-full outline-none transition-all"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={clearSearch}
+                aria-label="Clear search"
+                className="text-neutral-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all duration-200 hover:rotate-90"
+              >
+                <X size={14} />
+              </button>
+            ) : (
+              <kbd className="hidden lg:inline-flex items-center text-[10px] font-semibold font-mono tracking-wider text-neutral-300 bg-white/10 border border-white/20 px-2 py-0.5 rounded shadow-sm group-hover:border-white/40 group-hover:bg-white/15 transition-all whitespace-nowrap">
+                Ctrl + K
+              </kbd>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right: Custom Dropdown, Subscribe CTA & Auth Actions ── */}
+        <div className="hidden sm:flex min-w-0 shrink-0 items-center gap-3">
+          <CategorySelector placement="header" />
+
+          {/* Prominent Subscribe CTA Button */}
+          <button
+            type="button"
+            onClick={handleSubscribeClick}
+            className="relative group overflow-hidden flex items-center gap-2 bg-[#FF6B6B] hover:bg-[#ff5252] text-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-md shadow-rose-500/25 transition-all duration-300 hover:scale-[1.04] active:scale-95 cursor-pointer border border-rose-400/40 shrink-0"
+            title="Subscribe to VIP AI Newsletter"
+          >
+            <span className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+            <Mail size={14} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            <span>Subscribe</span>
+          </button>
+
+          {user ? (
+            <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+              <Link
+                href="/admin"
+                className="flex items-center gap-2 bg-neutral-800/90 text-white border border-neutral-700 px-3 py-1.5 text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
+              >
+                <ShieldCheck size={14} className="text-[#0D766E]" />
+                <span className="max-w-[100px] truncate">{user.username}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Sign out"
+                className="bg-neutral-800/90 text-neutral-300 hover:text-white border border-neutral-700 p-2 transition-transform hover:-translate-y-0.5"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+              <Link
+                href="/admin/login"
+                className="text-white hover:text-neutral-300 px-3 py-1.5 text-xs font-bold uppercase transition-colors"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/admin/login"
+                className="verdict-cta !py-1.5 !px-3.5 !text-xs"
+              >
+                Sign up
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* ── Mobile Hamburger Button ── */}
         <button
           type="button"
-          onClick={handleSearch}
-          className="bg-white text-black font-bold text-[10px] uppercase px-2.5 h-[28px] shrink-0 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
+          onClick={() => setMobileMenuOpen((current) => !current)}
+          className="pointer-events-auto relative z-[2] shrink-0 touch-manipulation sm:hidden text-white p-2 hover:bg-neutral-800/80 rounded transition-colors"
+          aria-label="Toggle Navigation"
+          aria-expanded={mobileMenuOpen}
         >
-          Go
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* ── Right: Categories + Auth Actions ── */}
-      <div className="hidden min-w-0 shrink-0 items-center gap-2 md:flex xl:gap-3">
-        {/* Categories Selection */}
-        <CategorySelector placement="header" />
-
-        {/* Auth Buttons / User Profile */}
-        {user ? (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin"
-              role="button"
-              className="flex items-center gap-1.5 bg-zinc-800 text-white border border-zinc-600 px-3 py-2 text-xs font-bold uppercase transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
-            >
-              <ShieldCheck size={14} className="text-emerald-400" />
-              <span>{user.username}</span>
-            </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Sign out"
-              className="bg-zinc-800 text-white border border-zinc-600 p-2 transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
-            >
-              <LogOut size={14} />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin/login"
-              role="button"
-              className="border border-white/80 text-white px-3.5 py-2 text-xs font-bold uppercase transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/admin/login"
-              role="button"
-              className="bg-white text-black border border-white px-3.5 py-2 text-xs font-bold uppercase transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
-            >
-              Sign up
-            </Link>
-          </div>
-        )}
-      </div>
-
-      {/* ── Mobile Hamburger Button ── */}
-      <button
-        type="button"
-        onClick={() => setMobileMenuOpen((current) => !current)}
-        className="pointer-events-auto relative z-[2] shrink-0 touch-manipulation md:hidden text-white p-2 hover:bg-zinc-800 rounded"
-        aria-label="Toggle Navigation"
-        aria-expanded={mobileMenuOpen}
-        aria-controls="mobile-editorial-navigation"
-      >
-        {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      {/* ── Mobile Menu Dropdown ── */}
+      {/* ── Mobile Menu Slide Dropdown ── */}
       {mobileMenuOpen && (
-        <div id="mobile-editorial-navigation" className="pointer-events-auto fixed top-[70px] left-0 right-0 z-[1100] max-h-[calc(100dvh-70px)] touch-manipulation overflow-y-auto overscroll-contain bg-[#111111] border-b border-[#333] p-4 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center bg-[#111111] border-2 border-white rounded-lg h-[44px] px-3">
-            <Search className="text-white shrink-0 w-5 h-5 mr-2" />
+        <div className="pointer-events-auto fixed top-[68px] left-0 right-0 z-[1100] max-h-[calc(100dvh-68px)] overflow-y-auto bg-[#111111] border-b border-white/15 p-5 space-y-4 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center bg-black/90 border border-white/25 rounded-md h-[44px] px-3.5">
+            <Search className="text-neutral-400 shrink-0 w-4 h-4 mr-2" />
             <input
               type="text"
-              placeholder="Search news..."
+              placeholder="Search news, tools & reviews..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -209,44 +329,66 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                   setMobileMenuOpen(false);
                 }
               }}
-              className="bg-transparent border-0 text-white placeholder-gray-400 text-sm w-full outline-none"
+              className="bg-transparent border-0 text-white placeholder-neutral-500 text-xs font-medium w-full outline-none"
             />
-            <button
-              type="button"
-              onClick={() => {
-                handleSearch();
-                setMobileMenuOpen(false);
-              }}
-              className="bg-white text-black font-bold text-[10px] uppercase px-2.5 h-[28px] shrink-0"
-            >
-              Go
-            </button>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  handleSearch();
+                  setMobileMenuOpen(false);
+                }}
+                className="verdict-cta !py-1 !px-3 !text-[10px]"
+              >
+                Search
+              </button>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 pt-2">
-            <Button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                router.push('/');
-              }}
-              variant="headerOutline"
-              size="headerNav"
-              leadingIcon={<Home size={14} />}
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
             >
-              Home
-            </Button>
+              <Home size={14} /> Home
+            </Link>
+            <Link
+              href="/latest"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+            >
+              <Compass size={14} /> Latest News
+            </Link>
+            <Link
+              href="/hottest"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+            >
+              <TrendingUp size={14} className="text-[#0D766E]" /> Hottest Deals
+            </Link>
+            <Link
+              href="/editorial-picks"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+            >
+              <Sparkles size={14} className="text-amber-400" /> Top Choice
+            </Link>
+          </div>
+
+          <div className="pt-2 border-t border-white/10">
             <CategorySelector placement="header" />
           </div>
 
-          <div className="pt-2 border-t border-zinc-800 flex items-center gap-2">
+          <div className="pt-3 border-t border-white/10 flex items-center gap-2">
             {user ? (
               <div className="flex items-center justify-between w-full">
                 <Link
                   href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-1.5 text-white text-xs font-bold uppercase"
+                  className="flex items-center gap-2 text-white text-xs font-bold uppercase"
                 >
-                  <ShieldCheck size={14} className="text-emerald-400" /> CMS: {user.username}
+                  <ShieldCheck size={14} className="text-[#0D766E]" /> CMS: {user.username}
                 </Link>
                 <button
                   type="button"
@@ -264,14 +406,14 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                 <Link
                   href="/admin/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 text-center border border-white text-white py-2 text-xs font-bold uppercase"
+                  className="flex-1 text-center border border-white/30 text-white py-2.5 text-xs font-bold uppercase"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/admin/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 text-center bg-white text-black py-2 text-xs font-bold uppercase"
+                  className="flex-1 text-center verdict-cta justify-center !py-2.5 !text-xs"
                 >
                   Sign up
                 </Link>
@@ -288,8 +430,8 @@ export default function EditorialHeader(props: EditorialHeaderProps) {
   return (
     <Suspense
       fallback={
-        <header className="fixed top-0 left-0 right-0 z-[1000] h-[70px] md:h-[82px] bg-[#111111] border-b border-[#222222] flex items-center justify-between px-4 sm:px-7">
-          <Link href="/" className="text-white text-2xl font-bold">
+        <header className="fixed top-0 left-0 right-0 z-[1000] h-[68px] bg-[#111111] border-b border-[#222222] flex items-center justify-between px-4 sm:px-7">
+          <Link href="/" className="text-white text-2xl font-bold font-['Plus_Jakarta_Sans']">
             {BRAND_NAME}
           </Link>
         </header>

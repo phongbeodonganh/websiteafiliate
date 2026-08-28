@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, Star } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface AffiliateCtaLink {
   id: string;
@@ -22,63 +22,70 @@ const POSITION_LABELS: Record<string, string> = {
   footer_banner: 'Special Deal',
 };
 
+/**
+ * Redesigned affiliate CTA block — editorial style.
+ *
+ * Changes from previous version:
+ * - Removed fake 5/5 star ratings (broke trust)
+ * - Uses the same typographic language as article content
+ * - "Verified" badge replaced with specific claim ("Tested by our team")
+ * - CTA uses verdict-cta class with shimmer hover effect
+ */
 export default function AffiliateCtaBlock({ articleId, link, positionLabel }: AffiliateCtaBlockProps) {
   const labelText = POSITION_LABELS[positionLabel] || 'Editor Pick';
+  const trackingUrl = `/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`;
 
   return (
-    <div className="clickable-card group relative flex cursor-pointer flex-col justify-between border border-neutral-300 bg-white p-5" data-motion="scale">
+    <div className="clickable-card group relative flex cursor-pointer flex-col justify-between border border-[#E2E2DE] bg-white p-5" data-motion="scale">
       <a
-        href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`}
+        href={trackingUrl}
         className="card-stretched-link"
         rel="nofollow sponsored"
         target="_blank"
-        aria-label={`Claim affiliate offer from ${link.name}`}
+        aria-label={`View deal for ${link.name}`}
       />
-      {/* Top Tag & Rating */}
+
+      {/* Top: Label + Trust indicator */}
       <div>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 mb-3">
           <span className="bg-black text-white text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5">
             {labelText}
           </span>
-          <span className="flex items-center gap-1 text-[10px] font-bold text-neutral-600 bg-neutral-100 border border-neutral-200 px-2 py-0.5 uppercase tracking-wider">
-            <CheckCircle2 size={11} className="text-black" /> Verified
+          <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ed-verdict)' }}>
+            <CheckCircle2 size={11} /> Tested
           </span>
         </div>
 
-        {/* Offer Title */}
+        {/* Tool name */}
         <h4 className="text-base font-bold text-black m-0 mb-1 leading-snug font-['Plus_Jakarta_Sans'] group-hover:underline">
           {link.name}
         </h4>
 
-        {/* Rating Stars */}
-        <div className="flex items-center gap-1 mb-3 text-amber-500">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={11} fill="currentColor" />
-          ))}
-          <span className="text-[11px] font-bold text-neutral-500 ml-1">5.0</span>
-        </div>
-
-        {/* Benefits / Deal Specs */}
+        {/* Deal specs — clean, no fake ratings */}
         <div className="border-t border-b border-neutral-100 py-2.5 mb-4 space-y-1 text-xs text-neutral-600">
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
-            <span>Commission:</span>
-            <strong className="text-black font-bold">{link.commission || 'Up to 50% Off'}</strong>
-          </div>
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
-            <span>Guarantee:</span>
-            <strong className="text-black font-semibold">{link.cookie || '30-Day Cookie'}</strong>
-          </div>
+          {link.commission && (
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
+              <span>Commission</span>
+              <strong className="text-black font-bold">{link.commission}</strong>
+            </div>
+          )}
+          {link.cookie && (
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
+              <span>Cookie window</span>
+              <strong className="text-black font-semibold">{link.cookie}</strong>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* High-Converting Black Button */}
+      {/* CTA with shimmer effect */}
       <a
-        href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${link.id}`}
-        className="affiliate-btn w-full inline-flex items-center justify-center gap-2 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider py-3 transition-colors text-center"
+        href={trackingUrl}
+        className="verdict-cta w-full justify-center"
         rel="nofollow sponsored"
         target="_blank"
       >
-        Claim Offer <ArrowRight size={13} />
+        View deal <ArrowRight size={13} className="cta-arrow" />
       </a>
     </div>
   );

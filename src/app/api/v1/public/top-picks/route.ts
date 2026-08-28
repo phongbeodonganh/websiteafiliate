@@ -18,6 +18,8 @@ export async function GET() {
         cookie: doc.cookie,
         isTopPick: doc.is_top_pick,
         is_top_pick: doc.is_top_pick,
+        clickCount: doc.click_count || 0,
+        click_count: doc.click_count || 0,
         createdAt: doc.created_at,
       };
     });

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -27,6 +28,8 @@ export async function GET(req: Request) {
         isTopPick: doc.is_top_pick,
         is_top_pick: doc.is_top_pick,
         status: doc.status || 'active',
+        clickCount: doc.click_count || 0,
+        click_count: doc.click_count || 0,
         createdAt: doc.created_at,
       };
     });
@@ -62,13 +65,18 @@ export async function POST(req: Request) {
       );
     }
 
+    const finalCommission = commission || 'N/A';
+    const finalCookie = cookie || '30 ngày';
+
     await connectToDatabase();
     const newLink = await AffiliateLinkModel.create({
       name,
       base_url: finalBaseUrl,
       product_url: finalProductUrl,
-      commission: commission || 'N/A',
-      cookie: cookie || '30 ngày',
+      commission: finalCommission,
+      commission_rate: parseCommissionRate(finalCommission),
+      cookie: finalCookie,
+      cookie_days: parseCookieDays(finalCookie),
       is_top_pick: is_top_pick !== undefined ? is_top_pick : (isTopPick !== undefined ? isTopPick : false),
     });
 
@@ -86,6 +94,8 @@ export async function POST(req: Request) {
           cookie: newLink.cookie,
           isTopPick: newLink.is_top_pick,
           is_top_pick: newLink.is_top_pick,
+          clickCount: newLink.click_count || 0,
+          click_count: newLink.click_count || 0,
           createdAt: newLink.created_at,
         },
       },

@@ -89,7 +89,7 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
       </div>
 
       <Link
-        href="/figma-tech-finance-news/affiliates"
+        href="/affiliates"
         className="mt-5 flex items-center justify-between border-t border-black pt-4 text-[10px] font-bold uppercase text-black"
       >
         All affiliate deals <ArrowRight size={13} />

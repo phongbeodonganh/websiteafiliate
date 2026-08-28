@@ -23,12 +23,14 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
   const editorial = variant === 'editorial';
 
   useEffect(() => {
-    fetch('/api/v1/public/top-picks')
+    fetch('/api/v1/public/affiliates?sort=clicks&limit=4')
       .then((response) => response.json())
       .then((data) => {
-        if (data.status === 'success') setPicks(data.data);
+        if (data.status === 'success' && Array.isArray(data.data)) {
+          setPicks(data.data.slice(0, 4));
+        }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -46,17 +48,17 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
         <div className="flex items-center gap-2">
           <Award className="w-5 h-5 text-black" />
           <h2 className="text-xl md:text-2xl font-bold text-black uppercase font-['Plus_Jakarta_Sans']">
-            Top Recommended AI Deals (Editor&apos;s Choice)
+            Hottest Affiliate Deals
           </h2>
         </div>
         <span
           className={
             editorial
-              ? 'text-xs text-black font-semibold bg-neutral-100 px-3 py-1 border border-black uppercase'
+              ? 'text-xs text-[#0D766E] font-bold bg-emerald-50 px-3 py-1 border border-[#0D766E]/30 uppercase flex items-center gap-1'
               : 'text-xs text-black font-semibold bg-neutral-100 px-3 py-1 border border-neutral-300'
           }
         >
-          ✓ Verified Offers
+          ✓ Tested Deals
         </span>
       </div>
 
@@ -83,10 +85,10 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
               className={
                 editorial
                   ? 'absolute top-4 right-4 bg-black text-white font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1 flex items-center gap-1'
-                  : 'absolute top-4 right-4 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm'
+                  : 'absolute top-4 right-4 bg-black text-white font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm'
               }
             >
-              <Star size={10} fill="currentColor" /> Rank #{index + 1}
+              <Star size={10} fill="currentColor" /> Pick #{index + 1}
             </div>
 
             <div>
@@ -126,14 +128,10 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
               href={`/api/v1/public/tracking/redirect?affiliate_link_id=${pick.id}`}
               rel="nofollow sponsored"
               target="_blank"
-              className={
-                editorial
-                  ? 'w-full py-3.5 border border-black bg-black text-white font-bold text-xs flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:scale-[1.02] transition-transform duration-150 cursor-pointer'
-                  : 'w-full py-3.5 rounded-xl bg-[#FF6B6B] hover:bg-[#ff5252] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-rose-500/20 hover:scale-[1.02] transition-all cursor-pointer'
-              }
+              className={editorial ? 'verdict-cta w-full justify-center' : 'verdict-cta w-full justify-center'}
             >
-              <span>Claim Deal &amp; Start</span>
-              <ExternalLink size={14} />
+              <span>View Deal</span>
+              <ExternalLink size={14} className="cta-arrow" />
             </a>
           </div>
         ))}

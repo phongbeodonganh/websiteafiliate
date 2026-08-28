@@ -65,3 +65,26 @@ export function getClientIp(req: Request): string {
   }
   return '127.0.0.1';
 }
+
+// Trích xuất số % hoa hồng từ chuỗi commission (ví dụ "30% recurring" -> 30)
+export function parseCommissionRate(commission?: string): number {
+  if (!commission) return 0;
+  const percentMatch = commission.match(/(\d+(?:\.\d+)?)\s*%/);
+  if (percentMatch) return parseFloat(percentMatch[1]);
+  const numMatch = commission.match(/(\d+(?:\.\d+)?)/);
+  return numMatch ? parseFloat(numMatch[1]) : 0;
+}
+
+// Trích xuất số ngày cookie từ chuỗi cookie (ví dụ "30 days" -> 30, "1 year" -> 365, "Lifetime" -> 9999)
+export function parseCookieDays(cookie?: string): number {
+  if (!cookie) return 0;
+  const lower = cookie.toLowerCase();
+  if (lower.includes('lifetime') || lower.includes('vĩnh viễn')) return 9999;
+  if (lower.includes('year') || lower.includes('năm')) {
+    const m = lower.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) * 365 : 365;
+  }
+  const match = lower.match(/(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
