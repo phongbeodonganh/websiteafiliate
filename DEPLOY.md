@@ -105,7 +105,7 @@ R2_BUCKET_NAME="affiliate-storage"
 R2_ACCESS_KEY_ID="<copy từ .env.local local>"
 R2_SECRET_ACCESS_KEY="<copy từ .env.local local>"
 R2_ENDPOINT="https://7929e845b9844a3cdb2cab8314760931.r2.cloudflarestorage.com"
-R2_PUBLIC_URL="https://pub-953bb290427d4613aef7ab843d88f8a5.r2.dev"
+R2_PUBLIC_URL="https://media.aidealsuk.com"
 ```
 
 > Lưu ý: `JWT_SECRET` này **phải khác** secret đang dùng ở máy dev local — nếu trùng, ai có secret dev cũng ký được token hợp lệ trên production.
@@ -290,4 +290,4 @@ Tham khảo [GO_LIVE_TASKLIST.md](GO_LIVE_TASKLIST.md) và [R2_IMAGE_STORAGE_TAS
 - [x] SEO-01/SEO-02 (`sitemap.ts`, `robots.ts`) — đã làm, tự hoạt động đúng sau khi deploy, không cần thêm thao tác gì
 - [x] SEO-03 (`next/image`) — đã làm, cần domain R2/Unsplash nằm trong `next.config.ts` remotePatterns (đã cấu hình sẵn)
 - [ ] SEC-01 (mật khẩu MongoDB Atlas bị lộ) — vẫn đang bị block, cần chủ sở hữu Atlas xử lý
-- [ ] R2-03 (custom domain cho ảnh R2) — đang tạm dùng `pub-*.r2.dev`, làm sau khi đổi nameserver `aidealsuk.com` sang Cloudflare (không bắt buộc để go-live, chỉ tối ưu thêm)
+- [x] R2-03 (custom domain cho ảnh R2) — đã gắn `media.aidealsuk.com`, nhớ đổi `R2_PUBLIC_URL` trên server production sang giá trị mới rồi restart app (bước 6)

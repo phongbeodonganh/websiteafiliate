@@ -3228,6 +3228,18 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Google Analytics Measurement ID (GA4)</label>
+              <input
+                type="text"
+                value={settingsData?.googleAnalyticsId || ''}
+                onChange={(e) => setSettingsData({ ...settingsData, googleAnalyticsId: e.target.value })}
+                placeholder="G-XXXXXXXXXX"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">Lấy Measurement ID từ Google Analytics 4 (Admin &gt; Data Streams). Để trống để tắt tracking.</p>
+            </div>
+
+            <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-xs font-medium text-slate-400">Schema JSON-LD (AI Engine Friendly)</label>
                 <button
