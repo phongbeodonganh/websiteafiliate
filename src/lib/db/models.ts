@@ -207,17 +207,31 @@ const ClickLogSchema = new Schema<IClickLog>({
 export interface ISubscriber extends Document {
   email: string;
   subscribed_at: Date;
+  status?: 'pending' | 'active' | 'unsubscribed';
+  confirmation_sent_at?: Date;
+  confirmation_expires_at?: Date;
+  confirmed_at?: Date;
+  unsubscribed_at?: Date;
   email_status?: 'sent' | 'opened';
   last_email_id?: string;
   opened_at?: Date;
+  last_digest_at?: Date;
+  last_digest_key?: string;
 }
 
 const SubscriberSchema = new Schema<ISubscriber>({
   email: { type: String, required: true, unique: true },
   subscribed_at: { type: Date, default: Date.now },
+  status: { type: String, enum: ['pending', 'active', 'unsubscribed'], default: 'pending', index: true },
+  confirmation_sent_at: { type: Date },
+  confirmation_expires_at: { type: Date },
+  confirmed_at: { type: Date },
+  unsubscribed_at: { type: Date },
   email_status: { type: String, enum: ['sent', 'opened'], default: 'sent' },
   last_email_id: { type: String },
-  opened_at: { type: Date }
+  opened_at: { type: Date },
+  last_digest_at: { type: Date },
+  last_digest_key: { type: String, index: true },
 });
 
 // 9. Setting

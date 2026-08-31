@@ -1,17 +1,20 @@
-const RESEND_API_URL = 'https://api.resend.com/emails';
+import { Resend } from 'resend';
+
+const DEFAULT_EMAIL_FROM = 'AIDEALSUK Insider <insider@aidealsuk.com>';
+const DEFAULT_EMAIL_REPLY_TO = 'support@aidealsuk.com';
 
 export interface SendEmailInput {
   to: string;
   subject: string;
   html: string;
   text: string;
+  headers?: Record<string, string>;
   idempotencyKey?: string;
 }
 
-interface ResendErrorResponse {
-  message?: string;
-  name?: string;
-}
+export type BatchEmailInput = Omit<SendEmailInput, 'idempotencyKey'>;
+
+export const RESEND_BATCH_SIZE = 100;
 
 export class EmailConfigurationError extends Error {
   constructor(message: string) {
@@ -22,50 +25,70 @@ export class EmailConfigurationError extends Error {
 
 function getEmailConfig() {
   const apiKey = process.env.RESEND_API?.trim();
-  const from = process.env.EMAIL_FROM?.trim();
-  const replyTo = process.env.EMAIL_REPLY_TO?.trim();
+  const from = process.env.EMAIL_FROM?.trim() || DEFAULT_EMAIL_FROM;
+  const replyTo = process.env.EMAIL_REPLY_TO?.trim() || DEFAULT_EMAIL_REPLY_TO;
 
   if (!apiKey) throw new EmailConfigurationError('RESEND_API is not configured');
-  if (!from) throw new EmailConfigurationError('EMAIL_FROM is not configured');
 
   return { apiKey, from, replyTo };
 }
 
 export function isResendConfigured() {
   const apiKey = process.env.RESEND_API?.trim();
-  return Boolean(apiKey && process.env.EMAIL_FROM?.trim());
+  return Boolean(apiKey);
 }
 
 export async function sendEmailWithResend(input: SendEmailInput) {
   const { apiKey, from, replyTo } = getEmailConfig();
-  const response = await fetch(RESEND_API_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      ...(input.idempotencyKey ? { 'Idempotency-Key': input.idempotencyKey } : {}),
-    },
-    body: JSON.stringify({
+  const resend = new Resend(apiKey);
+  const { data, error } = await resend.emails.send(
+    {
       from,
-      to: [input.to],
+      to: input.to,
       subject: input.subject,
       html: input.html,
       text: input.text,
-      ...(replyTo ? { reply_to: replyTo } : {}),
-    }),
-    cache: 'no-store',
-  });
+      replyTo,
+      headers: input.headers,
+    },
+    input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : undefined,
+  );
 
-  const payload = (await response.json().catch(() => ({}))) as ResendErrorResponse & { id?: string };
   console.log('Resend email response:', {
-    status: response.status,
-    ok: response.ok,
-    payload,
+    id: data?.id,
+    error,
   });
 
-  if (!response.ok || !payload.id) {
-    throw new Error(payload.message || payload.name || `Resend rejected the email (${response.status})`);
+  if (error || !data?.id) {
+    throw new Error(error?.message || error?.name || 'Resend rejected the email');
   }
 
-  return { id: payload.id };
+  return { id: data.id };
+}
+
+export async function sendEmailBatchWithResend(inputs: BatchEmailInput[], idempotencyKey: string) {
+  if (inputs.length === 0 || inputs.length > RESEND_BATCH_SIZE) {
+    throw new Error(`Resend batch must contain between 1 and ${RESEND_BATCH_SIZE} emails`);
+  }
+
+  const { apiKey, from, replyTo } = getEmailConfig();
+  const resend = new Resend(apiKey);
+  const { data, error } = await resend.batch.send(
+    inputs.map((input) => ({
+      from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+      replyTo,
+      headers: input.headers,
+    })),
+    { idempotencyKey, batchValidation: 'strict' },
+  );
+
+  if (error || !data?.data) {
+    throw new Error(error?.message || error?.name || 'Resend rejected the email batch');
+  }
+
+  return { ids: data.data.map((item) => item.id) };
 }
