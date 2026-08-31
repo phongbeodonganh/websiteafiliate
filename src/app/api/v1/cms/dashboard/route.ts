@@ -2,6 +2,28 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, UserModel, ClickLogModel, SubscriberModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { ACTIVE_SUBSCRIBER_FILTER } from '@/lib/insider/subscribers';
+
+interface PopulatedAuthor {
+  _id?: { toString(): string };
+  name?: string;
+  username?: string;
+}
+
+interface EditorStats {
+  user: {
+    id: string;
+    name: string;
+    username: string;
+    role: 'admin' | 'editor' | 'author';
+    avatar: string;
+  };
+  views: number;
+  clicks: number;
+  revenue: number;
+  bestArticle: { title: string; revenue: number } | null;
+  maxClicks: number;
+}
 
 export async function GET(req: Request) {
   const user = getAuthUser(req);
@@ -30,10 +52,11 @@ export async function GET(req: Request) {
       const doc = art.toObject();
       const artIdStr = doc._id.toString();
       const clicks = clickMap[artIdStr] ?? 0;
+      const author = doc.author_id as unknown as PopulatedAuthor | undefined;
       return {
         id: artIdStr,
-        authorId: doc.author_id ? (doc.author_id as any)._id?.toString() || doc.author_id.toString() : null,
-        authorName: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Unknown',
+        authorId: author?._id?.toString() || doc.author_id?.toString() || null,
+        authorName: author?.name || author?.username || 'Unknown',
         title: doc.title,
         slug: doc.slug,
         status: doc.status,
@@ -54,12 +77,12 @@ export async function GET(req: Request) {
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 5);
 
-    let topEditors: any[] = [];
+    let topEditors: EditorStats[] = [];
     if (user.role === 'admin') {
       const allUsers = await UserModel.find();
       const allPublished = await ArticleModel.find({ status: 'published' });
 
-      const userStats: Record<string, any> = {};
+      const userStats: Record<string, EditorStats> = {};
 
       allPublished.forEach((article) => {
         const artDoc = article.toObject();
@@ -103,7 +126,7 @@ export async function GET(req: Request) {
         .slice(0, 5);
     }
 
-    const totalSubscribers = await SubscriberModel.countDocuments();
+    const totalSubscribers = await SubscriberModel.countDocuments(ACTIVE_SUBSCRIBER_FILTER);
 
     return NextResponse.json({
       status: 'success',

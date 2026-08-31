@@ -52,6 +52,9 @@ import {
   Upload,
   FileSpreadsheet,
   AlertTriangle,
+  Send,
+  Loader2,
+  Radio,
 } from 'lucide-react';
 
 // Reusable Luxury Button Component
@@ -119,6 +122,8 @@ export default function AdminDashboardPage() {
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
   const [subscribersStats, setSubscribersStats] = useState<any>({ totalSubscribers: 0, countToday: 0, countThisWeek: 0 });
   const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
+  const [sendingInsiderDigest, setSendingInsiderDigest] = useState(false);
+  const [insiderDispatchNotice, setInsiderDispatchNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // User Modal State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -501,6 +506,45 @@ export default function AdminDashboardPage() {
       if (res.ok) loadSubscribersData();
     } catch (err) {
       alert('Error deleting subscriber');
+    }
+  };
+
+  const handleSendInsiderDigestNow = async () => {
+    const activeRecipients = subscribersStats?.totalSubscribers || 0;
+    if (activeRecipients === 0) {
+      setInsiderDispatchNotice({ type: 'error', text: 'No active Insider recipients are available.' });
+      return;
+    }
+    if (!confirm(`Send today's Insider digest to ${activeRecipients.toLocaleString()} active recipient${activeRecipients === 1 ? '' : 's'} now? This manual send will not replace or suppress the next scheduled cron digest.`)) return;
+
+    const token = localStorage.getItem('token');
+    setSendingInsiderDigest(true);
+    setInsiderDispatchNotice(null);
+    try {
+      const response = await fetch('/api/v1/cms/insider/send-now', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.status !== 'success') {
+        throw new Error(payload.message || 'The digest could not be sent.');
+      }
+
+      const result = payload.data || {};
+      const text = result.skipped === 'no_articles'
+        ? 'No published articles are available for this digest.'
+        : result.sent === 0
+          ? 'No active Insider recipients were found when the dispatch started.'
+          : `Digest sent to ${result.sent.toLocaleString()} Insider${result.sent === 1 ? '' : 's'} in ${result.batches.toLocaleString()} Resend batch${result.batches === 1 ? '' : 'es'}. The next scheduled cron digest remains active.`;
+      setInsiderDispatchNotice({ type: 'success', text });
+      loadSubscribersData();
+    } catch (error) {
+      setInsiderDispatchNotice({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'The digest could not be sent.',
+      });
+    } finally {
+      setSendingInsiderDigest(false);
     }
   };
 
@@ -3219,8 +3263,14 @@ export default function AdminDashboardPage() {
         alert('No subscribers to export');
         return;
       }
-      const headers = ['ID', 'Email Address', 'Subscribed Date'];
-      const rows = subscribersList.map((s) => [s.id, `"${s.email}"`, `"${s.subscribedAt || ''}"`]);
+      const headers = ['ID', 'Email Address', 'Subscription Status', 'Subscribed Date', 'Last Digest'];
+      const rows = subscribersList.map((s) => [
+        s.id,
+        `"${s.email}"`,
+        `"${s.status || 'active'}"`,
+        `"${s.subscribedAt || ''}"`,
+        `"${s.lastDigestAt || ''}"`,
+      ]);
       const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
@@ -3235,19 +3285,78 @@ export default function AdminDashboardPage() {
       <div className="space-y-6 animate-in fade-in duration-500 pb-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Subscriber Leads & Email Reports</h2>
-            <p className="text-slate-400 text-sm">Monitor newsletter signups, track conversion trends, and export leads for email marketing campaigns.</p>
+            <h2 className="text-2xl font-bold text-white mb-1">Insider Dispatch</h2>
+            <p className="text-slate-400 text-sm">Manage confirmed readers, confirmation status, daily delivery, and unsubscribes.</p>
           </div>
           <LuxuryButton onClick={exportToCsv} className="py-2.5 px-5">
             <Download size={18} /> Export Leads (.CSV)
           </LuxuryButton>
         </div>
 
+        {/* Daily dispatch control */}
+        <section className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-[#0b0b0e] shadow-[0_20px_70px_rgba(0,0,0,0.28)]">
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-amber-300 via-amber-500 to-transparent" />
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 p-6 sm:p-7">
+            <div>
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+                  <Radio size={11} className="animate-pulse" /> Daily automation
+                </span>
+                <span className="text-xs font-mono text-slate-500">00:00 GMT+12 · previous-day brief</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Recipients</p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{(subscribersStats?.totalSubscribers || 0).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">Active and confirmed</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Awaiting confirmation</p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-300">{(subscribersStats?.pendingCount || 0).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">Not included in delivery</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Last dispatch</p>
+                  <p className="mt-2 text-sm font-mono text-slate-200">
+                    {subscribersStats?.lastDispatchAt
+                      ? new Date(subscribersStats.lastDispatchAt).toLocaleString()
+                      : 'No digest sent yet'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col justify-center xl:items-end gap-3 xl:border-l xl:border-slate-800 xl:pl-7">
+              <LuxuryButton
+                onClick={handleSendInsiderDigestNow}
+                disabled={sendingInsiderDigest || !(subscribersStats?.totalSubscribers > 0)}
+                className="min-w-[210px] py-3 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {sendingInsiderDigest
+                  ? <><Loader2 size={16} className="animate-spin" /> Sending digest...</>
+                  : <><Send size={16} /> Send digest now</>}
+              </LuxuryButton>
+              <p className="max-w-[260px] text-[11px] leading-relaxed text-slate-500 xl:text-right">Sends today’s GMT+12 brief immediately. The next scheduled cron digest remains active.</p>
+            </div>
+          </div>
+          {insiderDispatchNotice && (
+            <div
+              className={`border-t px-6 py-3 text-xs font-medium ${insiderDispatchNotice.type === 'success'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+                : 'border-rose-500/20 bg-rose-500/[0.07] text-rose-300'
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              {insiderDispatchNotice.text}
+            </div>
+          )}
+        </section>
+
         {/* Lead KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="Total Email Leads" value={(subscribersStats?.totalSubscribers || 0).toLocaleString()} icon={Mail} trend="+12.5%" subtext="Verified opt-in leads" />
-          <StatCard title="New Leads Today" value={(subscribersStats?.countToday || 0).toLocaleString()} icon={Sparkles} subtext="Signups last 24h" />
-          <StatCard title="New Leads This Week" value={(subscribersStats?.countThisWeek || 0).toLocaleString()} icon={TrendingUp} subtext="Signups last 7 days" />
+          <StatCard title="New Insiders Today" value={(subscribersStats?.countToday || 0).toLocaleString()} icon={Sparkles} subtext="Confirmed today in GMT+12" />
+          <StatCard title="New This Week" value={(subscribersStats?.countThisWeek || 0).toLocaleString()} icon={TrendingUp} subtext="Confirmed in the last 7 days" />
+          <StatCard title="Unsubscribed" value={(subscribersStats?.unsubscribedCount || 0).toLocaleString()} icon={X} subtext="Excluded from all delivery" />
         </div>
 
         {/* Search Bar */}
@@ -3292,13 +3401,26 @@ export default function AdminDashboardPage() {
                     <td className="p-4">
                       <span
                         className={`text-xs font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-max ${
-                          sub.emailStatus === 'opened'
+                          sub.status === 'active'
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                            : sub.status === 'unsubscribed'
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                         }`}
-                        title={sub.openedAt ? `Opened ${new Date(sub.openedAt).toLocaleString()}` : 'Email sent, waiting to be opened'}
+                        title={sub.lastDigestAt
+                          ? `Last digest: ${new Date(sub.lastDigestAt).toLocaleString()}`
+                          : `Email status: ${sub.emailStatus || 'sent'}`}
                       >
-                        <CheckCircle2 size={12} /> {sub.emailStatus === 'opened' ? 'Opened' : 'Sent'}
+                        {sub.status === 'active'
+                          ? <CheckCircle2 size={12} />
+                          : sub.status === 'unsubscribed'
+                            ? <X size={12} />
+                            : <Clock size={12} />}
+                        {sub.status === 'active'
+                          ? 'Active'
+                          : sub.status === 'unsubscribed'
+                            ? 'Unsubscribed'
+                            : 'Pending confirmation'}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -3382,7 +3504,7 @@ export default function AdminDashboardPage() {
               {currentUser.role === 'admin' && (
                 <>
                   <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">System (Admin)</div>
-                  <NavItem id="subscribers" icon={Mail} label="Subscriber Leads" requiredRole="admin" />
+                  <NavItem id="subscribers" icon={Mail} label="Insider" requiredRole="admin" />
                   <NavItem id="categories" icon={FolderTree} label="Categories & Sub-Cats" requiredRole="admin" />
                   <NavItem id="users" icon={Users} label="Team & Creators" requiredRole="admin" />
                   <NavItem id="blacklist" icon={ShieldAlert} label="Link & Blacklist Center" requiredRole="admin" />
