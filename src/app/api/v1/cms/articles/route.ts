@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { slugify } from '@/lib/utils';
+import { slugify, isValidObjectId } from '@/lib/utils';
+import { sanitizeArticleContent } from '@/lib/sanitize';
+import { revalidatePublicArticles } from '@/lib/cache-revalidation';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
@@ -89,6 +91,7 @@ export async function POST(req: Request) {
       entities,
       faqSchema,
       affiliatePlacements,
+      id,
     } = body;
 
     if (!title || !content) {
@@ -102,14 +105,20 @@ export async function POST(req: Request) {
       finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
     }
 
+    let presetId: string | undefined;
+    if (id && isValidObjectId(id) && !(await ArticleModel.exists({ _id: id }))) {
+      presetId = id;
+    }
+
     const newArticle = await ArticleModel.create({
+      ...(presetId ? { _id: presetId } : {}),
       author_id: user.userId.toString(),
       category_id: categoryId || undefined,
       sub_category_id: subCategoryId || undefined,
       title,
       slug: finalSlug,
       excerpt: excerpt || '',
-      content,
+      content: sanitizeArticleContent(content),
       status: status || 'draft',
       is_featured: Boolean(isFeatured),
       revenue: revenue ? Number(revenue) : 0,
@@ -122,6 +131,8 @@ export async function POST(req: Request) {
       faq_schema: Array.isArray(faqSchema) ? faqSchema : [],
       affiliate_placements: Array.isArray(affiliatePlacements) ? affiliatePlacements : [],
     });
+
+    revalidatePublicArticles();
 
     return NextResponse.json(
       {

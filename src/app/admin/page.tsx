@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import TipTapEditor from '@/components/TipTapEditor';
+import { sanitizeArticleContent } from '@/lib/sanitize';
+import { generateObjectId } from '@/lib/utils';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 import {
   LayoutDashboard,
   FileText,
@@ -50,6 +52,9 @@ import {
   Upload,
   FileSpreadsheet,
   AlertTriangle,
+  Send,
+  Loader2,
+  Radio,
 } from 'lucide-react';
 
 // Reusable Luxury Button Component
@@ -117,6 +122,8 @@ export default function AdminDashboardPage() {
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
   const [subscribersStats, setSubscribersStats] = useState<any>({ totalSubscribers: 0, countToday: 0, countThisWeek: 0 });
   const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
+  const [sendingInsiderDigest, setSendingInsiderDigest] = useState(false);
+  const [insiderDispatchNotice, setInsiderDispatchNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // User Modal State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -179,6 +186,77 @@ export default function AdminDashboardPage() {
   const [settingsSection, setSettingsSection] = useState<'appearance' | 'seo_geo' | 'code'>('appearance');
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // FE-01: Đồng bộ state điều hướng (tab / bài đang sửa / bài đang preview) vào
+  // query string, để nút Back/Forward trình duyệt lùi lại đúng từng bước UI thay
+  // vì thoát hẳn khỏi /admin.
+  const buildAdminUrl = (tab: string, editId?: string, previewId?: string) => {
+    const params = new URLSearchParams();
+    if (tab !== 'dashboard') params.set('tab', tab);
+    if (editId) params.set('edit', editId);
+    if (previewId) params.set('preview', previewId);
+    const qs = params.toString();
+    return qs ? `/admin?${qs}` : '/admin';
+  };
+
+  const navigate = (
+    next: { tab?: string; editingArticle?: any; previewArticle?: any },
+    options: { replace?: boolean } = {}
+  ) => {
+    const tab = next.tab ?? activeTab;
+    const nextEditing = 'editingArticle' in next ? next.editingArticle : null;
+    const nextPreview = 'previewArticle' in next ? next.previewArticle : null;
+
+    setActiveTab(tab);
+    setEditingArticle(nextEditing);
+    setPreviewArticle(nextPreview);
+
+    const url = buildAdminUrl(
+      tab,
+      nextEditing ? nextEditing.id || 'new' : undefined,
+      nextPreview?.id
+    );
+    if (options.replace) router.replace(url, { scroll: false });
+    else router.push(url, { scroll: false });
+  };
+
+  // Khôi phục state từ URL khi bấm Back/Forward (hoặc khi mở thẳng link có sẵn
+  // query string). Chạy sau mọi navigate() ở trên cũng vô hại vì lúc đó state
+  // local đã khớp URL sẵn rồi (early-return bên dưới).
+  useEffect(() => {
+    const urlTab = searchParams.get('tab') || 'dashboard';
+    const urlEditId = searchParams.get('edit');
+    const urlPreviewId = searchParams.get('preview');
+
+    const currentEditId = editingArticle ? editingArticle.id || 'new' : null;
+    const currentPreviewId = previewArticle?.id || null;
+
+    if (urlTab === activeTab && urlEditId === currentEditId && urlPreviewId === currentPreviewId) {
+      return;
+    }
+
+    setActiveTab(urlTab);
+
+    if (urlEditId === 'new') {
+      setEditingArticle({});
+    } else if (urlEditId) {
+      const found = articlesList.find((a) => a.id === urlEditId);
+      if (found) setEditingArticle(found);
+      // Chưa tìm thấy (articlesList chưa load xong) — giữ nguyên, effect sẽ chạy
+      // lại khi articlesList cập nhật (đã có trong dependency array).
+    } else {
+      setEditingArticle(null);
+    }
+
+    if (urlPreviewId) {
+      const found = articlesList.find((a) => a.id === urlPreviewId);
+      if (found) setPreviewArticle(found);
+    } else {
+      setPreviewArticle(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, articlesList]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -431,6 +509,45 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleSendInsiderDigestNow = async () => {
+    const activeRecipients = subscribersStats?.totalSubscribers || 0;
+    if (activeRecipients === 0) {
+      setInsiderDispatchNotice({ type: 'error', text: 'No active Insider recipients are available.' });
+      return;
+    }
+    if (!confirm(`Send today's Insider digest to ${activeRecipients.toLocaleString()} active recipient${activeRecipients === 1 ? '' : 's'} now? This manual send will not replace or suppress the next scheduled cron digest.`)) return;
+
+    const token = localStorage.getItem('token');
+    setSendingInsiderDigest(true);
+    setInsiderDispatchNotice(null);
+    try {
+      const response = await fetch('/api/v1/cms/insider/send-now', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.status !== 'success') {
+        throw new Error(payload.message || 'The digest could not be sent.');
+      }
+
+      const result = payload.data || {};
+      const text = result.skipped === 'no_articles'
+        ? 'No published articles are available for this digest.'
+        : result.sent === 0
+          ? 'No active Insider recipients were found when the dispatch started.'
+          : `Digest sent to ${result.sent.toLocaleString()} Insider${result.sent === 1 ? '' : 's'} in ${result.batches.toLocaleString()} Resend batch${result.batches === 1 ? '' : 'es'}. The next scheduled cron digest remains active.`;
+      setInsiderDispatchNotice({ type: 'success', text });
+      loadSubscribersData();
+    } catch (error) {
+      setInsiderDispatchNotice({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'The digest could not be sent.',
+      });
+    } finally {
+      setSendingInsiderDigest(false);
+    }
+  };
+
   const loadUsersData = () => {
     const token = localStorage.getItem('token');
     fetch('/api/v1/cms/users', { headers: { Authorization: `Bearer ${token}` } })
@@ -447,7 +564,19 @@ export default function AdminDashboardPage() {
     }
   }, [activeTab, currentUser]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        // Mất mạng/API lỗi vẫn cứ đăng xuất phía client bình thường — token cũ
+        // không bị revoke ngay lúc đó nhưng vẫn tự hết hạn sau 24h như cũ.
+      }
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     router.push('/admin/login');
@@ -541,25 +670,27 @@ export default function AdminDashboardPage() {
         setShowAiGenerateModal(false);
         loadAllData();
         // Switch to Articles tab and open edit mode
-        setActiveTab('articles');
-        setEditingArticle({
-          id: data.data.articleId,
-          title: data.data.title,
-          slug: data.data.slug,
-          content: data.data.content,
-          excerpt: data.data.excerpt,
-          metaTitle: data.data.seo_meta?.meta_title || '',
-          metaDescription: data.data.seo_meta?.meta_description || '',
-          focusKeyword: data.data.seo_meta?.focus_keywords?.[0] || '',
-          keyTakeaways: Array.isArray(data.data.geo_data?.key_takeaways)
-            ? data.data.geo_data.key_takeaways.join('\n')
-            : data.data.geo_data?.key_takeaways || '',
-          entities: Array.isArray(data.data.geo_data?.entities)
-            ? data.data.geo_data.entities.join(', ')
-            : data.data.geo_data?.entities || '',
-          faqSchema: data.data.faqSchema || data.data.geo_data?.faq_list || [],
-          faqSchemaJsonld: data.data.geo_data?.faq_schema_jsonld || '',
-          status: 'draft',
+        navigate({
+          tab: 'articles',
+          editingArticle: {
+            id: data.data.articleId,
+            title: data.data.title,
+            slug: data.data.slug,
+            content: data.data.content,
+            excerpt: data.data.excerpt,
+            metaTitle: data.data.seo_meta?.meta_title || '',
+            metaDescription: data.data.seo_meta?.meta_description || '',
+            focusKeyword: data.data.seo_meta?.focus_keywords?.[0] || '',
+            keyTakeaways: Array.isArray(data.data.geo_data?.key_takeaways)
+              ? data.data.geo_data.key_takeaways.join('\n')
+              : data.data.geo_data?.key_takeaways || '',
+            entities: Array.isArray(data.data.geo_data?.entities)
+              ? data.data.geo_data.entities.join(', ')
+              : data.data.geo_data?.entities || '',
+            faqSchema: data.data.faqSchema || data.data.geo_data?.faq_list || [],
+            faqSchemaJsonld: data.data.geo_data?.faq_schema_jsonld || '',
+            status: 'draft',
+          },
         });
       } else {
         alert(`Lỗi sinh bài viết AI: ${data.message}`);
@@ -748,7 +879,7 @@ export default function AdminDashboardPage() {
     const schema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": settingsData?.businessName || settingsData?.siteTitle || "NEXUS FINANCE GLOBAL",
+      "name": settingsData?.businessName || settingsData?.siteTitle || "AIDEALSUK",
       "url": settingsData?.canonicalUrl || "https://nexusfinance.global",
       "logo": settingsData?.logoUrl || "https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=300",
       "description": settingsData?.metaDescription || "Institutional Financial Intelligence & Affiliate Deals",
@@ -818,7 +949,7 @@ export default function AdminDashboardPage() {
               <h3 className="text-white font-medium flex items-center gap-2">
                 <Activity size={18} className="text-amber-400" /> Top Performing Articles
               </h3>
-              <button onClick={() => setActiveTab('articles')} className="text-xs text-amber-400 hover:text-amber-300">
+              <button onClick={() => navigate({ tab: 'articles' })} className="text-xs text-amber-400 hover:text-amber-300">
                 View All
               </button>
             </div>
@@ -830,15 +961,14 @@ export default function AdminDashboardPage() {
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                        idx === 0
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : idx === 1
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${idx === 0
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : idx === 1
                           ? 'bg-slate-300/20 text-slate-300'
                           : idx === 2
-                          ? 'bg-amber-700/20 text-amber-600'
-                          : 'bg-slate-800 text-slate-500'
-                      }`}
+                            ? 'bg-amber-700/20 text-amber-600'
+                            : 'bg-slate-800 text-slate-500'
+                        }`}
                     >
                       #{idx + 1}
                     </div>
@@ -945,13 +1075,12 @@ export default function AdminDashboardPage() {
                 </td>
                 <td className="p-4">
                   <span
-                    className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 w-max ${
-                      u.role === 'admin'
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : u.role === 'editor'
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 w-max ${u.role === 'admin'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : u.role === 'editor'
                         ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                         : 'bg-slate-800 text-slate-300 border border-slate-700'
-                    }`}
+                      }`}
                   >
                     {u.role === 'admin' && <Shield size={12} />}
                     {u.role.toUpperCase()}
@@ -960,9 +1089,8 @@ export default function AdminDashboardPage() {
                 <td className="p-4">
                   <span className="flex items-center gap-2 text-xs">
                     <span
-                      className={`w-2 h-2 rounded-full ${
-                        u.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-600'
-                      }`}
+                      className={`w-2 h-2 rounded-full ${u.status === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-slate-600'
+                        }`}
                     ></span>
                     <span className={u.status === 'active' ? 'text-slate-300' : 'text-slate-500'}>
                       {u.status === 'active' ? 'Active' : 'Inactive'}
@@ -1075,7 +1203,7 @@ export default function AdminDashboardPage() {
           >
             <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
           </button>
-          <LuxuryButton onClick={() => setEditingArticle({})}>
+          <LuxuryButton onClick={() => navigate({ editingArticle: {} })}>
             <Plus size={18} /> Create New Article
           </LuxuryButton>
         </div>
@@ -1116,11 +1244,10 @@ export default function AdminDashboardPage() {
                 )}
                 <td className="p-4">
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 w-max uppercase tracking-wider ${
-                      art.status === 'published'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700'
-                    }`}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 w-max uppercase tracking-wider ${art.status === 'published'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                      }`}
                   >
                     {art.status === 'published' ? <CheckCircle2 size={12} /> : <CircleDashed size={12} />}
                     {art.status === 'published' ? 'Published' : 'Draft'}
@@ -1138,14 +1265,14 @@ export default function AdminDashboardPage() {
                 </td>
                 <td className="p-4 text-right flex justify-end gap-2">
                   <button
-                    onClick={() => setPreviewArticle(art)}
+                    onClick={() => navigate({ previewArticle: art })}
                     className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
                     title="Preview Article"
                   >
                     <Globe size={16} />
                   </button>
                   <button
-                    onClick={() => setEditingArticle(art)}
+                    onClick={() => navigate({ editingArticle: art })}
                     className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                     title="Edit Article"
                   >
@@ -1162,10 +1289,74 @@ export default function AdminDashboardPage() {
 
   // Article Editor Form V5.1 (SEO & GEO Studio)
   const ArticleEditorForm = () => {
+    // ID sinh trước ở client cho bài mới (chưa có editingArticle.id), dùng để
+    // gắn link/nút affiliate có theo dõi ngay cả khi chưa bấm Save. Nếu bài
+    // được lưu, id này được gửi kèm để MongoDB dùng làm _id thật; nếu không
+    // bao giờ lưu thì id chỉ tồn tại tạm trong state và tự mất khi rời trang.
+    const [pendingId] = useState(() => editingArticle?.id || generateObjectId());
     const [title, setTitle] = useState(editingArticle?.title || '');
     const [slug, setSlug] = useState(editingArticle?.slug || '');
     const [excerpt, setExcerpt] = useState(editingArticle?.excerpt || '');
     const [content, setContent] = useState(editingArticle?.content || '');
+
+    // Autosave nháp vào localStorage — chống mất bài khi crash/đóng nhầm tab.
+    // Bài đang sửa dùng đúng id thật (ổn định qua nhiều phiên); bài mới tạo dùng
+    // 1 slot cố định "new" (không dùng pendingId vì mỗi lần "Create New" sinh ra
+    // 1 id ngẫu nhiên khác nhau — nếu dùng pendingId sẽ không bao giờ tìm lại
+    // được nháp cũ ở phiên sau).
+    const draftKey = editingArticle?.id ? `admin_article_draft_${editingArticle.id}` : 'admin_article_draft_new';
+    const [draftBanner, setDraftBanner] = useState<{ savedAt: number } | null>(null);
+
+    useEffect(() => {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        const isDifferent = draft.title !== (editingArticle?.title || '') || draft.content !== (editingArticle?.content || '');
+        if (isDifferent && typeof draft.savedAt === 'number') {
+          setDraftBanner({ savedAt: draft.savedAt });
+        }
+      } catch {
+        // ignore malformed draft
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+      if (!title && !content) return;
+      const timer = setTimeout(() => {
+        try {
+          localStorage.setItem(draftKey, JSON.stringify({ title, excerpt, content, savedAt: Date.now() }));
+        } catch {
+          // localStorage đầy/bị chặn — bỏ qua autosave, không chặn viết bài
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }, [title, excerpt, content, draftKey]);
+
+    const restoreDraft = () => {
+      try {
+        const raw = localStorage.getItem(draftKey);
+        if (raw) {
+          const draft = JSON.parse(raw);
+          setTitle(draft.title || '');
+          setExcerpt(draft.excerpt || '');
+          setContent(draft.content || '');
+        }
+      } catch {
+        // ignore
+      }
+      setDraftBanner(null);
+    };
+
+    const dismissDraft = () => {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        // ignore
+      }
+      setDraftBanner(null);
+    };
     const [status, setStatus] = useState(editingArticle?.status || 'published');
     const [isFeatured, setIsFeatured] = useState(editingArticle?.isFeatured || editingArticle?.is_featured || false);
     const [categoryId, setCategoryId] = useState(editingArticle?.categoryId || editingArticle?.category_id?._id || editingArticle?.category_id || '');
@@ -1180,22 +1371,38 @@ export default function AdminDashboardPage() {
       typeof editingArticle?.keyTakeaways === 'string'
         ? editingArticle.keyTakeaways
         : Array.isArray(editingArticle?.keyTakeaways || editingArticle?.key_takeaways)
-        ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
-        : ''
+          ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
+          : ''
     );
     const [entitiesText, setEntitiesText] = useState<string>(
       typeof editingArticle?.entities === 'string'
         ? editingArticle.entities
         : Array.isArray(editingArticle?.entities)
-        ? editingArticle.entities.join(', ')
-        : ''
+          ? editingArticle.entities.join(', ')
+          : ''
     );
     const [faqRows, setFaqRows] = useState<Array<{ question: string; answer: string }>>(
       Array.isArray(editingArticle?.faqSchema || editingArticle?.faq_schema) && (editingArticle?.faqSchema || editingArticle?.faq_schema).length > 0
         ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
         : Array.isArray(editingArticle?.faq_list) && editingArticle.faq_list.length > 0
-        ? editingArticle.faq_list
-        : [{ question: '', answer: '' }]
+          ? editingArticle.faq_list
+          : [{ question: '', answer: '' }]
+    );
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
+    // này, KHÔNG dùng chung previewArticle/navigate() của trang ngoài, vì
+    // navigate() sẽ set editingArticle = null làm unmount hẳn ArticleEditorForm
+    // (state title/content sống trong chính component này, không phải ở parent)
+    // — mất hết nội dung đang gõ dở khi bấm quay lại từ preview.
+    const [showLivePreview, setShowLivePreview] = useState(false);
+    const [affiliatePlacements, setAffiliatePlacements] = useState<Array<{ affiliate_link_id: string; position_label: string }>>(
+      (() => {
+        const raw = editingArticle?.affiliatePlacements || editingArticle?.affiliate_placements || [];
+        return raw.map((p: any) => ({
+          affiliate_link_id: p.affiliate_link_id?._id || p.affiliate_link_id,
+          position_label: p.position_label,
+        }));
+      })()
     );
 
     const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId) || c.id === categoryId);
@@ -1234,7 +1441,7 @@ export default function AdminDashboardPage() {
             return;
           }
         }
-      } catch {}
+      } catch { }
       setKeyTakeawaysText(
         `- Phân tích giải pháp cho bài viết "${title || 'AI Insights'}".\n- Tích hợp mô hình Generative Engine mới nhất.\n- Tối ưu hóa quy trình tự động hóa.`
       );
@@ -1257,6 +1464,13 @@ export default function AdminDashboardPage() {
 
     const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
+
+      const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
+      if (isContentEmpty) {
+        alert('Vui lòng nhập nội dung bài viết');
+        return;
+      }
+
       const token = localStorage.getItem('token');
 
       const takeawaysList = keyTakeawaysText
@@ -1272,6 +1486,7 @@ export default function AdminDashboardPage() {
       const validFaq = faqRows.filter((f) => f.question.trim() && f.answer.trim());
 
       const payload = {
+        ...(editingArticle?.id ? {} : { id: pendingId }),
         title,
         slug,
         excerpt,
@@ -1287,6 +1502,7 @@ export default function AdminDashboardPage() {
         keyTakeaways: takeawaysList,
         entities: entitiesList,
         faqSchema: validFaq,
+        affiliatePlacements,
       };
 
       try {
@@ -1308,7 +1524,12 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         if (res.ok && data.status === 'success') {
           alert('Article saved successfully with GEO & SEO metadata!');
-          setEditingArticle(null);
+          try {
+            localStorage.removeItem(draftKey);
+          } catch {
+            // ignore
+          }
+          navigate({ tab: 'articles', editingArticle: null }, { replace: true });
           loadAllData();
         } else {
           alert(`Error: ${data.message}`);
@@ -1318,31 +1539,56 @@ export default function AdminDashboardPage() {
       }
     };
 
-    const insertAffCta = (link: any, positionLabel: string) => {
-      const artId = editingArticle?.id || 1;
-      const labelText =
-        positionLabel === 'top_cta'
-          ? 'Top Partner Deal'
-          : positionLabel === 'middle_comparison'
-          ? 'Comparison Offer'
-          : 'Footer Special Promo';
-      const ctaSnippet = `
-<div class="my-8 flex flex-col items-center justify-center p-6 bg-[#0056B3]/10 border border-[#0056B3]/30 rounded-2xl text-center">
-  <p class="font-bold text-[#0056B3] text-lg mb-2">🔥 ${labelText} (${link.name}):</p>
-  <p class="text-xs text-slate-500 mb-4">Commission: ${link.commission || 'Exclusive'} • Cookie: ${link.cookie || '30 Days'}</p>
-  <a href="/api/v1/public/tracking/redirect?article_id=${artId}&affiliate_link_id=${link.id}" data-affiliate-id="${link.id}" data-article-id="${artId}" class="affiliate-btn inline-flex items-center justify-center px-8 py-3.5 font-bold text-white transition-all duration-200 bg-[#FF6B6B] hover:bg-[#ff5252] rounded-full hover:scale-105 shadow-md shadow-rose-500/20" rel="nofollow sponsored" target="_blank">
-    👉 Claim Offer On ${link.name}
-  </a>
-</div>
-`;
-      setContent((prev: string) => prev + ctaSnippet);
+    const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploadingThumbnail(true);
+      try {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/v1/cms/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        const json = await res.json();
+
+        if (res.ok && json.status === 'success') {
+          setThumbnailUrl(json.data.url);
+        } else {
+          alert(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
+        }
+      } catch {
+        alert('Đã có lỗi xảy ra khi tải ảnh lên!');
+      } finally {
+        setIsUploadingThumbnail(false);
+        e.target.value = '';
+      }
+    };
+
+    const togglePlacement = (affiliateLinkId: string, positionLabel: string) => {
+      const exists = affiliatePlacements.some(
+        (p) => p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel
+      );
+      if (exists) {
+        setAffiliatePlacements(
+          affiliatePlacements.filter(
+            (p) => !(p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel)
+          )
+        );
+      } else {
+        setAffiliatePlacements([...affiliatePlacements, { affiliate_link_id: affiliateLinkId, position_label: positionLabel }]);
+      }
     };
 
     return (
       <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
         <div className="flex items-center gap-4 text-slate-400">
           <button
-            onClick={() => setEditingArticle(null)}
+            onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
             className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
           >
             ← Back to Articles List
@@ -1351,7 +1597,35 @@ export default function AdminDashboardPage() {
           <span className="text-amber-400 font-bold text-xs">
             {editingArticle?.id ? 'Edit Article (SEO & GEO Studio V5.1)' : 'Create Article (SEO & GEO Studio V5.1)'}
           </span>
+          <button
+            type="button"
+            onClick={() => setShowLivePreview(true)}
+            disabled={!title.trim() && !content.trim()}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <Globe size={13} /> Preview
+          </button>
         </div>
+
+        {draftBanner && (
+          <div className="flex items-center justify-between gap-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-2.5 text-xs">
+            <span className="text-cyan-300">
+              Phát hiện bản nháp tự động lưu lúc {new Date(draftBanner.savedAt).toLocaleTimeString('vi-VN')} — khôi phục?
+            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={restoreDraft}
+                className="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold hover:bg-cyan-500/30"
+              >
+                Khôi phục
+              </button>
+              <button type="button" onClick={dismissDraft} className="px-3 py-1 rounded-lg text-slate-400 hover:text-white">
+                Bỏ qua
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Column (Span 2) */}
@@ -1391,24 +1665,45 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Thumbnail Image URL</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Thumbnail Image</label>
+                <div className="flex items-center gap-3 mb-2">
+                  {thumbnailUrl && (
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="w-14 h-14 rounded-lg object-cover border border-slate-800 shrink-0"
+                    />
+                  )}
+                  <label className="flex-1 cursor-pointer">
+                    <span className="w-full inline-flex items-center justify-center gap-2 bg-slate-950 border border-dashed border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-400 hover:bg-slate-900 hover:border-amber-500 transition">
+                      {isUploadingThumbnail ? 'Đang tải ảnh lên...' : 'Chọn ảnh từ máy (JPEG/PNG/WEBP/GIF, tối đa 5MB)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleThumbnailUpload}
+                      disabled={isUploadingThumbnail}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   value={thumbnailUrl}
                   onChange={(e) => setThumbnailUrl(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
-                  placeholder="https://images.unsplash.com/photo-..."
+                  placeholder="...hoặc dán URL ảnh thủ công"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-slate-300">Article Content (Visual WYSIWYG Editor) *</label>
-                  <span className="text-[10px] text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                    ✨ WYSIWYG / WordPress Mode
-                  </span>
-                </div>
-                <TipTapEditor content={content} onChange={setContent} />
+                <label className="text-xs font-semibold text-slate-300 mb-2 block">Article Content (Rich Text) *</label>
+                <RichTextEditor
+                  value={content}
+                  onChange={setContent}
+                  articleId={pendingId}
+                  affiliateLinks={affiliateLinksList}
+                />
               </div>
             </div>
 
@@ -1637,34 +1932,55 @@ export default function AdminDashboardPage() {
               </h3>
 
               <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                {affiliateLinksList.map((link) => (
-                  <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
-                    <p className="text-xs font-bold text-white truncate">{link.name}</p>
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => insertAffCta(link, 'top_cta')}
-                        className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-semibold py-1 rounded"
-                      >
-                        + Top CTA
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertAffCta(link, 'middle_comparison')}
-                        className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[10px] font-semibold py-1 rounded"
-                      >
-                        + Middle
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => insertAffCta(link, 'footer_banner')}
-                        className="flex-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[10px] font-semibold py-1 rounded"
-                      >
-                        + Footer
-                      </button>
+                {affiliateLinksList.map((link) => {
+                  const topActive = affiliatePlacements.some(
+                    (p) => p.affiliate_link_id === link.id && p.position_label === 'top_cta'
+                  );
+                  const middleActive = affiliatePlacements.some(
+                    (p) => p.affiliate_link_id === link.id && p.position_label === 'middle_comparison'
+                  );
+                  const footerActive = affiliatePlacements.some(
+                    (p) => p.affiliate_link_id === link.id && p.position_label === 'footer_banner'
+                  );
+
+                  return (
+                    <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
+                      <p className="text-xs font-bold text-white truncate">{link.name}</p>
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => togglePlacement(link.id, 'top_cta')}
+                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${topActive
+                            ? 'bg-amber-500/30 text-amber-300 border-amber-400'
+                            : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
+                            }`}
+                        >
+                          + Top CTA
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePlacement(link.id, 'middle_comparison')}
+                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${middleActive
+                            ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400'
+                            : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                            }`}
+                        >
+                          + Middle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePlacement(link.id, 'footer_banner')}
+                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${footerActive
+                            ? 'bg-purple-500/30 text-purple-300 border-purple-400'
+                            : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/30'
+                            }`}
+                        >
+                          + Footer
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -1673,54 +1989,85 @@ export default function AdminDashboardPage() {
             </LuxuryButton>
           </div>
         </form>
+
+        {showLivePreview && (
+          <PublicArticlePreview
+            article={{
+              title: title || 'Untitled',
+              content,
+              thumbnailUrl,
+              authorName: currentUser?.name || currentUser?.username,
+            }}
+            onBack={() => setShowLivePreview(false)}
+          />
+        )}
       </div>
     );
   };
 
-  // Preview Modal
-  const PublicArticlePreview = ({ article, onBack }: any) => (
-    <div className="fixed inset-0 z-50 bg-[#0c0c0e] overflow-y-auto animate-in slide-in-from-bottom-10 duration-500 font-sans">
-      <nav className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-            NEXUS<span className="text-amber-400 font-light">FINANCE</span>
-          </div>
-          <button
-            onClick={onBack}
-            className="text-sm text-slate-400 hover:text-white flex items-center gap-1 border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
-          >
-            Close Preview
-          </button>
-        </div>
-      </nav>
+  // Preview Modal — toggle overlay: bấm ra ngoài vùng nội dung (backdrop) cũng
+  // đóng lại, giống hành vi modal chuẩn thay vì chiếm nguyên màn hình trước đây.
+  const PublicArticlePreview = ({ article, onBack }: any) => {
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onBack();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onBack]);
 
-      <article className="max-w-3xl mx-auto px-6 py-16">
-        <div className="mb-10 text-center">
-          <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">In-Depth Analysis</div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{article.title}</h1>
-          <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
-            <span>By <strong>{article.authorName || 'Global Analyst'}</strong></span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} views
-            </span>
-          </div>
-        </div>
-
-        {article.thumbnailUrl && (
-          <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-slate-800 mb-10">
-            <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
-          </div>
-        )}
-
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200 flex justify-center p-4 md:p-8"
+        onClick={onBack}
+      >
         <div
-          className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif"
-          dangerouslySetInnerHTML={{ __html: article.content }}
-        />
-      </article>
-    </div>
-  );
+          className="w-full max-w-4xl h-fit bg-[#0c0c0e] rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 font-sans"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <nav className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-10">
+            <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+              <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                NEXUS<span className="text-amber-400 font-light">FINANCE</span>
+              </div>
+              <button
+                onClick={onBack}
+                className="text-sm text-slate-400 hover:text-white flex items-center gap-1 border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
+              >
+                Close Preview
+              </button>
+            </div>
+          </nav>
+
+          <article className="max-w-3xl mx-auto px-6 py-16">
+            <div className="mb-10 text-center">
+              <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">In-Depth Analysis</div>
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{article.title}</h1>
+              <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
+                <span>By <strong>{article.authorName || 'Global Analyst'}</strong></span>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} views
+                </span>
+              </div>
+            </div>
+
+            {article.thumbnailUrl && (
+              <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-slate-800 mb-10">
+                <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+
+            <div
+              className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif"
+              dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(article.content) }}
+            />
+          </article>
+        </div>
+      </div>
+    );
+  };
 
   // Affiliate Links Management
   const LinksView = () => (
@@ -1763,11 +2110,10 @@ export default function AdminDashboardPage() {
               onChange={(e) => handleCheckAffUrl(e.target.value)}
               placeholder="https://binance.com/en/register?ref=123"
               required
-              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs transition-colors ${
-                affUrlBlacklistError?.isError
-                  ? 'border-rose-500 bg-rose-500/10 text-rose-300 focus:outline-none'
-                  : 'border-slate-800 text-white'
-              }`}
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs transition-colors ${affUrlBlacklistError?.isError
+                ? 'border-rose-500 bg-rose-500/10 text-rose-300 focus:outline-none'
+                : 'border-slate-800 text-white'
+                }`}
             />
           </div>
           <div>
@@ -1828,6 +2174,7 @@ export default function AdminDashboardPage() {
               <th className="p-4 font-medium">Campaign Name</th>
               <th className="p-4 font-medium">Commission Rate</th>
               <th className="p-4 font-medium">Cookie Window</th>
+              <th className="p-4 font-medium">Total Clicks</th>
               <th className="p-4 font-medium">Base Tracking URL</th>
               <th className="p-4 font-medium text-right">Actions</th>
             </tr>
@@ -1857,6 +2204,11 @@ export default function AdminDashboardPage() {
                 </td>
                 <td className="p-4 text-amber-400 text-xs flex items-center gap-1.5">
                   <Clock size={14} /> {link.cookie || '30 Days'}
+                </td>
+                <td className="p-4">
+                  <span className="text-sky-400 font-medium bg-sky-400/10 px-2.5 py-1 rounded-md text-xs border border-sky-400/20 inline-flex items-center gap-1">
+                    <MousePointerClick size={13} /> {(link.clickCount || link.click_count || 0).toLocaleString()}
+                  </span>
                 </td>
                 <td className="p-4 max-w-[200px]">
                   <code className="text-xs text-slate-400 bg-slate-950 px-2 py-1 rounded truncate block border border-slate-800 font-mono">
@@ -1932,22 +2284,20 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={() => setActiveBlacklistTab('repository')}
-            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-              activeBlacklistTab === 'repository'
-                ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-            }`}
+            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${activeBlacklistTab === 'repository'
+              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
           >
             <ShieldAlert size={16} /> Tab 1: Danh sách Blacklist ({blacklistList.length})
           </button>
           <button
             type="button"
             onClick={() => setActiveBlacklistTab('rules')}
-            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-              activeBlacklistTab === 'rules'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-            }`}
+            className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${activeBlacklistTab === 'rules'
+              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
           >
             <Sliders size={16} /> Tab 2: Cấu hình Quy tắc Chặn
           </button>
@@ -2555,22 +2905,20 @@ export default function AdminDashboardPage() {
         <button
           type="button"
           onClick={() => setSettingsSection('appearance')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-            settingsSection === 'appearance'
-              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-          }`}
+          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${settingsSection === 'appearance'
+            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
         >
           <Palette size={16} /> UI Appearance & Colors
         </button>
         <button
           type="button"
           onClick={() => setSettingsSection('seo_geo')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${
-            settingsSection === 'seo_geo'
-              ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
-          }`}
+          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${settingsSection === 'seo_geo'
+            ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
         >
           <Globe size={16} /> SEO & GEO AI Engine
         </button>
@@ -2726,7 +3074,7 @@ export default function AdminDashboardPage() {
                 rows={2}
                 value={settingsData?.footerText || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, footerText: e.target.value })}
-                placeholder="© 2026 NEXUS FINANCE GLOBAL. All rights reserved..."
+                placeholder="© 2026 AIDEALSUK. All rights reserved..."
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-xs text-white resize-none"
               />
             </div>
@@ -2880,6 +3228,18 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Google Analytics Measurement ID (GA4)</label>
+              <input
+                type="text"
+                value={settingsData?.googleAnalyticsId || ''}
+                onChange={(e) => setSettingsData({ ...settingsData, googleAnalyticsId: e.target.value })}
+                placeholder="G-XXXXXXXXXX"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">Lấy Measurement ID từ Google Analytics 4 (Admin &gt; Data Streams). Để trống để tắt tracking.</p>
+            </div>
+
+            <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-xs font-medium text-slate-400">Schema JSON-LD (AI Engine Friendly)</label>
                 <button
@@ -2915,8 +3275,14 @@ export default function AdminDashboardPage() {
         alert('No subscribers to export');
         return;
       }
-      const headers = ['ID', 'Email Address', 'Subscribed Date'];
-      const rows = subscribersList.map((s) => [s.id, `"${s.email}"`, `"${s.subscribedAt || ''}"`]);
+      const headers = ['ID', 'Email Address', 'Subscription Status', 'Subscribed Date', 'Last Digest'];
+      const rows = subscribersList.map((s) => [
+        s.id,
+        `"${s.email}"`,
+        `"${s.status || 'active'}"`,
+        `"${s.subscribedAt || ''}"`,
+        `"${s.lastDigestAt || ''}"`,
+      ]);
       const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
@@ -2931,19 +3297,78 @@ export default function AdminDashboardPage() {
       <div className="space-y-6 animate-in fade-in duration-500 pb-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Subscriber Leads & Email Reports</h2>
-            <p className="text-slate-400 text-sm">Monitor newsletter signups, track conversion trends, and export leads for email marketing campaigns.</p>
+            <h2 className="text-2xl font-bold text-white mb-1">Insider Dispatch</h2>
+            <p className="text-slate-400 text-sm">Manage confirmed readers, confirmation status, daily delivery, and unsubscribes.</p>
           </div>
           <LuxuryButton onClick={exportToCsv} className="py-2.5 px-5">
             <Download size={18} /> Export Leads (.CSV)
           </LuxuryButton>
         </div>
 
+        {/* Daily dispatch control */}
+        <section className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-[#0b0b0e] shadow-[0_20px_70px_rgba(0,0,0,0.28)]">
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-amber-300 via-amber-500 to-transparent" />
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 p-6 sm:p-7">
+            <div>
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
+                  <Radio size={11} className="animate-pulse" /> Daily automation
+                </span>
+                <span className="text-xs font-mono text-slate-500">00:00 GMT+12 · previous-day brief</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Recipients</p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{(subscribersStats?.totalSubscribers || 0).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">Active and confirmed</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Awaiting confirmation</p>
+                  <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-300">{(subscribersStats?.pendingCount || 0).toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">Not included in delivery</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Last dispatch</p>
+                  <p className="mt-2 text-sm font-mono text-slate-200">
+                    {subscribersStats?.lastDispatchAt
+                      ? new Date(subscribersStats.lastDispatchAt).toLocaleString()
+                      : 'No digest sent yet'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col justify-center xl:items-end gap-3 xl:border-l xl:border-slate-800 xl:pl-7">
+              <LuxuryButton
+                onClick={handleSendInsiderDigestNow}
+                disabled={sendingInsiderDigest || !(subscribersStats?.totalSubscribers > 0)}
+                className="min-w-[210px] py-3 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {sendingInsiderDigest
+                  ? <><Loader2 size={16} className="animate-spin" /> Sending digest...</>
+                  : <><Send size={16} /> Send digest now</>}
+              </LuxuryButton>
+              <p className="max-w-[260px] text-[11px] leading-relaxed text-slate-500 xl:text-right">Sends today’s GMT+12 brief immediately. The next scheduled cron digest remains active.</p>
+            </div>
+          </div>
+          {insiderDispatchNotice && (
+            <div
+              className={`border-t px-6 py-3 text-xs font-medium ${insiderDispatchNotice.type === 'success'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+                : 'border-rose-500/20 bg-rose-500/[0.07] text-rose-300'
+              }`}
+              role="status"
+              aria-live="polite"
+            >
+              {insiderDispatchNotice.text}
+            </div>
+          )}
+        </section>
+
         {/* Lead KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="Total Email Leads" value={(subscribersStats?.totalSubscribers || 0).toLocaleString()} icon={Mail} trend="+12.5%" subtext="Verified opt-in leads" />
-          <StatCard title="New Leads Today" value={(subscribersStats?.countToday || 0).toLocaleString()} icon={Sparkles} subtext="Signups last 24h" />
-          <StatCard title="New Leads This Week" value={(subscribersStats?.countThisWeek || 0).toLocaleString()} icon={TrendingUp} subtext="Signups last 7 days" />
+          <StatCard title="New Insiders Today" value={(subscribersStats?.countToday || 0).toLocaleString()} icon={Sparkles} subtext="Confirmed today in GMT+12" />
+          <StatCard title="New This Week" value={(subscribersStats?.countThisWeek || 0).toLocaleString()} icon={TrendingUp} subtext="Confirmed in the last 7 days" />
+          <StatCard title="Unsubscribed" value={(subscribersStats?.unsubscribedCount || 0).toLocaleString()} icon={X} subtext="Excluded from all delivery" />
         </div>
 
         {/* Search Bar */}
@@ -2986,8 +3411,28 @@ export default function AdminDashboardPage() {
                       {sub.subscribedAt ? new Date(sub.subscribedAt).toLocaleString() : 'N/A'}
                     </td>
                     <td className="p-4">
-                      <span className="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5 w-max">
-                        <CheckCircle2 size={12} /> Verified Lead
+                      <span
+                        className={`text-xs font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-max ${
+                          sub.status === 'active'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : sub.status === 'unsubscribed'
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                        }`}
+                        title={sub.lastDigestAt
+                          ? `Last digest: ${new Date(sub.lastDigestAt).toLocaleString()}`
+                          : `Email status: ${sub.emailStatus || 'sent'}`}
+                      >
+                        {sub.status === 'active'
+                          ? <CheckCircle2 size={12} />
+                          : sub.status === 'unsubscribed'
+                            ? <X size={12} />
+                            : <Clock size={12} />}
+                        {sub.status === 'active'
+                          ? 'Active'
+                          : sub.status === 'unsubscribed'
+                            ? 'Unsubscribed'
+                            : 'Pending confirmation'}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -3012,7 +3457,7 @@ export default function AdminDashboardPage() {
   };
 
   const renderContent = () => {
-    if (previewArticle) return <PublicArticlePreview article={previewArticle} onBack={() => setPreviewArticle(null)} />;
+    if (previewArticle) return <PublicArticlePreview article={previewArticle} onBack={() => navigate({ previewArticle: null }, { replace: true })} />;
     if (editingArticle !== null) return <ArticleEditorForm />;
 
     if (activeTab === 'dashboard') return <DashboardView />;
@@ -3032,15 +3477,11 @@ export default function AdminDashboardPage() {
     const isActive = activeTab === id && !editingArticle && !previewArticle;
     return (
       <button
-        onClick={() => {
-          setActiveTab(id);
-          setEditingArticle(null);
-        }}
-        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium text-sm cursor-pointer ${
-          isActive
-            ? 'bg-gradient-to-r from-amber-500/15 to-transparent text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]'
-            : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-        }`}
+        onClick={() => navigate({ tab: id })}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium text-sm cursor-pointer ${isActive
+          ? 'bg-gradient-to-r from-amber-500/15 to-transparent text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.05)]'
+          : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
+          }`}
       >
         <Icon size={18} className={isActive ? 'text-amber-400' : 'text-slate-500'} /> {label}
       </button>
@@ -3075,7 +3516,7 @@ export default function AdminDashboardPage() {
               {currentUser.role === 'admin' && (
                 <>
                   <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">System (Admin)</div>
-                  <NavItem id="subscribers" icon={Mail} label="Subscriber Leads" requiredRole="admin" />
+                  <NavItem id="subscribers" icon={Mail} label="Insider" requiredRole="admin" />
                   <NavItem id="categories" icon={FolderTree} label="Categories & Sub-Cats" requiredRole="admin" />
                   <NavItem id="users" icon={Users} label="Team & Creators" requiredRole="admin" />
                   <NavItem id="blacklist" icon={ShieldAlert} label="Link & Blacklist Center" requiredRole="admin" />

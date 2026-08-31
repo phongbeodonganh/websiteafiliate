@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -29,8 +30,14 @@ export async function PUT(
 
     if (name !== undefined) link.name = name;
     if (base_url !== undefined) link.base_url = base_url;
-    if (commission !== undefined) link.commission = commission;
-    if (cookie !== undefined) link.cookie = cookie;
+    if (commission !== undefined) {
+      link.commission = commission;
+      link.commission_rate = parseCommissionRate(commission);
+    }
+    if (cookie !== undefined) {
+      link.cookie = cookie;
+      link.cookie_days = parseCookieDays(cookie);
+    }
     if (is_top_pick !== undefined) link.is_top_pick = Boolean(is_top_pick);
     if (isTopPick !== undefined) link.is_top_pick = Boolean(isTopPick);
 
@@ -47,6 +54,8 @@ export async function PUT(
         cookie: link.cookie,
         isTopPick: link.is_top_pick,
         is_top_pick: link.is_top_pick,
+        clickCount: link.click_count || 0,
+        click_count: link.click_count || 0,
         createdAt: link.created_at,
       },
     });

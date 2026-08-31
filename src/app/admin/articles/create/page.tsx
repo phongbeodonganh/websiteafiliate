@@ -86,19 +86,32 @@ export default function CreateArticleStudioPage() {
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
 
+  // Thumbnail Upload
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
 
+  // Auth guard — this page previously never checked for or sent a token at all
+  useEffect(() => {
+    if (!localStorage.getItem('token')) {
+      router.push('/admin/login');
+    }
+  }, [router]);
+
   // Load Categories and Affiliate Links on mount
   useEffect(() => {
     async function fetchData() {
       try {
+        const token = localStorage.getItem('token');
         const [catRes, affRes] = await Promise.all([
           fetch('/api/v1/public/categories'),
-          fetch('/api/v1/cms/affiliate-links'),
+          fetch('/api/v1/cms/affiliate-links', {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         if (catRes.ok) {
@@ -158,9 +171,10 @@ export default function CreateArticleStudioPage() {
   const handleAiTakeawaysGenerate = async () => {
     triggerToast('AI đang phân tích và tạo Key Takeaways...');
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/v1/cms/ai/generate-takeaways', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title, content }),
       });
       if (res.ok) {
@@ -184,6 +198,37 @@ export default function CreateArticleStudioPage() {
   };
 
   // FAQ Schema Rows
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingThumbnail(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/v1/cms/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const json = await res.json();
+
+      if (res.ok && json.status === 'success') {
+        setThumbnailUrl(json.data.url);
+        triggerToast('Đã tải ảnh lên thành công!');
+      } else {
+        triggerToast(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
+      }
+    } catch {
+      triggerToast('Đã có lỗi xảy ra khi tải ảnh lên!');
+    } finally {
+      setIsUploadingThumbnail(false);
+      e.target.value = '';
+    }
+  };
+
   const addFaqRow = () => {
     setFaqRows([...faqRows, { question: '', answer: '' }]);
   };
@@ -268,9 +313,10 @@ export default function CreateArticleStudioPage() {
     };
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/v1/cms/articles', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
 
@@ -366,15 +412,36 @@ export default function CreateArticleStudioPage() {
                 />
               </div>
 
-              {/* Thumbnail URL */}
+              {/* Thumbnail Upload */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Thumbnail Image URL</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Thumbnail Image</label>
+                <div className="flex items-center gap-3">
+                  {thumbnailUrl && (
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="w-16 h-16 rounded-xl object-cover border border-slate-200 shrink-0"
+                    />
+                  )}
+                  <label className="flex-1 cursor-pointer">
+                    <span className="w-full inline-flex items-center justify-center gap-2 bg-slate-50 border border-dashed border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-slate-500 hover:bg-slate-100 hover:border-[#0056B3] transition">
+                      {isUploadingThumbnail ? 'Đang tải ảnh lên...' : 'Chọn ảnh từ máy (JPEG/PNG/WEBP/GIF, tối đa 5MB)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleThumbnailUpload}
+                      disabled={isUploadingThumbnail}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <input
                   type="url"
                   value={thumbnailUrl}
                   onChange={(e) => setThumbnailUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0056B3] transition font-mono"
+                  placeholder="...hoặc dán URL ảnh thủ công"
+                  className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#0056B3] transition font-mono"
                 />
               </div>
 
@@ -687,7 +754,10 @@ export default function CreateArticleStudioPage() {
                       (p) => p.affiliate_link_id === aff.id && p.position_label === 'top_cta'
                     );
                     const middleActive = activePlacements.some(
-                      (p) => p.affiliate_link_id === aff.id && p.position_label === 'middle'
+                      (p) => p.affiliate_link_id === aff.id && p.position_label === 'middle_comparison'
+                    );
+                    const footerActive = activePlacements.some(
+                      (p) => p.affiliate_link_id === aff.id && p.position_label === 'footer_banner'
                     );
 
                     return (
@@ -715,7 +785,7 @@ export default function CreateArticleStudioPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => togglePlacement(aff.id, 'middle')}
+                            onClick={() => togglePlacement(aff.id, 'middle_comparison')}
                             className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition ${
                               middleActive
                                 ? 'bg-blue-50 text-[#0056B3] border-blue-200'
@@ -723,6 +793,17 @@ export default function CreateArticleStudioPage() {
                             }`}
                           >
                             + Middle
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => togglePlacement(aff.id, 'footer_banner')}
+                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition ${
+                              footerActive
+                                ? 'bg-blue-50 text-[#0056B3] border-blue-200'
+                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            + Footer
                           </button>
                         </div>
                       </div>

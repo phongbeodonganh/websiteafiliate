@@ -28,10 +28,10 @@ function getMongoUri(): string {
   } catch {
     // Ignore error
   }
-  return 'mongodb+srv://pnv6555_db_user:LagoFHSUotjbc7HE@webafiliate.xbqpx7k.mongodb.net/websiteafiliate?retryWrites=true&w=majority';
+  throw new Error(
+    'MONGODB_URI is not set. Provide it via the MONGODB_URI environment variable, .env.local, or mongodb.env.'
+  );
 }
-
-const MONGODB_URI = getMongoUri();
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -49,6 +49,23 @@ if (!cached) {
   cached = global.mongooseCache = { conn: null, promise: null };
 }
 
+async function connectWithRetry(
+  uri: string,
+  opts: { bufferCommands: boolean; serverSelectionTimeoutMS: number },
+  attempt = 1
+): Promise<typeof mongoose> {
+  try {
+    return await mongoose.connect(uri, opts);
+  } catch (e) {
+    const isDnsRefused = e instanceof Error && e.message.includes('querySrv ECONNREFUSED');
+    if (isDnsRefused && attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+      return connectWithRetry(uri, opts, attempt + 1);
+    }
+    throw e;
+  }
+}
+
 export async function connectToDatabase(): Promise<typeof mongoose> {
   if (cached!.conn) {
     return cached!.conn;
@@ -62,14 +79,13 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   }
 
   if (!cached!.promise) {
+    const uri = getMongoUri();
     const opts = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 10000,
     };
 
-    cached!.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
-      return m;
-    });
+    cached!.promise = connectWithRetry(uri, opts);
   }
 
   try {

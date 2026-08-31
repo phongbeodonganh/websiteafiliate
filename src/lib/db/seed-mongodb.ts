@@ -214,7 +214,10 @@ export async function seedMongoDB() {
     name: 'HeyGen Avatar Presenters',
     base_url: 'https://heygen.com/?sid=affiliate202',
     commission: '20% Recurring Commission',
+    commission_rate: 20,
     cookie: '30 Days',
+    cookie_days: 30,
+    click_count: 0,
     is_top_pick: true,
   });
 
@@ -222,23 +225,32 @@ export async function seedMongoDB() {
     name: 'Jasper AI Copywriter',
     base_url: 'https://jasper.ai/?fpr=affiliate123',
     commission: '30% Recurring Commission',
+    commission_rate: 30,
     cookie: '30 Days',
+    cookie_days: 30,
+    click_count: 0,
     is_top_pick: true,
   });
 
   const affElevenLabs = await AffiliateLinkModel.create({
     name: 'ElevenLabs Voice AI',
     base_url: 'https://elevenlabs.io/?from=affiliate456',
-    commission: '30% Recurring Commission',
-    cookie: '60 Days',
+    commission: '50% Recurring Commission',
+    commission_rate: 50,
+    cookie: '90 Days',
+    cookie_days: 90,
+    click_count: 0,
     is_top_pick: true,
   });
 
   const affCursor = await AffiliateLinkModel.create({
     name: 'Cursor AI Code Editor',
     base_url: 'https://cursor.com/?ref=affiliate789',
-    commission: '20% Recurring Commission',
+    commission: '15% Recurring Commission',
+    commission_rate: 15,
     cookie: '30 Days',
+    cookie_days: 30,
+    click_count: 0,
     is_top_pick: true,
   });
 
@@ -246,7 +258,10 @@ export async function seedMongoDB() {
     name: 'Surfer SEO AI',
     base_url: 'https://surferseo.com/?fpr=affiliate101',
     commission: '25% Recurring Commission',
+    commission_rate: 25,
     cookie: '60 Days',
+    cookie_days: 60,
+    click_count: 0,
     is_top_pick: true,
   });
 
@@ -369,14 +384,14 @@ export async function seedMongoDB() {
 
   // 7. Seed Site Settings
   await SettingModel.create({
-    site_title: 'AI AFFILIATE HUB',
+    site_title: 'AIDEALSUK',
     metaDescription:
       'Discover top AI tool categories, real-world AI use-case case studies, high-paying affiliate programs, and revenue automation strategies.',
     focusKeywords: 'ai use-cases, ai case studies, ai affiliate programs, ai content copywriting, ai coding tools',
-    canonicalUrl: 'https://aiaffiliatehub.com',
+    canonicalUrl: 'https://aidealsuk.com',
     hreflang: 'en-US',
     geoTarget: 'GLOBAL',
-    businessName: 'AI Affiliate Hub LLC',
+    businessName: 'AIDEALSUK Ltd',
     businessAddress: '500 Innovation Way, Suite 300, San Francisco, CA 94105, USA',
     businessPhone: '+1 (800) 555-0188',
     ogImageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',

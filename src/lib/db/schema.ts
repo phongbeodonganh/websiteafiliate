@@ -55,6 +55,8 @@ export interface IAffiliateLink extends Document {
   commission?: string;
   cookie?: string;
   isTopPick: boolean;
+  clickCount?: number;
+  click_count?: number;
   createdAt: Date;
 }
 
@@ -183,6 +185,7 @@ const AffiliateLinkSchema = new Schema<IAffiliateLink>(
     commission: { type: String },
     cookie: { type: String },
     isTopPick: { type: Boolean, default: false, required: true },
+    clickCount: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
   },
   opts
@@ -221,7 +224,7 @@ const SubscriberSchema = new Schema<ISubscriber>(
 // 9. Setting Schema
 const SettingSchema = new Schema<ISetting>(
   {
-    siteTitle: { type: String, default: 'NEXUS FINANCE GLOBAL' },
+    siteTitle: { type: String, default: 'AIDEALSUK' },
     metaDescription: { type: String },
     focusKeywords: { type: String },
     canonicalUrl: { type: String },

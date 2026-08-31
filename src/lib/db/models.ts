@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 
 // 1. User
 export interface IUser extends Document {
@@ -67,9 +68,12 @@ export interface IAffiliateLink extends Document {
   base_url: string;
   product_url?: string;
   commission?: string;
+  commission_rate?: number;
   cookie?: string;
+  cookie_days?: number;
   is_top_pick: boolean;
   status: 'active' | 'inactive' | 'blacklisted';
+  click_count: number;
   created_at: Date;
 }
 
@@ -78,9 +82,12 @@ const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   base_url: { type: String, required: true },
   product_url: { type: String, default: '' },
   commission: { type: String },
+  commission_rate: { type: Number, default: 0 },
   cookie: { type: String },
+  cookie_days: { type: Number, default: 0 },
   is_top_pick: { type: Boolean, default: false },
   status: { type: String, enum: ['active', 'inactive', 'blacklisted'], default: 'active' },
+  click_count: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -200,11 +207,31 @@ const ClickLogSchema = new Schema<IClickLog>({
 export interface ISubscriber extends Document {
   email: string;
   subscribed_at: Date;
+  status?: 'pending' | 'active' | 'unsubscribed';
+  confirmation_sent_at?: Date;
+  confirmation_expires_at?: Date;
+  confirmed_at?: Date;
+  unsubscribed_at?: Date;
+  email_status?: 'sent' | 'opened';
+  last_email_id?: string;
+  opened_at?: Date;
+  last_digest_at?: Date;
+  last_digest_key?: string;
 }
 
 const SubscriberSchema = new Schema<ISubscriber>({
   email: { type: String, required: true, unique: true },
-  subscribed_at: { type: Date, default: Date.now }
+  subscribed_at: { type: Date, default: Date.now },
+  status: { type: String, enum: ['pending', 'active', 'unsubscribed'], default: 'pending', index: true },
+  confirmation_sent_at: { type: Date },
+  confirmation_expires_at: { type: Date },
+  confirmed_at: { type: Date },
+  unsubscribed_at: { type: Date },
+  email_status: { type: String, enum: ['sent', 'opened'], default: 'sent' },
+  last_email_id: { type: String },
+  opened_at: { type: Date },
+  last_digest_at: { type: Date },
+  last_digest_key: { type: String, index: true },
 });
 
 // 9. Setting
@@ -221,6 +248,7 @@ export interface ISetting extends Document {
   ogImageUrl?: string;
   schemaJsonld?: string;
   headScripts?: string;
+  googleAnalyticsId?: string;
   primary_color?: string;
   accent_color?: string;
   theme_mode?: string;
@@ -238,7 +266,7 @@ export interface ISetting extends Document {
 }
 
 const SettingSchema = new Schema<ISetting>({
-  site_title: { type: String, default: 'NEXUS FINANCE GLOBAL' },
+  site_title: { type: String, default: 'AIDEALSUK' },
   metaDescription: { type: String },
   focusKeywords: { type: String },
   canonicalUrl: { type: String },
@@ -250,6 +278,7 @@ const SettingSchema = new Schema<ISetting>({
   ogImageUrl: { type: String },
   schemaJsonld: { type: String },
   headScripts: { type: String },
+  googleAnalyticsId: { type: String },
   primary_color: { type: String, default: '#0f172a' },
   accent_color: { type: String, default: '#f59e0b' },
   theme_mode: { type: String, default: 'dark' },
@@ -277,3 +306,47 @@ export const ArticleAffiliateRelationModel: Model<IArticleAffiliateRelation> = m
 export const ClickLogModel: Model<IClickLog> = mongoose.models.ClickLog || mongoose.model<IClickLog>('ClickLog', ClickLogSchema);
 export const SubscriberModel: Model<ISubscriber> = mongoose.models.Subscriber || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema);
 export const SettingModel: Model<ISetting> = mongoose.models.Setting || mongoose.model<ISetting>('Setting', SettingSchema);
+
+export async function syncAffiliateNumericFields() {
+  try {
+    // Step 1: Aggregate real click counts from ClickLog for every affiliate link
+    const clickCounts: { _id: mongoose.Types.ObjectId; count: number }[] =
+      await ClickLogModel.aggregate([
+        { $match: { affiliate_link_id: { $exists: true, $ne: null } } },
+        { $group: { _id: '$affiliate_link_id', count: { $sum: 1 } } },
+      ]);
+
+    // Build a map for O(1) lookup: affiliateLinkId -> realCount
+    const countMap = new Map<string, number>(
+      clickCounts.map(({ _id, count }) => [_id.toString(), count])
+    );
+
+    // Step 2: Update every AffiliateLink in bulk
+    const allLinks = await AffiliateLinkModel.find({}, '_id commission cookie click_count commission_rate cookie_days');
+
+    const bulkOps = allLinks.flatMap((link) => {
+      const realCount = countMap.get(link._id.toString()) ?? link.click_count ?? 0;
+      const commissionRate = parseCommissionRate(link.commission);
+      const cookieDays = parseCookieDays(link.cookie);
+      const setDoc: Record<string, number> = {};
+
+      if (link.click_count !== realCount) setDoc.click_count = realCount;
+      if (link.commission_rate !== commissionRate) setDoc.commission_rate = commissionRate;
+      if (link.cookie_days !== cookieDays) setDoc.cookie_days = cookieDays;
+      if (Object.keys(setDoc).length === 0) return [];
+
+      return [{
+        updateOne: {
+          filter: { _id: link._id },
+          update: { $set: setDoc },
+        },
+      }];
+    });
+
+    if (bulkOps.length > 0) {
+      await AffiliateLinkModel.bulkWrite(bulkOps, { ordered: false });
+    }
+  } catch (err) {
+    console.error('Error syncing affiliate numeric fields:', err);
+  }
+}

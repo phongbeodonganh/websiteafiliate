@@ -1,40 +1,55 @@
+import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ClickLogModel, AffiliateLinkModel, ArticleModel } from '@/lib/db/models';
 import { getClientIp, appendSubId } from '@/lib/utils';
 import { checkUrlAgainstBlacklist } from '@/lib/blacklist';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const articleId = searchParams.get('article_id');
   const affiliateLinkId = searchParams.get('affiliate_link_id');
+  const fallbackUrl = new URL('/', req.url);
 
-  if (!articleId || !affiliateLinkId) {
-    return NextResponse.redirect(new URL('/', req.url));
+  if (!affiliateLinkId || !mongoose.isValidObjectId(affiliateLinkId)) {
+    return NextResponse.redirect(fallbackUrl);
   }
 
   try {
     await connectToDatabase();
-    const ipAddress = getClientIp(req);
 
-    await ClickLogModel.create({
-      article_id: articleId,
-      affiliate_link_id: affiliateLinkId,
-      ip_address: ipAddress,
-    });
+    const [affiliateLink, article] = await Promise.all([
+      AffiliateLinkModel.findById(affiliateLinkId),
+      articleId && mongoose.isValidObjectId(articleId)
+        ? ArticleModel.findById(articleId)
+        : null,
+    ]);
 
-    const article = await ArticleModel.findById(articleId);
-    const affLink = await AffiliateLinkModel.findById(affiliateLinkId);
-
-    if (!affLink) {
-      return NextResponse.redirect(new URL('/', req.url));
+    if (!affiliateLink) {
+      return NextResponse.redirect(fallbackUrl);
     }
 
-    // Blacklist Safety Check
-    const blacklistCheck = await checkUrlAgainstBlacklist(affLink.base_url);
-    if (affLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {
-      const reason = blacklistCheck.reason || 'Nền tảng vi phạm chính sách an toàn / bùng hoa hồng';
-      const projectName = blacklistCheck.projectName || affLink.name;
+    await Promise.all([
+      ClickLogModel.create({
+        ...(article ? { article_id: article._id } : {}),
+        affiliate_link_id: affiliateLink._id,
+        ip_address: getClientIp(req),
+      }),
+      AffiliateLinkModel.findByIdAndUpdate(
+        affiliateLink._id,
+        { $inc: { click_count: 1 } },
+        { new: true, strict: false }
+      ),
+    ]);
+
+    const blacklistCheck = await checkUrlAgainstBlacklist(affiliateLink.base_url);
+    if (affiliateLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {
+      const reason =
+        blacklistCheck.reason ||
+        'Nền tảng vi phạm chính sách an toàn / bùng hoa hồng';
+      const projectName = blacklistCheck.projectName || affiliateLink.name;
 
       const warningHtml = `
         <!DOCTYPE html>
@@ -60,8 +75,12 @@ export async function GET(req: Request) {
               </p>
             </div>
             <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left text-xs space-y-2">
-              <p className="text-slate-400"><strong class="text-slate-200">Lý do chặn:</strong> ${reason}</p>
-              ${blacklistCheck.blockedCountries && blacklistCheck.blockedCountries.length > 0 ? `<p class="text-slate-400"><strong class="text-slate-200">Quốc gia cấm:</strong> ${blacklistCheck.blockedCountries.join(', ')}</p>` : ''}
+              <p class="text-slate-400"><strong class="text-slate-200">Lý do chặn:</strong> ${reason}</p>
+              ${blacklistCheck.blockedCountries &&
+          blacklistCheck.blockedCountries.length > 0
+          ? `<p class="text-slate-400"><strong class="text-slate-200">Quốc gia cấm:</strong> ${blacklistCheck.blockedCountries.join(', ')}</p>`
+          : ''
+        }
             </div>
             <a href="/" class="inline-block w-full py-3.5 bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 text-slate-950 font-bold rounded-xl text-sm hover:scale-[1.02] transition-transform">
               ← Quay Về Trang Chủ An Toàn
@@ -70,17 +89,21 @@ export async function GET(req: Request) {
         </body>
         </html>
       `;
+
       return new Response(warningHtml, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
       });
     }
 
-    const subId = article ? article.slug : `art_${articleId}`;
-    const destinationUrl = appendSubId(affLink.base_url, subId);
-
-    return NextResponse.redirect(destinationUrl, 302);
+    const destinationUrl = appendSubId(
+      affiliateLink.base_url,
+      article?.slug || 'homepage',
+    );
+    const response = NextResponse.redirect(destinationUrl, 302);
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
   } catch (error) {
     console.error('Redirect tracking error:', error);
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect(fallbackUrl);
   }
 }
