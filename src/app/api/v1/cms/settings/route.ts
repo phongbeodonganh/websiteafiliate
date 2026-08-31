@@ -13,7 +13,7 @@ export async function GET() {
         site_title: 'AIDEALSUK',
         metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
         focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
-        canonicalUrl: 'https://nexusfinance.global',
+        canonicalUrl: 'https://aidealsuk.com',
         hreflang: 'en-US',
         geoTarget: 'GLOBAL',
       });

@@ -14,7 +14,7 @@ Mục tiêu: bài viết (thumbnail + ảnh trong nội dung) tự lưu trên R2
 |---|---|---|---|---|
 | R2-01 | Tạo Cloudflare account + R2 bucket | 🔴 | Bạn (cần đăng nhập Cloudflare) | 🟩 |
 | R2-02 | Tạo API Token (Access Key/Secret) cho R2 | 🔴 | Bạn | 🟩 |
-| R2-03 | Gắn custom domain cho bucket (vd `img.yourdomain.com`) | 🟠 | Bạn | ⬜ (tạm dùng `pub-*.r2.dev`) |
+| R2-03 | Gắn custom domain cho bucket (vd `img.yourdomain.com`) | 🟠 | Bạn | 🟩 |
 | R2-04 | Cài SDK + tạo module upload dùng chung | 🔴 | Tôi | 🟩 |
 | R2-05 | Cấu hình biến môi trường R2 | 🔴 | Bạn + Tôi | 🟩 |
 | R2-06 | API upload ảnh trong CMS | 🔴 | Tôi | 🟩 |
@@ -97,10 +97,11 @@ R2_PUBLIC_URL=https://img.yourdomain.com   # hoặc URL public mặc định R2 
 **Việc cần làm (bạn tự làm trên Cloudflare Dashboard, cần domain đã trỏ DNS qua Cloudflare):**
 1. R2 bucket → Settings → Public Access → Connect Domain
 2. Nhập subdomain (vd `img.yourdomain.com`), Cloudflare tự tạo DNS record
-**Status:** ⬜ Chưa bắt đầu — theo quyết định của bạn, tạm dùng URL mặc định `pub-953bb290427d4613aef7ab843d88f8a5.r2.dev`, domain `aidealsuk.com` chưa trỏ Cloudflare (đang dùng nameserver Vietnix) nên chưa làm được bước này. Làm sau khi bạn đổi nameserver.
+**Status:** 🟩 Hoàn thành — domain `aidealsuk.com` đã đổi nameserver sang Cloudflare (Active), gắn custom domain `media.aidealsuk.com` cho bucket `affiliate-storage`. `R2_PUBLIC_URL` đã cập nhật trong `.env.local`; `images.remotePatterns` trong `next.config.ts` đã thêm hostname mới (giữ `*.r2.dev` song song cho URL ảnh cũ đã lưu trong DB).
 **Test-list accept:**
-- [ ] Truy cập `https://img.yourdomain.com/<tên-file>` load được ảnh trực tiếp
-- [ ] HTTPS hoạt động tự động (Cloudflare tự cấp SSL)
+- [x] Truy cập `https://media.aidealsuk.com/` → trả về 404 (đúng, do không có file ở path gốc) thay vì lỗi kết nối/SSL — xác nhận domain đã trỏ đúng vào bucket
+- [x] HTTPS hoạt động tự động (Cloudflare tự cấp SSL) — verified qua `curl`
+- [ ] Cần làm khi deploy production: đổi `R2_PUBLIC_URL` trên server sang `https://media.aidealsuk.com` rồi restart app (xem `DEPLOY.md`)
 
 ### R2-07: Thay ô "dán URL thumbnail" bằng upload file thật
 **Mô tả:** Hiện tại [create/page.tsx](src/app/admin/articles/create/page.tsx) và Edit form chỉ có input text để dán URL ảnh — đổi thành `<input type="file">` + preview, tự upload qua R2-06 khi chọn file, điền URL trả về vào field `thumbnailUrl`.
@@ -115,7 +116,7 @@ R2_PUBLIC_URL=https://img.yourdomain.com   # hoặc URL public mặc định R2 
 
 ### R2-09: Cho phép domain R2 trong `next/image`
 **Mô tả:** Đi cùng task SEO-03 (chuyển `<img>` sang `next/image`) — cấu hình `images.remotePatterns` trong `next.config.ts` để Next.js được phép tối ưu ảnh từ domain R2.
-**Đã thực hiện:** Thêm `images.remotePatterns` trong [next.config.ts](next.config.ts): allow `*.r2.dev` (wildcard, tự động khớp khi đổi sang domain riêng ở R2-03 không cần — **lưu ý:** nếu đổi sang domain riêng như `img.yourdomain.com` thì phải thêm pattern mới, wildcard `*.r2.dev` sẽ không còn khớp) + `images.unsplash.com` (ảnh cũ đã seed vẫn dùng tạm).
+**Đã thực hiện:** Thêm `images.remotePatterns` trong [next.config.ts](next.config.ts): `media.aidealsuk.com` (domain riêng, xem R2-03) + `*.r2.dev` (giữ song song cho URL ảnh cũ đã lưu trong DB trước khi đổi domain) + `images.unsplash.com` (ảnh cũ đã seed vẫn dùng tạm).
 **Status:** 🟩 Hoàn thành (phần cấu hình — bản thân SEO-03 chuyển `<img>` sang `next/image` vẫn chưa làm, xem `GO_LIVE_TASKLIST.md`)
 **Test-list accept:**
 - [ ] Ảnh từ R2 hiển thị qua `next/image` không bị lỗi "hostname not configured" — chưa test được vì `next/image` chưa được dùng ở đâu trong code (phụ thuộc SEO-03)

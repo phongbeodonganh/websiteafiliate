@@ -16,9 +16,10 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.102.172', '*.ngrok-free.app'],
   images: {
     remotePatterns: [
-      // Cloudflare R2 (uploaded thumbnails/content images). Using a wildcard
-      // hostname pattern so this keeps working once a custom R2 domain replaces
-      // the temporary pub-*.r2.dev one (see R2_IMAGE_STORAGE_TASKLIST.md).
+      // Cloudflare R2 (uploaded thumbnails/content images), served through the
+      // custom domain connected in R2-03 (see R2_IMAGE_STORAGE_TASKLIST.md).
+      { protocol: 'https', hostname: 'media.aidealsuk.com' },
+      // Kept for old thumbnail URLs uploaded before the custom domain existed.
       { protocol: 'https', hostname: '*.r2.dev' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
