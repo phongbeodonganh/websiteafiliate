@@ -108,6 +108,7 @@ export default function AdminDashboardPage() {
 
   // System States
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [clickLogsList, setClickLogsList] = useState<any[]>([]);
   const [articlesList, setArticlesList] = useState<any[]>([]);
   const [editingArticle, setEditingArticle] = useState<any>(null);
   const [previewArticle, setPreviewArticle] = useState<any>(null);
@@ -511,12 +512,22 @@ export default function AdminDashboardPage() {
       .then((d) => d.status === 'success' && setUsersList(d.data));
   };
 
+  const loadClickLogsData = () => {
+    const token = localStorage.getItem('token');
+    fetch('/api/v1/cms/click-logs', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => d.status === 'success' && setClickLogsList(d.data));
+  };
+
   useEffect(() => {
     if (activeTab === 'users' && currentUser?.role === 'admin') {
       loadUsersData();
     }
     if (activeTab === 'subscribers' && currentUser?.role === 'admin') {
       loadSubscribersData();
+    }
+    if (activeTab === 'dashboard' && currentUser?.role === 'admin') {
+      loadClickLogsData();
     }
   }, [activeTab, currentUser]);
 
@@ -987,6 +998,51 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
+
+        {currentUser.role === 'admin' && (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white font-medium flex items-center gap-2">
+                <Clock size={18} className="text-amber-400" /> Recent Click Activity
+              </h3>
+              <span className="text-xs text-slate-500">Last {clickLogsList.length} tracked clicks</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                    <th className="p-3 font-medium">Article</th>
+                    <th className="p-3 font-medium">Affiliate Link</th>
+                    <th className="p-3 font-medium">IP Address</th>
+                    <th className="p-3 font-medium text-right">Clicked At</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {clickLogsList.length > 0 ? (
+                    clickLogsList.map((log: any) => (
+                      <tr key={log.id} className="border-b border-slate-800/60 hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3 text-white line-clamp-1 max-w-xs">{log.articleTitle}</td>
+                        <td className="p-3 text-emerald-400/90 flex items-center gap-1.5">
+                          <MousePointerClick size={14} /> {log.affiliateName}
+                        </td>
+                        <td className="p-3 text-slate-400 font-mono text-xs">{log.ipAddress}</td>
+                        <td className="p-3 text-slate-500 text-xs text-right font-mono">
+                          {new Date(log.clickedAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
+                        No click activity tracked yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
