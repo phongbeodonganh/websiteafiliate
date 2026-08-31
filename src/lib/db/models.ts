@@ -234,6 +234,7 @@ export interface ISetting extends Document {
   ogImageUrl?: string;
   schemaJsonld?: string;
   headScripts?: string;
+  googleAnalyticsId?: string;
   primary_color?: string;
   accent_color?: string;
   theme_mode?: string;
@@ -263,6 +264,7 @@ const SettingSchema = new Schema<ISetting>({
   ogImageUrl: { type: String },
   schemaJsonld: { type: String },
   headScripts: { type: String },
+  googleAnalyticsId: { type: String },
   primary_color: { type: String, default: '#0f172a' },
   accent_color: { type: String, default: '#f59e0b' },
   theme_mode: { type: String, default: 'dark' },

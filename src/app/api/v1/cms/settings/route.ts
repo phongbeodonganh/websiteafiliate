@@ -37,6 +37,7 @@ export async function GET() {
         ogImageUrl: doc.ogImageUrl,
         schemaJsonld: doc.schemaJsonld,
         headScripts: doc.headScripts,
+        googleAnalyticsId: doc.googleAnalyticsId,
         primaryColor: doc.primary_color,
         accentColor: doc.accent_color,
         themeMode: doc.theme_mode,
@@ -79,6 +80,7 @@ export async function PUT(req: Request) {
       ogImageUrl,
       schemaJsonld,
       headScripts,
+      googleAnalyticsId,
       primaryColor,
       accentColor,
       themeMode,
@@ -113,6 +115,16 @@ export async function PUT(req: Request) {
     if (ogImageUrl !== undefined) currentSettings.ogImageUrl = ogImageUrl;
     if (schemaJsonld !== undefined) currentSettings.schemaJsonld = schemaJsonld;
     if (headScripts !== undefined) currentSettings.headScripts = headScripts;
+    if (googleAnalyticsId !== undefined) {
+      const trimmed = String(googleAnalyticsId).trim();
+      if (trimmed && !/^G-[A-Z0-9]{6,}$/.test(trimmed)) {
+        return NextResponse.json(
+          { status: 'error', message: 'Google Analytics Measurement ID không hợp lệ (định dạng G-XXXXXXXXXX)' },
+          { status: 400 }
+        );
+      }
+      currentSettings.googleAnalyticsId = trimmed;
+    }
     if (primaryColor !== undefined) currentSettings.primary_color = primaryColor;
     if (accentColor !== undefined) currentSettings.accent_color = accentColor;
     if (themeMode !== undefined) currentSettings.theme_mode = themeMode;
@@ -147,6 +159,7 @@ export async function PUT(req: Request) {
         ogImageUrl: doc.ogImageUrl,
         schemaJsonld: doc.schemaJsonld,
         headScripts: doc.headScripts,
+        googleAnalyticsId: doc.googleAnalyticsId,
         primaryColor: doc.primary_color,
         accentColor: doc.accent_color,
         themeMode: doc.theme_mode,

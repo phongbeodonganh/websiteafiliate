@@ -98,7 +98,7 @@ export default async function RootLayout({
   // (set in src/proxy.ts) and stamp it onto its own inline bootstrap scripts —
   // otherwise statically-optimized routes (e.g. /admin, /admin/login) ship
   // those scripts with no nonce and the CSP in proxy.ts blocks them outright.
-  await headers();
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   let sysSettings;
   try {
@@ -115,6 +115,7 @@ export default async function RootLayout({
   const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
   const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);
+  const gaId = sysSettings?.googleAnalyticsId || "";
 
   return (
     <html lang={sysSettings?.hreflang || "en"} className="h-full antialiased dark">
@@ -142,6 +143,26 @@ export default async function RootLayout({
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: safeSchemaJsonld }}
           />
+        )}
+        {gaId && (
+          <>
+            <script
+              async
+              nonce={nonce}
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            />
+            <script
+              nonce={nonce}
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaId}');
+                `,
+              }}
+            />
+          </>
         )}
       </head>
       <body className="min-h-full flex flex-col bg-[#F8F9FA] text-slate-700 font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B]">
