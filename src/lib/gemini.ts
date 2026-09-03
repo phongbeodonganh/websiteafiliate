@@ -91,6 +91,7 @@ QUY TẮC BẮT BUỘC:
 4. Cấu trúc bài viết: Có Sapo thu hút, phân chia các thẻ <h2> và <h3> rõ ràng, dùng <ul> / <li> để trình bày dữ liệu dạng danh sách.
 5. GEO (Generative Engine Optimization): Trích xuất 3-5 Key Takeaways cô đọng (để SearchGPT/Perplexity dẫn nguồn), danh sách các Thực thể (Entities).
 6. FAQ Schema & Rows: Tạo 3 câu hỏi FAQ thực tế (câu hỏi & câu trả lời chi tiết) vừa điền vào mảng faq_list vừa sinh mã JSON-LD hợp lệ.
+7. QUY TẮC LIÊN KẾT NGHIÊM NGẶT: Thẻ <a href="..."> CHỈ được phép dùng cho URL theo dõi Affiliate "${trackingUrl}" ở trên. TUYỆT ĐỐI KHÔNG tự tạo bất kỳ link nội bộ nào khác (không link về trang chủ, không link "đọc thêm bài viết khác", không tự đoán URL bài viết). KHÔNG BAO GIỜ viết cú pháp Markdown [text](url) trong content_html — content_html chỉ được chứa HTML thuần, không lẫn Markdown.
 `;
 
   const userPrompt = `
