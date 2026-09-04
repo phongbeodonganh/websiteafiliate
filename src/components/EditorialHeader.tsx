@@ -130,42 +130,43 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
     <header
       className={`pointer-events-auto fixed isolate top-0 left-0 right-0 z-[1000] transition-all duration-300 ${
         scrolled
-          ? 'bg-[#111111]/95 backdrop-blur-md border-b border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.35)]'
-          : 'bg-[#111111] border-b border-[#222222] shadow-[0_10px_30px_rgba(0,0,0,0.2)]'
+          ? 'header-glass bg-[#0a0a0a]/88 border-b border-white/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.4)]'
+          : 'bg-[#0a0a0a] border-b border-white/[0.06]'
       }`}
     >
-      {/* ── Top Micro-Ticker Bar (Signature Editorial Detail) ── */}
-      <div className="hidden sm:flex items-center justify-between px-6 py-1 bg-black/40 border-b border-white/5 text-[11px] font-mono text-neutral-400">
-        <div className="flex items-center gap-2">
+      {/* ── Top Micro-Ticker Bar ── */}
+      <div className="hidden sm:flex items-center justify-between px-6 py-1.5 bg-black/50 border-b border-white/[0.04] text-[11px] font-mono text-neutral-400">
+        <div className="flex items-center gap-2.5">
+          {/* Animated live pulse indicator */}
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0D766E] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0D766E]"></span>
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[#0D766E] opacity-60 animate-ping" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0D766E]" />
           </span>
-          <span className="font-semibold text-white tracking-wider">LIVE EDITION</span>
-          <span className="text-neutral-600">|</span>
-          <span className="text-neutral-300">UK AI & Tech Intelligence Platform</span>
+          <span className="font-semibold text-white/90 tracking-wider">LIVE EDITION</span>
+          <span className="text-white/10">|</span>
+          <span className="text-neutral-400">UK AI & Tech Intelligence Platform</span>
         </div>
         <div className="flex items-center gap-4 text-xs font-sans text-neutral-400">
-          <Link href="/hottest" className="hover:text-white transition-colors flex items-center gap-1">
+          <Link href="/hottest" className="hover:text-white transition-colors duration-200 flex items-center gap-1.5">
             <TrendingUp size={11} className="text-[#0D766E]" /> Hottest Deals
           </Link>
-          <Link href="/editorial-picks" className="hover:text-white transition-colors flex items-center gap-1">
-            <Sparkles size={11} className="text-amber-400" /> Editor&apos;s Choice
+          <Link href="/editorial-picks" className="hover:text-white transition-colors duration-200 flex items-center gap-1.5">
+            <Sparkles size={11} className="text-amber-400/80" /> Editor&apos;s Choice
           </Link>
         </div>
       </div>
 
       {/* ── Main Navigation Bar ── */}
-      <div className={`mx-auto max-w-[1536px] flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
-        scrolled ? 'h-[62px] md:h-[68px]' : 'h-[68px] md:h-[76px]'
+      <div className={`mx-auto max-w-[1440px] flex items-center justify-between gap-4 px-4 sm:px-6 transition-[height] duration-300 ${
+        scrolled ? 'h-[58px] md:h-[64px]' : 'h-[66px] md:h-[74px]'
       }`}>
         {/* ── Brand Logo & Quick Nav ── */}
         <div className="flex min-w-0 shrink-0 items-center gap-3 lg:gap-5">
           <Link
             href="/"
-            className="flex items-center gap-2 group text-decoration-none"
+            className="flex items-center gap-2.5 group text-decoration-none"
           >
-            <span className="whitespace-nowrap text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-neutral-200 transition-colors">
+            <span className="whitespace-nowrap text-xl sm:text-2xl lg:text-[28px] font-extrabold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-neutral-200 transition-colors duration-200">
               {BRAND_NAME}
             </span>
             <span className="hidden xl:inline-block bg-[#0D766E] text-white text-[9px] font-extrabold uppercase px-1.5 py-0.5 tracking-widest font-mono">
@@ -177,7 +178,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1.5 border border-white/20 bg-white/5 text-neutral-200 px-3 py-1.5 text-xs font-bold uppercase transition-all hover:bg-white/10 hover:border-white/40"
+              className="flex items-center gap-1.5 border border-white/15 bg-white/[0.04] text-neutral-300 px-3 py-1.5 text-xs font-bold uppercase transition-all duration-200 hover:bg-white/[0.08] hover:border-white/25 hover:text-white"
               aria-label="Go back"
             >
               <ArrowLeft size={13} />
@@ -186,10 +187,10 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           )}
 
           {/* Quick Nav Links */}
-          <nav className="hidden lg:flex items-center gap-4 border-l border-white/10 pl-4 text-xs font-bold uppercase tracking-wider text-neutral-300">
+          <nav className="hidden lg:flex items-center gap-4 border-l border-white/[0.08] pl-4 text-xs font-bold uppercase tracking-wider text-neutral-400">
             <Link
               href="/"
-              className={`flex items-center gap-1.5 transition-colors hover:text-white ${
+              className={`flex items-center gap-1.5 transition-colors duration-200 hover:text-white ${
                 pathname === '/' ? 'text-white border-b-2 border-[#0D766E] pb-0.5' : ''
               }`}
             >
@@ -197,7 +198,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             </Link>
             <Link
               href="/latest"
-              className={`flex items-center gap-1.5 transition-colors hover:text-white ${
+              className={`flex items-center gap-1.5 transition-colors duration-200 hover:text-white ${
                 pathname === '/latest' ? 'text-white border-b-2 border-[#0D766E] pb-0.5' : ''
               }`}
             >
@@ -206,20 +207,20 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           </nav>
         </div>
 
-        {/* ── Center: Prominent Large Search Bar with Dynamic Micro-Interactions ── */}
-        <div className="hidden md:flex flex-1 max-w-[480px] lg:max-w-[540px] focus-within:max-w-[620px] items-center mx-2 lg:mx-6 transition-all duration-300 ease-out">
-          <div className={`group relative flex w-full items-center h-[42px] rounded-lg border bg-black/80 px-3.5 transition-all duration-300 ${
+        {/* ── Center: Search Bar with Accent Glow ── */}
+        <div className="hidden md:flex flex-1 max-w-[560px] items-center mx-2 lg:mx-6">
+          <div className={`group relative flex w-full items-center h-[40px] border px-3.5 transition-all duration-250 ${
             searchFocused
-              ? 'border-[#0D766E] ring-2 ring-[#0D766E]/40 shadow-[0_0_25px_rgba(13,118,110,0.35)] scale-[1.01] bg-black'
-              : 'border-white/20 hover:border-white/45 hover:bg-black/90 hover:shadow-[0_0_15px_rgba(255,255,255,0.06)]'
+              ? 'border-[#0D766E]/70 bg-black/90 shadow-[0_0_0_1px_rgba(13,118,110,0.3),0_0_20px_rgba(13,118,110,0.1)]'
+              : 'border-white/[0.12] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.05]'
           }`}>
             <button
               type="button"
               onClick={handleSearch}
               aria-label="Submit search"
-              className="mr-2 text-neutral-400 hover:text-white transition-colors focus:outline-none"
+              className="mr-2 text-neutral-500 hover:text-white transition-colors duration-200 focus:outline-none"
             >
-              <Search className={`w-4 h-4 transition-all duration-300 ${searchFocused ? 'text-[#0D766E] scale-110 rotate-12' : 'text-neutral-400 group-hover:text-white group-hover:scale-105'}`} />
+              <Search className={`w-4 h-4 transition-colors duration-250 ${searchFocused ? 'text-[#0D766E]' : 'text-neutral-500 group-hover:text-neutral-300'}`} />
             </button>
             <input
               ref={inputRef}
@@ -237,39 +238,38 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                 type="button"
                 onClick={clearSearch}
                 aria-label="Clear search"
-                className="text-neutral-400 hover:text-white p-1 rounded-full hover:bg-white/10 transition-all duration-200 hover:rotate-90"
+                className="text-neutral-500 hover:text-white p-1 hover:bg-white/[0.08] transition-all duration-200"
               >
                 <X size={14} />
               </button>
             ) : (
-              <kbd className="hidden lg:inline-flex items-center text-[10px] font-semibold font-mono tracking-wider text-neutral-300 bg-white/10 border border-white/20 px-2 py-0.5 rounded shadow-sm group-hover:border-white/40 group-hover:bg-white/15 transition-all whitespace-nowrap">
+              <kbd className="hidden lg:inline-flex items-center text-[10px] font-semibold font-mono tracking-wider text-neutral-500 bg-white/[0.06] border border-white/[0.1] px-2 py-0.5 group-hover:border-white/20 group-hover:text-neutral-400 transition-all duration-200 whitespace-nowrap">
                 Ctrl + K
               </kbd>
             )}
           </div>
         </div>
 
-        {/* ── Right: Custom Dropdown, Subscribe CTA & Auth Actions ── */}
+        {/* ── Right: Dropdown, Subscribe CTA & Auth Actions ── */}
         <div className="hidden sm:flex min-w-0 shrink-0 items-center gap-3">
           <CategorySelector placement="header" />
 
-          {/* Prominent Subscribe CTA Button */}
+          {/* Subscribe CTA Button */}
           <button
             type="button"
             onClick={handleSubscribeClick}
-            className="relative group overflow-hidden flex items-center gap-2 bg-[#FF6B6B] hover:bg-[#ff5252] text-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider shadow-md shadow-rose-500/25 transition-all duration-300 hover:scale-[1.04] active:scale-95 cursor-pointer border border-rose-400/40 shrink-0"
+            className="flex items-center gap-2 bg-[#0D766E] hover:bg-[#0a625c] text-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-[#0D766E]/60 hover:border-[#0D766E] hover:shadow-[0_0_16px_rgba(13,118,110,0.2)] shrink-0"
             title="Subscribe to VIP AI Newsletter"
           >
-            <span className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-            <Mail size={14} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            <Mail size={14} />
             <span>Subscribe</span>
           </button>
 
           {user ? (
-            <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+            <div className="flex items-center gap-2 border-l border-white/[0.08] pl-3">
               <Link
                 href="/admin"
-                className="flex items-center gap-2 bg-neutral-800/90 text-white border border-neutral-700 px-3 py-1.5 text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
+                className="flex items-center gap-2 bg-white/[0.04] text-white border border-white/[0.1] px-3 py-1.5 text-xs font-bold uppercase transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20"
               >
                 <ShieldCheck size={14} className="text-[#0D766E]" />
                 <span className="max-w-[100px] truncate">{user.username}</span>
@@ -278,16 +278,16 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                 type="button"
                 onClick={handleLogout}
                 title="Sign out"
-                className="bg-neutral-800/90 text-neutral-300 hover:text-white border border-neutral-700 p-2 transition-transform hover:-translate-y-0.5"
+                className="bg-white/[0.04] text-neutral-400 hover:text-white border border-white/[0.1] p-2 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20"
               >
                 <LogOut size={14} />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 border-l border-white/10 pl-3">
+            <div className="flex items-center gap-2 border-l border-white/[0.08] pl-3">
               <Link
                 href="/admin/login"
-                className="text-white hover:text-neutral-300 px-3 py-1.5 text-xs font-bold uppercase transition-colors"
+                className="text-neutral-400 hover:text-white px-3 py-1.5 text-xs font-bold uppercase transition-colors duration-200"
               >
                 Sign in
               </Link>
@@ -305,7 +305,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
         <button
           type="button"
           onClick={() => setMobileMenuOpen((current) => !current)}
-          className="pointer-events-auto relative z-[2] shrink-0 touch-manipulation sm:hidden text-white p-2 hover:bg-neutral-800/80 rounded transition-colors"
+          className="pointer-events-auto relative z-[2] shrink-0 touch-manipulation sm:hidden text-white p-2 hover:bg-white/[0.06] transition-colors duration-200"
           aria-label="Toggle Navigation"
           aria-expanded={mobileMenuOpen}
         >
@@ -315,9 +315,19 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
 
       {/* ── Mobile Menu Slide Dropdown ── */}
       {mobileMenuOpen && (
-        <div className="pointer-events-auto fixed top-[68px] left-0 right-0 z-[1100] max-h-[calc(100dvh-68px)] overflow-y-auto bg-[#111111] border-b border-white/15 p-5 space-y-4 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex items-center bg-black/90 border border-white/25 rounded-md h-[44px] px-3.5">
-            <Search className="text-neutral-400 shrink-0 w-4 h-4 mr-2" />
+        <div
+          className="pointer-events-auto fixed top-[66px] left-0 right-0 z-[1100] max-h-[calc(100dvh-66px)] overflow-y-auto bg-[#0a0a0a]/95 header-glass border-b border-white/[0.08] p-5 space-y-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)]"
+          style={{ animation: 'mobile-menu-in 250ms cubic-bezier(0.22, 1, 0.36, 1) both' }}
+        >
+          <style>{`
+            @keyframes mobile-menu-in {
+              from { opacity: 0; transform: translateY(-8px); }
+              to   { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+
+          <div className="flex items-center bg-black/60 border border-white/[0.12] h-[44px] px-3.5">
+            <Search className="text-neutral-500 shrink-0 w-4 h-4 mr-2" />
             <input
               type="text"
               placeholder="Search news, tools & reviews..."
@@ -345,42 +355,42 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
             <Link
               href="/"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+              className="flex items-center gap-2 border border-white/[0.08] bg-white/[0.03] p-3 text-xs font-bold text-white uppercase transition-colors duration-200 hover:bg-white/[0.06]"
             >
               <Home size={14} /> Home
             </Link>
             <Link
               href="/latest"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+              className="flex items-center gap-2 border border-white/[0.08] bg-white/[0.03] p-3 text-xs font-bold text-white uppercase transition-colors duration-200 hover:bg-white/[0.06]"
             >
               <Compass size={14} /> Latest News
             </Link>
             <Link
               href="/hottest"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+              className="flex items-center gap-2 border border-white/[0.08] bg-white/[0.03] p-3 text-xs font-bold text-white uppercase transition-colors duration-200 hover:bg-white/[0.06]"
             >
               <TrendingUp size={14} className="text-[#0D766E]" /> Hottest Deals
             </Link>
             <Link
               href="/editorial-picks"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 border border-white/10 bg-white/5 p-3 text-xs font-bold text-white uppercase"
+              className="flex items-center gap-2 border border-white/[0.08] bg-white/[0.03] p-3 text-xs font-bold text-white uppercase transition-colors duration-200 hover:bg-white/[0.06]"
             >
-              <Sparkles size={14} className="text-amber-400" /> Top Choice
+              <Sparkles size={14} className="text-amber-400/80" /> Top Choice
             </Link>
           </div>
 
-          <div className="pt-2 border-t border-white/10">
+          <div className="pt-2 border-t border-white/[0.06]">
             <CategorySelector placement="header" />
           </div>
 
-          <div className="pt-3 border-t border-white/10 flex items-center gap-2">
+          <div className="pt-3 border-t border-white/[0.06] flex items-center gap-2">
             {user ? (
               <div className="flex items-center justify-between w-full">
                 <Link
@@ -406,7 +416,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
                 <Link
                   href="/admin/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 text-center border border-white/30 text-white py-2.5 text-xs font-bold uppercase"
+                  className="flex-1 text-center border border-white/20 text-white py-2.5 text-xs font-bold uppercase transition-colors duration-200 hover:bg-white/[0.06]"
                 >
                   Sign in
                 </Link>
@@ -430,7 +440,7 @@ export default function EditorialHeader(props: EditorialHeaderProps) {
   return (
     <Suspense
       fallback={
-        <header className="fixed top-0 left-0 right-0 z-[1000] h-[68px] bg-[#111111] border-b border-[#222222] flex items-center justify-between px-4 sm:px-7">
+        <header className="fixed top-0 left-0 right-0 z-[1000] h-[66px] bg-[#0a0a0a] border-b border-white/[0.06] flex items-center justify-between px-4 sm:px-7">
           <Link href="/" className="text-white text-2xl font-bold font-['Plus_Jakarta_Sans']">
             {BRAND_NAME}
           </Link>
