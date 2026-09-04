@@ -35,10 +35,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
         }
       }, 450);
     } else {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth',
-      });
+      router.push('/#newsletter-section');
     }
   };
 
