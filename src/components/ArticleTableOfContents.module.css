@@ -1,6 +1,7 @@
 .toc {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  background: linear-gradient(145deg, #162b26, #101e1b);
   border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
   color: #f7fbfa;
   padding: 22px;
 }
@@ -63,9 +64,10 @@
   gap: 10px;
   grid-template-columns: 2px minmax(0, 1fr);
   line-height: 1.45;
-  padding: 8px 0;
+  border-radius: 5px;
+  padding: 9px 8px;
   text-decoration: none;
-  transition: color 180ms ease, transform 180ms ease;
+  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
 
 .toc a > span {
@@ -81,6 +83,8 @@
   color: #ffffff;
   transform: translateX(2px);
 }
+
+.toc li[data-active='true'] a { background: rgba(133, 221, 213, 0.08); }
 
 .toc li[data-active='true'] a > span {
   background: #85ddd5;

@@ -161,7 +161,7 @@ input[type="submit"]:active {
 }
 
 /* ── Smooth Silk Motion System (No layout jumps, elegant 480ms rise) ── */
-[data-motion]:not([data-motion-visible="true"]) {
+.public-motion-ready [data-motion]:not([data-motion-visible="true"]) {
   opacity: 0;
   transform: translate3d(0, 16px, 0);
   will-change: transform, opacity;

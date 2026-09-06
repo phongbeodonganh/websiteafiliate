@@ -65,7 +65,7 @@ export default function SocialFloatingBar() {
   return (
     <aside
       aria-label="Social links"
-      className="fixed right-6 top-1/2 -translate-y-1/2 z-[940] hidden md:flex flex-col gap-2.5"
+      className="fixed right-6 top-1/2 -translate-y-1/2 z-[940] hidden min-[1536px]:flex flex-col gap-2.5"
     >
       {SOCIAL_LINKS.map((item) => (
         <a

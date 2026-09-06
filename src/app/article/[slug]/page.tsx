@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, CalendarDays, Clock3, Eye } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Clock3, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
@@ -14,6 +14,7 @@ import EditorialFooter from '@/components/EditorialFooter';
 import EditorialBackdrop from '@/components/EditorialBackdrop';
 import PublicArticleImage from '@/components/PublicArticleImage';
 import ArticleContent from '@/components/ArticleContent';
+import ArticleReadingTools from '@/components/ArticleReadingTools';
 import ArticleTableOfContents from '@/components/ArticleTableOfContents';
 import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
@@ -197,7 +198,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
         </nav>
       </div>
 
-      <main className={styles.layout}>
+      <main className={styles.articleMain}>
         <article className={styles.articleBox}>
           <header className={styles.articleHeader} data-motion="rise">
             {categoryName && (categorySlug
@@ -226,61 +227,79 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
           </figure>
 
-          <div className={styles.readingColumn}>
-            {keyTakeaways.length > 0 && (
-              <section className={styles.takeaways} data-motion="rise">
-                <p>Key Takeaways</p>
-                <ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul>
-              </section>
-            )}
-
-            <ArticleContent id="article-content" className={styles.articleContent} html={sanitizedContent} />
-
-            {verdictPlacement && (
-              <EditorVerdict
-                articleId={articleId}
-                toolName={verdictPlacement.link.name}
-                affiliateLinkId={verdictPlacement.link.id}
-                commission={verdictPlacement.link.commission}
-              />
-            )}
-
-            {remainingPlacements.length > 0 && (
-              <aside className={styles.placements} aria-label="Affiliate recommendations" data-motion="rise">
-                <p className={styles.sectionEyebrow}>Selected partner offers</p>
-                <h2>Tools worth a closer look</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {remainingPlacements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
-                </div>
-              </aside>
-            )}
-
-            <section className={styles.authorBio} aria-labelledby="author-bio-title" data-motion="rise">
-              <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'AIDEALSUK Editorial'} src={authorAvatar} />
-              <div>
-                <p className={styles.sectionEyebrow}>About the author</p>
-                <h2 id="author-bio-title">{authorName || 'AIDEALSUK Editorial'}</h2>
-                <p>
-                  {authorName
-                    ? `${authorName} contributes reporting and analysis to AIDEALSUK across artificial intelligence, finance, and the tools shaping modern work.`
-                    : 'The AIDEALSUK editorial desk reports on artificial intelligence, finance, and the tools shaping modern work—with clarity over hype.'}
-                </p>
+          <div className={styles.layout}>
+            <aside className={styles.leftRail} aria-label="Article contents" data-motion="rise">
+              <div className={styles.leftSticky} data-toc-rail="true">
+                <ArticleTableOfContents key={`desktop-${articleId}`} contentId="article-content" />
+                <VerticalAffiliateSidebar sticky={false} variant="article" />
               </div>
-            </section>
+            </aside>
+
+            <div className={styles.readingColumn}>
+              <ArticleReadingTools key={articleId} contentId="article-content" slug={doc.slug} />
+              <details className={styles.mobileContents}>
+                <summary>In this article <BookOpen size={16} aria-hidden="true" /></summary>
+                <ArticleTableOfContents key={`mobile-${articleId}`} contentId="article-content" />
+              </details>
+              {keyTakeaways.length > 0 && (
+                <section className={styles.takeaways} data-motion="rise">
+                  <p>Key Takeaways</p>
+                  <ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul>
+                </section>
+              )}
+
+              <ArticleContent id="article-content" className={styles.articleContent} html={sanitizedContent} />
+
+              <div className={styles.articleEnd}>
+                <span aria-hidden="true">◆</span>
+                <p>A fresh perspective is worth sharing.</p>
+                <SocialShare title={doc.title} variant="compact" />
+              </div>
+
+              {verdictPlacement && (
+                <EditorVerdict
+                  articleId={articleId}
+                  toolName={verdictPlacement.link.name}
+                  affiliateLinkId={verdictPlacement.link.id}
+                  commission={verdictPlacement.link.commission}
+                />
+              )}
+
+              {remainingPlacements.length > 0 && (
+                <aside className={styles.placements} aria-label="Affiliate recommendations" data-motion="rise">
+                  <p className={styles.sectionEyebrow}>Selected partner offers</p>
+                  <h2>Tools worth a closer look</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {remainingPlacements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+                  </div>
+                </aside>
+              )}
+
+              <section className={styles.authorBio} aria-labelledby="author-bio-title" data-motion="rise">
+                <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'AIDEALSUK Editorial'} src={authorAvatar} />
+                <div>
+                  <p className={styles.sectionEyebrow}>About the author</p>
+                  <h2 id="author-bio-title">{authorName || 'AIDEALSUK Editorial'}</h2>
+                  <p>
+                    {authorName
+                      ? `${authorName} contributes reporting and analysis to AIDEALSUK across artificial intelligence, finance, and the tools shaping modern work.`
+                      : 'The AIDEALSUK editorial desk reports on artificial intelligence, finance, and the tools shaping modern work—with clarity over hype.'}
+                  </p>
+                </div>
+              </section>
+            </div>
+
+            <aside className={styles.rightRail} role="complementary" aria-label="Latest news" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
+              <div className={styles.rightSticky} tabIndex={0} role="region" aria-label="Latest news">
+                {latestArticles.length > 0 && <section className={styles.latestNews}>
+                  <p>Recently Published</p><h2>Latest News</h2>
+                  <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
+                  <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
+                </section>}
+              </div>
+            </aside>
           </div>
         </article>
-
-        <aside className={styles.rightRail} role="complementary" aria-label="Sidebar" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
-          <div className={styles.railSticky}>
-            <ArticleTableOfContents contentId="article-content" />
-            <VerticalAffiliateSidebar sticky={false} variant="article" />
-          </div>
-          {latestArticles.length > 0 && <section className={styles.latestNews}>
-            <p>Recently Published</p><h2>Latest News</h2>
-            <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
-            <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
-          </section>}
-        </aside>
       </main>
 
       {relatedArticles.length > 0 && (

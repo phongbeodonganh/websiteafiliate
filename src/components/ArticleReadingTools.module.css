@@ -1,0 +1,19 @@
+.progress { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 1100; pointer-events: none; background: transparent; }
+.progress > span { display: block; width: 100%; height: 100%; background: #85ddd5; box-shadow: 0 0 12px #85ddd570; transform-origin: left; transition: transform 150ms linear; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 22px; margin-bottom: 30px; border-bottom: 1px solid #ffffff20; scroll-margin-top: 120px; }
+.progressLabel { display: flex; align-items: center; gap: 8px; color: #a1b6b1; font-size: 11px; font-variant-numeric: tabular-nums; }
+.progressLabel > svg { color: #85ddd5; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: #85ddd5; }
+.actions { display: flex; align-items: center; gap: 14px; }
+.sizeControls { display: flex; align-items: center; border: 1px solid #ffffff20; border-radius: 5px; }
+.sizeControls > span { color: #d1dedb; font-size: 13px; padding: 0 3px; }
+.toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 36px; min-height: 38px; background: transparent; border: 0; color: #a1b6b1; cursor: pointer; transition: color 150ms, background 150ms; }
+.toolbar button:hover { color: #85ddd5; background: #85ddd50a; }
+.toolbar button:disabled { opacity: .3; cursor: default; }
+.toolbar button:focus-visible, .backToReading:focus-visible { outline: 2px solid #85ddd5; outline-offset: 4px; }
+.save { font-size: 11px; padding: 0 5px; }
+.save[aria-pressed='true'] { color: #85ddd5; }
+.storageError { flex-basis: 100%; font-size: 12px; color: #ffb79f; margin: 0; }
+.backToReading { position: fixed; bottom: 98px; right: 22px; display: grid; place-items: center; height: 42px; width: 42px; border: 1px solid #85ddd550; border-radius: 50%; background: #102321; color: #85ddd5; z-index: 30; box-shadow: 0 6px 24px #0004; cursor: pointer; }
+@media (max-width: 520px) { .actions { gap: 8px; } .save span { display: none; } .backToReading { right: 14px; } }
+@media (prefers-reduced-motion: reduce) { .progress > span, .toolbar button { transition: none; } }
