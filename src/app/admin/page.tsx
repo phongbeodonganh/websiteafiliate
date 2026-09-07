@@ -55,6 +55,9 @@ import {
   Send,
   Loader2,
   Radio,
+  RefreshCw,
+  TrendingDown,
+  Info,
 } from 'lucide-react';
 
 // Reusable Luxury Button Component
@@ -74,35 +77,170 @@ const LuxuryButton = ({ children, variant = 'primary', className = '', ...props 
   );
 };
 
-const StatCard = ({ title, value, icon: Icon, trend, subtext }: any) => (
-  <div className="relative overflow-hidden rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-xl p-6 group hover:border-amber-500/30 transition-all duration-500">
-    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
-      <Icon size={100} className="text-amber-400" />
-    </div>
-    <div className="relative z-10">
-      <div className="flex items-center gap-3 text-slate-400 mb-2">
-        <div className="p-2 bg-slate-950/50 rounded-lg border border-slate-800">
-          <Icon size={16} className="text-amber-400" />
+const StatCard = ({ title, value, icon: Icon, trend, subtext, info }: any) => {
+  return (
+    <div className="relative rounded-2xl bg-slate-900/50 border border-slate-800 backdrop-blur-xl p-6 group hover:border-amber-500/30 transition-all duration-500">
+      <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+          <Icon size={100} className="text-amber-400" />
         </div>
-        <h3 className="font-medium text-xs tracking-wider uppercase">{title}</h3>
       </div>
-      <div className="mt-4">
-        <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-          {value}
-        </span>
-      </div>
-      <div className="mt-2 flex items-center gap-2 text-sm">
-        {trend && (
-          <span className={`font-medium flex items-center gap-1 ${trend.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>
-            <TrendingUp size={14} className={trend.startsWith('+') ? '' : 'rotate-180'} />
-            {trend}
+      <div className="relative z-10">
+        <div className="flex items-center justify-between gap-3 text-slate-400 mb-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 bg-slate-950/50 rounded-lg border border-slate-800 shrink-0">
+              <Icon size={16} className="text-amber-400" />
+            </div>
+            <h3 className="font-medium text-xs tracking-wider uppercase truncate">{title}</h3>
+          </div>
+          {info && (
+            <div className="relative shrink-0 group/info">
+              <button
+                type="button"
+                className="text-slate-500 hover:text-amber-400 transition-colors cursor-help"
+                aria-label={`Giải thích ${title}`}
+              >
+                <Info size={15} />
+              </button>
+              <div className="pointer-events-none absolute right-0 bottom-full mb-2.5 w-64 z-40 opacity-0 invisible -translate-y-1 group-hover/info:opacity-100 group-hover/info:visible group-hover/info:translate-y-0 transition-all duration-150">
+                <div className="relative p-3.5 rounded-xl bg-slate-950 border border-amber-500/30 shadow-2xl shadow-black/40 text-[11px] text-slate-300 leading-relaxed normal-case font-normal tracking-normal">
+                  {info}
+                </div>
+                <div className="absolute -bottom-1 right-3 w-2 h-2 bg-slate-950 border-b border-r border-amber-500/30 rotate-45" />
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+            {value}
           </span>
-        )}
-        {subtext && <span className="text-slate-500 text-xs">{subtext}</span>}
+        </div>
+        <div className="mt-2 flex items-center gap-2 text-sm">
+          {trend && (
+            <span className={`font-medium flex items-center gap-1 ${trend.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>
+              <TrendingUp size={14} className={trend.startsWith('+') ? '' : 'rotate-180'} />
+              {trend}
+            </span>
+          )}
+          {subtext && <span className="text-slate-500 text-xs">{subtext}</span>}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// Mini time-series line chart (0-based y-axis, hover crosshair + tooltip, direct end-label).
+// Dùng cho các chỉ số đơn lẻ (1 series/chart) — 2 series khác thang đo (clicks vs impressions)
+// cố tình tách thành 2 chart riêng thay vì dual-axis để không tạo tương quan giả.
+const TrendLineChart = ({
+  data,
+  color,
+  formatValue = (v: number) => v.toLocaleString('vi-VN'),
+}: {
+  data: { date: string; value: number }[];
+  color: string;
+  formatValue?: (v: number) => string;
+}) => {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const svgRef = React.useRef<SVGSVGElement>(null);
+
+  const W = 300;
+  const H = 84;
+  const PAD_TOP = 8;
+  const PAD_BOTTOM = 4;
+  const plotH = H - PAD_TOP - PAD_BOTTOM;
+
+  if (data.length < 2) {
+    return <p className="text-slate-500 text-xs py-8 text-center">Chưa đủ dữ liệu để vẽ biểu đồ.</p>;
+  }
+
+  const max = Math.max(...data.map((d) => d.value), 1);
+  const stepX = W / (data.length - 1);
+  const yFor = (v: number) => PAD_TOP + plotH - (v / max) * plotH;
+  const points = data.map((d, i) => [i * stepX, yFor(d.value)] as const);
+  const linePath = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L${points[points.length - 1][0].toFixed(1)},${H} L0,${H} Z`;
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? iso : `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const handleMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const fraction = (e.clientX - rect.left) / rect.width;
+    const idx = Math.round(fraction * (data.length - 1));
+    setHoverIdx(Math.max(0, Math.min(data.length - 1, idx)));
+  };
+
+  const active = hoverIdx !== null ? data[hoverIdx] : data[data.length - 1];
+  const activePoint = hoverIdx !== null ? points[hoverIdx] : points[points.length - 1];
+  const tooltipAnchor = activePoint[0] < W * 0.15 ? 'left' : activePoint[0] > W * 0.85 ? 'right' : 'center';
+
+  return (
+    <div>
+      <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1 tabular-nums">
+        <span>{formatValue(max)}</span>
+        <span>{formatValue(0)}</span>
+      </div>
+      <div className="relative">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio="none"
+          className="w-full h-20 cursor-crosshair overflow-visible"
+          onMouseMove={handleMove}
+          onMouseLeave={() => setHoverIdx(null)}
+        >
+          <line x1={0} y1={PAD_TOP} x2={W} y2={PAD_TOP} stroke="currentColor" strokeWidth={1} className="text-slate-800" vectorEffect="non-scaling-stroke" />
+          <line x1={0} y1={H - PAD_BOTTOM} x2={W} y2={H - PAD_BOTTOM} stroke="currentColor" strokeWidth={1} className="text-slate-800" vectorEffect="non-scaling-stroke" />
+          <path d={areaPath} fill={color} opacity={0.1} />
+          <path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          {hoverIdx !== null && (
+            <line
+              x1={activePoint[0]}
+              y1={0}
+              x2={activePoint[0]}
+              y2={H}
+              stroke="currentColor"
+              strokeWidth={1}
+              className="text-slate-600"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+          <circle
+            cx={activePoint[0]}
+            cy={activePoint[1]}
+            r={4}
+            fill={color}
+            stroke="currentColor"
+            strokeWidth={2}
+            className="text-slate-900"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+
+        <div
+          className={`absolute -top-1 flex flex-col text-[11px] whitespace-nowrap pointer-events-none px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 shadow-xl transition-opacity ${hoverIdx !== null ? 'opacity-100' : 'opacity-0'}`}
+          style={{
+            left: tooltipAnchor === 'center' ? `${(activePoint[0] / W) * 100}%` : tooltipAnchor === 'left' ? '0%' : undefined,
+            right: tooltipAnchor === 'right' ? '0%' : undefined,
+            transform: tooltipAnchor === 'center' ? 'translate(-50%, -100%)' : 'translateY(-100%)',
+          }}
+        >
+          <span className="text-slate-500">{formatDate(active.date)}</span>
+          <span className="font-bold" style={{ color }}>{formatValue(active.value)}</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+        <span>{formatDate(data[0].date)}</span>
+        <span>{formatDate(data[data.length - 1].date)}</span>
+      </div>
+    </div>
+  );
+};
 
 export default function AdminDashboardPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -111,7 +249,6 @@ export default function AdminDashboardPage() {
 
   // System States
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const [clickLogsList, setClickLogsList] = useState<any[]>([]);
   const [articlesList, setArticlesList] = useState<any[]>([]);
   const [editingArticle, setEditingArticle] = useState<any>(null);
   const [previewArticle, setPreviewArticle] = useState<any>(null);
@@ -119,6 +256,12 @@ export default function AdminDashboardPage() {
   const [affiliateLinksList, setAffiliateLinksList] = useState<any[]>([]);
   const [categoriesList, setCategoriesList] = useState<any[]>([]);
   const [settingsData, setSettingsData] = useState<any>(null);
+  // SEO Insights (GA4 + GSC) State
+  const [insightsData, setInsightsData] = useState<any>(null);
+  const [insightsConfigured, setInsightsConfigured] = useState<boolean | null>(null);
+  const [insightsMissingEnv, setInsightsMissingEnv] = useState<string[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [insightsDays, setInsightsDays] = useState(28);
   // Subscribers Leads State
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
   const [subscribersStats, setSubscribersStats] = useState<any>({ totalSubscribers: 0, countToday: 0, countThisWeek: 0 });
@@ -556,11 +699,20 @@ export default function AdminDashboardPage() {
       .then((d) => d.status === 'success' && setUsersList(d.data));
   };
 
-  const loadClickLogsData = () => {
+  const loadInsightsData = (force = false, days = insightsDays) => {
     const token = localStorage.getItem('token');
-    fetch('/api/v1/cms/click-logs', { headers: { Authorization: `Bearer ${token}` } })
+    setInsightsLoading(true);
+    const params = new URLSearchParams({ days: String(days) });
+    if (force) params.set('force', 'true');
+    fetch(`/api/v1/cms/insights?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
-      .then((d) => d.status === 'success' && setClickLogsList(d.data));
+      .then((d) => {
+        if (d.status !== 'success') return;
+        setInsightsConfigured(d.configured);
+        setInsightsMissingEnv(d.missingEnv || []);
+        setInsightsData(d.data);
+      })
+      .finally(() => setInsightsLoading(false));
   };
 
   useEffect(() => {
@@ -570,8 +722,8 @@ export default function AdminDashboardPage() {
     if (activeTab === 'subscribers' && currentUser?.role === 'admin') {
       loadSubscribersData();
     }
-    if (activeTab === 'dashboard' && currentUser?.role === 'admin') {
-      loadClickLogsData();
+    if (activeTab === 'insights' && currentUser?.role === 'admin') {
+      loadInsightsData();
     }
   }, [activeTab, currentUser]);
 
@@ -1042,48 +1194,210 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
+      </div>
+    );
+  };
 
-        {currentUser.role === 'admin' && (
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-medium flex items-center gap-2">
-                <Clock size={18} className="text-amber-400" /> Recent Click Activity
-              </h3>
-              <span className="text-xs text-slate-500">Last {clickLogsList.length} tracked clicks</span>
+  // SEO Insights View (GA4 + GSC)
+  const InsightsView = () => {
+    const overview: any[] = insightsData?.organicOverview || [];
+    const quickWins: any[] = insightsData?.quickWinQueries || [];
+    const decay: any[] = insightsData?.contentDecay || [];
+    const funnel: any[] = insightsData?.funnel || [];
+
+    const totals = overview.reduce(
+      (acc, d) => ({ clicks: acc.clicks + d.clicks, impressions: acc.impressions + d.impressions }),
+      { clicks: 0, impressions: 0 }
+    );
+    const avgPosition = overview.length
+      ? overview.reduce((sum, d) => sum + d.position, 0) / overview.length
+      : 0;
+    const avgCtr = totals.impressions > 0 ? (totals.clicks / totals.impressions) * 100 : 0;
+
+    const clicksSeries = overview.map((d) => ({ date: d.date, value: d.clicks }));
+    const impressionsSeries = overview.map((d) => ({ date: d.date, value: d.impressions }));
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="flex justify-between items-end">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">SEO Insights</h2>
+            <p className="text-slate-400 text-sm">Dữ liệu tổng hợp từ Google Analytics 4 &amp; Search Console — {insightsDays} ngày gần nhất.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={insightsDays}
+              onChange={(e) => {
+                const days = Number(e.target.value);
+                setInsightsDays(days);
+                loadInsightsData(false, days);
+              }}
+              disabled={insightsLoading}
+              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-300 hover:border-amber-500/40 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <option value={7}>7 ngày qua</option>
+              <option value={28}>28 ngày qua</option>
+              <option value={90}>90 ngày qua</option>
+            </select>
+            <button
+              onClick={() => loadInsightsData(true)}
+              disabled={insightsLoading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/40 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <RefreshCw size={14} className={insightsLoading ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
+        </div>
+
+        {insightsConfigured === false && (
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex items-start gap-4">
+            <AlertTriangle size={24} className="text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-white font-semibold mb-1">Chưa cấu hình GA4 Data API / Search Console API</p>
+              <p className="text-slate-400 text-sm mb-2">
+                Cần set các biến môi trường server sau (service account credentials, không nhập qua UI):
+              </p>
+              <ul className="text-xs font-mono text-amber-300/90 space-y-1">
+                {insightsMissingEnv.map((key) => (
+                  <li key={key}>• {key}</li>
+                ))}
+              </ul>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-                    <th className="p-3 font-medium">Article</th>
-                    <th className="p-3 font-medium">Affiliate Link</th>
-                    <th className="p-3 font-medium">IP Address</th>
-                    <th className="p-3 font-medium text-right">Clicked At</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {clickLogsList.length > 0 ? (
-                    clickLogsList.map((log: any) => (
-                      <tr key={log.id} className="border-b border-slate-800/60 hover:bg-white/[0.02] transition-colors">
-                        <td className="p-3 text-white line-clamp-1 max-w-xs">{log.articleTitle}</td>
-                        <td className="p-3 text-emerald-400/90 flex items-center gap-1.5">
-                          <MousePointerClick size={14} /> {log.affiliateName}
-                        </td>
-                        <td className="p-3 text-slate-400 font-mono text-xs">{log.ipAddress}</td>
-                        <td className="p-3 text-slate-500 text-xs text-right font-mono">
-                          {new Date(log.clickedAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
-                        No click activity tracked yet.
-                      </td>
-                    </tr>
+          </div>
+        )}
+
+        {insightsConfigured && insightsLoading && !insightsData && (
+          <div className="flex items-center justify-center h-48 text-slate-500 text-sm gap-2">
+            <Loader2 size={18} className="animate-spin" /> Đang tải dữ liệu từ Google...
+          </div>
+        )}
+
+        {insightsConfigured && insightsData && (
+          <div className={`space-y-6 transition-opacity duration-200 ${insightsLoading ? 'opacity-50' : 'opacity-100'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <StatCard
+                title={`Organic Clicks (${insightsDays}d)`}
+                value={totals.clicks.toLocaleString()}
+                icon={MousePointerClick}
+                subtext="Google Search Console"
+                info="Số lần người dùng bấm vào kết quả tìm kiếm (không phải quảng cáo) để vào trang của bạn trên Google. Đây là traffic SEO thực tế, khác với 'Impressions' chỉ là được nhìn thấy."
+              />
+              <StatCard
+                title={`Impressions (${insightsDays}d)`}
+                value={totals.impressions.toLocaleString()}
+                icon={Eye}
+                subtext="Google Search Console"
+                info="Số lần một URL của bạn xuất hiện trên trang kết quả tìm kiếm Google, dù người dùng có cuộn tới thấy hay bấm vào hay không. Impressions cao nhưng Clicks thấp = trang được Google hiển thị nhưng chưa đủ hấp dẫn để người dùng bấm vào."
+              />
+              <StatCard
+                title="Avg. CTR"
+                value={`${avgCtr.toFixed(2)}%`}
+                icon={Activity}
+                subtext="Clicks / Impressions"
+                info="Tỷ lệ click-through = Clicks ÷ Impressions. CTR thấp thường do title/meta description chưa hấp dẫn, hoặc thứ hạng (position) còn thấp nên ít người cuộn tới thấy."
+              />
+              <StatCard
+                title="Avg. Position"
+                value={avgPosition.toFixed(1)}
+                icon={Search}
+                subtext="Thứ hạng trung bình"
+                info="Vị trí trung bình trang của bạn xuất hiện trên kết quả tìm kiếm Google cho các truy vấn liên quan (1 = vị trí đầu tiên). Số càng nhỏ càng tốt."
+              />
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+              <h3 className="text-white font-medium flex items-center gap-2 mb-5">
+                <TrendingUp size={18} className="text-amber-400" /> Organic Performance Trend
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <p className="text-xs font-semibold text-amber-400/90 uppercase tracking-wider mb-2">Clicks theo ngày</p>
+                  <TrendLineChart data={clicksSeries} color="#f59e0b" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-cyan-400/90 uppercase tracking-wider mb-2">Impressions theo ngày</p>
+                  <TrendLineChart data={impressionsSeries} color="#22d3ee" />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+                <h3 className="text-white font-medium flex items-center gap-2 mb-4">
+                  <Search size={18} className="text-cyan-400" /> Quick-Win Keywords
+                </h3>
+                <p className="text-xs text-slate-500 mb-4">Từ khóa vị trí 8-20, impressions cao — cơ hội tối ưu để lên top 10.</p>
+                <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                  {quickWins.length > 0 ? quickWins.map((q: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800/50">
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{q.query}</p>
+                        <p className="text-xs text-slate-500 truncate">{q.page}</p>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="text-xs text-cyan-400 font-semibold">Pos. {q.position}</p>
+                        <p className="text-[11px] text-slate-500">{q.impressions.toLocaleString()} impr.</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-slate-500 text-sm text-center py-8">Không có quick-win nào trong kỳ này.</p>
                   )}
-                </tbody>
-              </table>
+                </div>
+              </div>
+
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+                <h3 className="text-white font-medium flex items-center gap-2 mb-4">
+                  <TrendingDown size={18} className="text-red-400" /> Content Decay Alerts
+                </h3>
+                <p className="text-xs text-slate-500 mb-4">Bài viết giảm &gt;20% clicks so với {insightsDays} ngày trước đó — ưu tiên update.</p>
+                <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                  {decay.length > 0 ? decay.map((d: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800/50">
+                      <p className="text-white text-sm font-medium truncate max-w-[60%]">{d.page}</p>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-red-400 font-semibold">{d.changePercent}%</p>
+                        <p className="text-[11px] text-slate-500">{d.clicksBefore} → {d.clicksAfter} clicks</p>
+                      </div>
+                    </div>
+                  )) : (
+                    <p className="text-slate-500 text-sm text-center py-8">Không phát hiện bài viết bị suy giảm.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
+              <h3 className="text-white font-medium flex items-center gap-2 mb-4">
+                <MousePointerClick size={18} className="text-emerald-400" /> Traffic → Affiliate Click Funnel
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                      <th className="p-3 font-medium">Article</th>
+                      <th className="p-3 font-medium text-right">Pageviews (GA4)</th>
+                      <th className="p-3 font-medium text-right">Affiliate Clicks</th>
+                      <th className="p-3 font-medium text-right">CTR</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm">
+                    {funnel.length > 0 ? funnel.map((f: any, i: number) => (
+                      <tr key={i} className="border-b border-slate-800/60 hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3 text-white">
+                          <div className="max-w-xs truncate" title={f.articleTitle}>{f.articleTitle}</div>
+                        </td>
+                        <td className="p-3 text-slate-300 text-right font-mono">{f.pageviews.toLocaleString()}</td>
+                        <td className="p-3 text-emerald-400/90 text-right font-mono">{f.affiliateClicks.toLocaleString()}</td>
+                        <td className="p-3 text-amber-400 text-right font-mono">{f.clickThroughRate}%</td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">Chưa có dữ liệu funnel trong kỳ này.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -3296,6 +3610,20 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Google Search Console Verification</label>
+              <input
+                type="text"
+                value={settingsData?.googleSiteVerification || ''}
+                onChange={(e) => setSettingsData({ ...settingsData, googleSiteVerification: e.target.value })}
+                placeholder="Chuỗi content của thẻ meta google-site-verification"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Search Console &gt; Settings &gt; Ownership verification &gt; HTML tag — chỉ dán giá trị <code>content=&quot;...&quot;</code>, hệ thống tự render thẻ meta.
+              </p>
+            </div>
+
+            <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-xs font-medium text-slate-400">Schema JSON-LD (AI Engine Friendly)</label>
                 <button
@@ -3517,6 +3845,7 @@ export default function AdminDashboardPage() {
     if (editingArticle !== null) return <ArticleEditorForm />;
 
     if (activeTab === 'dashboard') return <DashboardView />;
+    if (activeTab === 'insights' && currentUser.role === 'admin') return <InsightsView />;
     if (activeTab === 'articles') return <ArticlesView />;
     if (activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
     if (activeTab === 'categories' && currentUser.role === 'admin') return <CategoriesView />;
@@ -3571,6 +3900,7 @@ export default function AdminDashboardPage() {
 
               {currentUser.role === 'admin' && (
                 <>
+                  <NavItem id="insights" icon={TrendingUp} label="SEO Insights" requiredRole="admin" />
                   <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">System (Admin)</div>
                   <NavItem id="subscribers" icon={Mail} label="Insider" requiredRole="admin" />
                   <NavItem id="categories" icon={FolderTree} label="Categories & Sub-Cats" requiredRole="admin" />

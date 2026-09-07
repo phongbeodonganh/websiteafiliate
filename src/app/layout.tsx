@@ -116,6 +116,7 @@ export default async function RootLayout({
   const schemaJsonld = sysSettings?.schemaJsonld || "";
   const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);
   const gaId = sysSettings?.googleAnalyticsId || "";
+  const gscVerification = sysSettings?.googleSiteVerification || "";
 
   return (
     <html lang={sysSettings?.hreflang || "en"} className="h-full antialiased dark">
@@ -127,6 +128,9 @@ export default async function RootLayout({
         <meta name="geo.placename" content={geoPlace} />
         <meta name="geo.position" content={`${lat};${lng}`} />
         <meta name="ICBM" content={`${lat}, ${lng}`} />
+        {gscVerification && (
+          <meta name="google-site-verification" content={gscVerification} />
+        )}
         <style dangerouslySetInnerHTML={{
           __html: `
             :root {

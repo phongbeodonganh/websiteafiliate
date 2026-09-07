@@ -249,6 +249,7 @@ export interface ISetting extends Document {
   schemaJsonld?: string;
   headScripts?: string;
   googleAnalyticsId?: string;
+  googleSiteVerification?: string;
   primary_color?: string;
   accent_color?: string;
   theme_mode?: string;
@@ -279,6 +280,7 @@ const SettingSchema = new Schema<ISetting>({
   schemaJsonld: { type: String },
   headScripts: { type: String },
   googleAnalyticsId: { type: String },
+  googleSiteVerification: { type: String },
   primary_color: { type: String, default: '#0f172a' },
   accent_color: { type: String, default: '#f59e0b' },
   theme_mode: { type: String, default: 'dark' },
@@ -295,6 +297,19 @@ const SettingSchema = new Schema<ISetting>({
   updated_at: { type: Date, default: Date.now }
 });
 
+// 10. InsightsCache (cached GA4 / GSC report payloads, avoids hitting Google API quotas on every dashboard load)
+export interface IInsightsCache extends Document {
+  key: string;
+  data: any;
+  fetchedAt: Date;
+}
+
+const InsightsCacheSchema = new Schema<IInsightsCache>({
+  key: { type: String, required: true, unique: true },
+  data: { type: Schema.Types.Mixed },
+  fetchedAt: { type: Date, default: Date.now },
+});
+
 // Model Exports (preventing overwrite model errors in Next.js hot reload)
 export const UserModel: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 export const CategoryModel: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
@@ -306,6 +321,7 @@ export const ArticleAffiliateRelationModel: Model<IArticleAffiliateRelation> = m
 export const ClickLogModel: Model<IClickLog> = mongoose.models.ClickLog || mongoose.model<IClickLog>('ClickLog', ClickLogSchema);
 export const SubscriberModel: Model<ISubscriber> = mongoose.models.Subscriber || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema);
 export const SettingModel: Model<ISetting> = mongoose.models.Setting || mongoose.model<ISetting>('Setting', SettingSchema);
+export const InsightsCacheModel: Model<IInsightsCache> = mongoose.models.InsightsCache || mongoose.model<IInsightsCache>('InsightsCache', InsightsCacheSchema);
 
 export async function syncAffiliateNumericFields() {
   try {
