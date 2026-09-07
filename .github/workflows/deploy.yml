@@ -61,7 +61,7 @@ jobs:
       # No `npm install` / `next build` here — the VPS only unpacks the
       # bundle built in CI and reloads pm2. env files are kept outside the
       # unpacked app dir so they survive every deploy untouched.
-      - name: Extract and reload
+      - name: Extract and restart
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -80,4 +80,5 @@ jobs:
             [ -d app ] && mv app app_old
             mv app_new app
             rm -rf app_old
-            pm2 startOrReload ecosystem.config.js
+            pm2 delete ecosystem.config.js > /dev/null 2>&1 || true
+            pm2 start ecosystem.config.js
