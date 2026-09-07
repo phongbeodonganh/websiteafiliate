@@ -19,6 +19,7 @@ export async function GET() {
       });
     }
 
+
     const doc = currentSettings.toObject();
 
     return NextResponse.json({
