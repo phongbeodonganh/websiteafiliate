@@ -1,4 +1,4 @@
-# Make Homepage Motion Feel Editorial
+# Make Homepage Motion Feel Like a Live Technology Desk
 
 Written against: 1d55f5f5f8f71d64d1cfc74428a33410552f5c86
 
@@ -13,7 +13,7 @@ Written against: 1d55f5f5f8f71d64d1cfc74428a33410552f5c86
 
 ## Design decision
 
-Use one motion grammar: content reveals once with `PublicMotion`; cards use image scale only; command buttons use a 1px lift without scale; icon-only controls may move their icon, not their container. The featured carousel remains the signature motion and uses a single crossfade/very small image settle on slide change. Remove glow, rotate, shimmer, zoom, and compound scale effects from homepage consumers.
+Use one motion grammar: content reveals once with `PublicMotion`; cards use image scale only; command buttons use a small lift; icon-only controls move their icon, not their container. The signature is a live signal scan in the technology-news hero: the scan crosses one orchestrated sequence of eyebrow, headline, coverage desk, copy, and actions. The featured carousel complements it with a seven-second progress rail and the existing restrained image settle. Ambient hero movement stays behind content, uses only transform/opacity/background-position, and is fully disabled by `prefers-reduced-motion`.
 
 ## Reuse
 
@@ -32,9 +32,9 @@ Use one motion grammar: content reveals once with `PublicMotion`; cards use imag
    - Preserve: search focus visibility, menu open/close, loading spinners, and form success/error feedback.
    - Verify: header search does not resize, cards do not shift the grid, and newsletter feedback appears without zoom.
 3. `src/app/news-client.tsx` and `src/app/page.module.css`
-   - Change: make carousel slide changes use one keyed crossfade/settle sequence for media and copy; do not also replay the section reveal. Keep the seven-second interval, pause-on-hover/focus, controls, and reduced-motion stop.
+   - Change: add the hero signal scanner and staged technology-desk entrance; make carousel slide changes use one keyed crossfade/settle sequence with a visible seven-second progress rail. Keep the interval, pause-on-hover/focus, controls, and reduced-motion stop.
    - Preserve: manual navigation, active dots, full excerpt, and keyboard interaction.
-   - Verify: automatic and manual changes feel identical and no copy/image flash occurs.
+   - Verify: the hero sequence runs once, automatic and manual carousel changes feel identical, progress pauses with the carousel, and no copy/image flash occurs.
 
 ## Scope
 

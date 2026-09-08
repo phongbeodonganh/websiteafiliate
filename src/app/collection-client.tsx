@@ -38,6 +38,10 @@ function formatDate(value?: string) {
   return new Date(value).toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function plainText(value = '') { return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
+function categoryTitle(name: string) { return name.replace(/\bai\b/gi, 'AI'); }
+function categoryTitleFromSlug(slug: string) {
+  return categoryTitle(slug.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' '));
+}
 function readTime(article: Article) {
   if (!article.content) return null;
   return Math.max(1, Math.ceil(plainText(article.content).split(/\s+/).length / 220));
@@ -69,10 +73,10 @@ function Story({ article, rank, variant = 'card', label }: { article: Article; r
   </article>;
 }
 
-export default function CollectionClient({ kind, categorySlug }: { kind: CollectionKind; categorySlug?: string }) {
-  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} />;
+export default function CollectionClient({ kind, categorySlug, categoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string }) {
+  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} />;
 }
-function CollectionView({ kind, categorySlug }: { kind: CollectionKind; categorySlug?: string }) {
+function CollectionView({ kind, categorySlug, categoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string }) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 9, totalPages: 0, hasMore: false });
@@ -83,14 +87,16 @@ function CollectionView({ kind, categorySlug }: { kind: CollectionKind; category
   const isDeals = kind === 'affiliates';
   const details = config[kind];
   const Icon = details.icon;
-  const title = kind === 'category' && categorySlug ? categorySlug.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ') : details.title;
+  const title = kind === 'category' && categorySlug
+    ? categoryName ? categoryTitle(categoryName) : categoryTitleFromSlug(categorySlug)
+    : details.title;
   const loadingInitial = loading && request.page === 1;
   const count = isDeals ? affiliates.length : articles.length;
 
   useEffect(() => {
     const controller = new AbortController();
     const params = new URLSearchParams({ page: String(request.page), limit: '9' });
-    if (kind === 'editorial') params.set('tab', 'hot');
+    if (kind === 'editorial') params.set('tab', 'editorial');
     if (kind === 'hottest') params.set('tab', 'popular');
     if (kind === 'category' && categorySlug) params.set('category_slug', categorySlug);
     if (isDeals) params.set('sort', request.sort);

@@ -6,11 +6,17 @@
   --editorial-surface: #ffffff;
   --editorial-ink: #111111;
   --editorial-copy: #374151;
-  --editorial-muted: #6B7280;
+  --editorial-muted: #5f6670;
   --editorial-divider: #e2e2de;
   --ed-verdict: #0D766E;
   --ed-cta-hover: #1a1a1a;
   --ed-accent-glow: rgba(13, 118, 110, 0.25);
+  --editorial-accent: #0d766e;
+  --editorial-accent-soft: #e5f2f0;
+  --editorial-dark: #111111;
+  --editorial-dark-copy: #d5dcdb;
+  --editorial-signal: #85ddd5;
+  --editorial-shadow: 0 8px 24px rgba(17, 17, 17, 0.06);
 }
 
 html {
@@ -25,6 +31,11 @@ body {
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+}
+
+::selection {
+  background: var(--editorial-accent-soft);
+  color: var(--editorial-accent);
 }
 
 /* ── Typography & Font Family Standards ── */

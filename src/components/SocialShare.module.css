@@ -81,7 +81,7 @@
 }
 
 .compact .headingRow h2 {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--editorial-muted);
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 9px;
   letter-spacing: 0.14em;
@@ -94,18 +94,18 @@
 }
 
 .compact .actions button {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.74);
+  background: var(--editorial-surface);
+  border-color: var(--editorial-divider);
+  color: var(--editorial-copy);
   font-size: 9px;
   min-height: 34px;
   padding: 0 10px;
 }
 
 .compact .actions button:hover {
-  background: rgba(133, 221, 213, 0.1);
-  border-color: #85ddd5;
-  color: #85ddd5;
+  background: var(--editorial-accent-soft);
+  border-color: var(--editorial-accent);
+  color: var(--editorial-accent);
 }
 
 .compact .actions button span {

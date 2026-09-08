@@ -126,9 +126,9 @@ export default function TechFinanceNewsClient({
     setLoading(true);
     setError("");
     const controller = new AbortController();
-    const latestParams = new URLSearchParams({ limit: "8" });
-    const popularParams = new URLSearchParams({ tab: "popular", limit: "2" });
-    const editorialParams = new URLSearchParams({ tab: "hot", limit: "3" });
+    const latestParams = new URLSearchParams({ limit: "10" });
+    const popularParams = new URLSearchParams({ tab: "popular", limit: "6" });
+    const editorialParams = new URLSearchParams({ tab: "editorial", limit: "6" });
     if (activeQuery) {
       latestParams.set("q", activeQuery);
       popularParams.set("q", activeQuery);
@@ -156,10 +156,9 @@ export default function TechFinanceNewsClient({
     return () => controller.abort();
   }, [activeQuery, requestNonce]);
 
-  const featuredArticles = [
-    ...latest.filter((article) => article.isFeatured),
-    ...latest.filter((article) => !article.isFeatured),
-  ].slice(0, 5);
+  // Each lane keeps one clear meaning: latest by publication time, popular by
+  // views, and editorial by the explicit isFeatured choice in the CMS.
+  const featuredArticles = latest.slice(0, 5);
   const activeFeaturedIndex = featuredArticles.length
     ? featuredIndex % featuredArticles.length
     : 0;
@@ -190,17 +189,11 @@ export default function TechFinanceNewsClient({
     setRequestNonce((current) => current + 1);
   }
 
-  const latestArticles = latest.filter((article) => article.id !== featured?.id).slice(0, 5);
-  const secondaryArticles = [...popular, ...latestArticles]
-    .filter((article, index, articles) => (
-      article.id !== featured?.id
-      && articles.findIndex((candidate) => candidate.id === article.id) === index
-    ))
+  const secondaryArticles = popular
+    .map((article, index) => ({ article, rank: index + 1 }))
+    .filter(({ article }) => article.id !== featured?.id)
     .slice(0, 2);
-  const editorialFiltered = editorial.filter((article) => article.id !== featured?.id);
-  const displayEditorial = editorialFiltered.length >= 3
-    ? editorialFiltered.slice(0, 3)
-    : latest.filter((article) => article.id !== featured?.id).slice(0, 3);
+  const displayEditorial = editorial.filter((article) => article.id !== featured?.id).slice(0, 3);
 
   return (
     <main className={styles.page}>
@@ -210,11 +203,12 @@ export default function TechFinanceNewsClient({
       {!activeQuery && (
         <section className={styles.heroIntro} aria-labelledby="homepage-hero-title" data-motion="fade">
           <div className={styles.heroSignal} aria-hidden="true" />
+          <div className={styles.heroScan} aria-hidden="true"><span /></div>
           <div className={styles.heroCopy}>
             <p className={styles.heroEyebrow}>Independent intelligence for the AI economy</p>
             <h1 id="homepage-hero-title">
-              Read the signal.
-              <span>Build what comes next.</span>
+              <span className={styles.heroTitleLine}>Read the signal.</span>
+              <span className={styles.heroTitleAccent}>Build what comes next.</span>
             </h1>
             <p className={styles.heroLede}>
               Sharp reporting on artificial intelligence, money, and the tools worth your attention—edited for people making real decisions.
@@ -232,7 +226,7 @@ export default function TechFinanceNewsClient({
           <aside className={styles.signalPanel} aria-label="AIDEALSUK coverage desk">
             <div className={styles.signalPanelHeader}>
               <span>AIDEALSUK / SIGNAL DESK</span>
-              <span className={styles.signalStatus}><i aria-hidden="true" /> Live edition</span>
+              <span className={styles.signalStatus}><i aria-hidden="true" /> Current edition</span>
             </div>
             <p className={styles.signalKicker}>What we track</p>
             <div className={styles.signalTopics}>
@@ -278,7 +272,7 @@ export default function TechFinanceNewsClient({
       {!loading && !featured && (
         <section className={styles.newsState} aria-live="polite">
           <p className={styles.eyebrow}>{error ? "NEWSROOM UNAVAILABLE" : activeQuery ? "NO MATCHES" : "NEWSROOM"}</p>
-          <h1>{error ? "We couldn't load today's stories." : activeQuery ? `No stories found for “${activeQuery}”.` : "No published stories yet."}</h1>
+          <h1>{error ? "We couldn't load the latest stories." : activeQuery ? `No stories found for “${activeQuery}”.` : "No published stories yet."}</h1>
           <p>
             {error
               ? "The newsroom feed did not respond. Try again to reload the latest reporting."
@@ -299,8 +293,8 @@ export default function TechFinanceNewsClient({
         <section className={styles.storyDesk} aria-labelledby="story-desk-title">
           <div className={styles.storyDeskHeader} data-motion="rise">
             <div>
-              <p className={styles.eyebrow}>{activeQuery ? "SEARCH DESK" : "THE DAILY EDIT"}</p>
-              <h2 id="story-desk-title">{activeQuery ? "MATCHING STORIES" : "TODAY'S SIGNAL"}</h2>
+              <p className={styles.eyebrow}>{activeQuery ? "SEARCH DESK" : "NEWSROOM UPDATE"}</p>
+              <h2 id="story-desk-title">{activeQuery ? "MATCHING STORIES" : "LATEST NEWS"}</h2>
             </div>
             <Link href="/latest">All latest news <ArrowUpRight aria-hidden="true" /></Link>
           </div>
@@ -310,8 +304,9 @@ export default function TechFinanceNewsClient({
               className={`${styles.featured} ${styles.bentoLead}`}
               aria-labelledby="featured-title"
               aria-roledescription="carousel"
-              aria-label="Featured stories today"
+              aria-label="Latest published stories"
               data-motion="rise"
+              data-paused={featuredPaused ? "true" : undefined}
               onMouseEnter={() => setFeaturedPaused(true)}
               onMouseLeave={() => setFeaturedPaused(false)}
               onFocusCapture={() => setFeaturedPaused(true)}
@@ -326,7 +321,7 @@ export default function TechFinanceNewsClient({
               </Link>
               <div className={styles.featuredShade} aria-hidden="true" />
               <div className={styles.featuredCopy} key={featured.id} aria-live="polite" aria-atomic="true">
-                <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY TODAY"}</p>
+                <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "LATEST PUBLISHED"}</p>
                 <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
                 <p className={styles.lede}>{featuredDescriptionFor(featured)}</p>
                 <p className={styles.meta}>
@@ -368,7 +363,7 @@ export default function TechFinanceNewsClient({
               )}
             </section>
 
-            {secondaryArticles.map((article, index) => (
+            {secondaryArticles.map(({ article, rank }, index) => (
               <article
                 className={`${styles.bentoCard} ${styles.bentoSecondary} clickable-card`}
                 key={article.id}
@@ -377,40 +372,53 @@ export default function TechFinanceNewsClient({
               >
                 <div className={styles.bentoCardMedia}>
                   <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
-                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span>{String(rank).padStart(2, "0")}</span>
                 </div>
                 <div className={styles.bentoCardBody}>
-                  <p className={styles.meta}>TRENDING &middot; {article.viewCount} VIEWS</p>
+                  <p className={styles.meta}>MOST READ #{rank} &middot; {article.viewCount.toLocaleString("en-US")} VIEWS</p>
                   <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
                   <p>{descriptionFor(article)}</p>
                   <span className={styles.bentoRead}>Read story <ArrowUpRight aria-hidden="true" /></span>
                 </div>
               </article>
             ))}
-
-            {displayEditorial.map((article, index) => (
-              <article
-                className={`${styles.bentoCard} ${styles.bentoEditorialCard} ${index === 0 ? styles.bentoEditorialWide : ""} clickable-card`}
-                key={article.id}
-                data-motion="rise"
-                style={{ '--motion-delay': `${190 + index * 55}ms` } as React.CSSProperties}
-              >
-                <div className={styles.bentoCardMedia}>
-                  <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
-                </div>
-                <div className={styles.bentoCardBody}>
-                  <p className={styles.meta}>{article.categoryName || "EDITOR'S PICK"} &middot; {readingTime(article)}</p>
-                  <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
-                  {index === 0 && <p>{descriptionFor(article)}</p>}
-                  <span className={styles.bentoRead}>Editor&apos;s pick <ArrowUpRight aria-hidden="true" /></span>
-                </div>
-              </article>
-            ))}
           </div>
 
+          {displayEditorial.length > 0 && (
+            <section className={styles.editorialShelf} aria-labelledby="editorial-picks-title">
+              <div className={styles.editorialShelfHeader} data-motion="rise">
+                <div>
+                  <p className={styles.eyebrow}>SELECTED BY THE EDITORS</p>
+                  <h3 id="editorial-picks-title">EDITORIAL PICKS</h3>
+                  <p>Stories selected for their depth, usefulness, and lasting relevance.</p>
+                </div>
+                <Link href="/editorial-picks">View all picks <ArrowUpRight aria-hidden="true" /></Link>
+              </div>
+              <div className={styles.editorialShelfGrid}>
+                {displayEditorial.map((article, index) => (
+                  <article
+                    className={`${styles.bentoCard} ${styles.bentoEditorialCard} clickable-card`}
+                    key={article.id}
+                    data-motion="rise"
+                    style={{ '--motion-delay': `${190 + index * 55}ms` } as React.CSSProperties}
+                  >
+                    <div className={styles.bentoCardMedia}>
+                      <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
+                    </div>
+                    <div className={styles.bentoCardBody}>
+                      <p className={styles.meta}>EDITOR&apos;S PICK &middot; {article.categoryName || "NEWS"} &middot; {readingTime(article)}</p>
+                      <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
+                      <p>{descriptionFor(article)}</p>
+                      <span className={styles.bentoRead}>Read selected story <ArrowUpRight aria-hidden="true" /></span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className={styles.storyDeskFooter}>
-            <Link href="/hottest">Browse most read</Link>
-            <Link href="/editorial-picks">Explore editorial picks</Link>
+            <Link href="/hottest">View the full most-read ranking</Link>
           </div>
         </section>
       )}

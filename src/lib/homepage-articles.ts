@@ -35,18 +35,18 @@ function populatedValue(value: unknown, key: string) {
   return typeof field === "string" ? field : undefined;
 }
 
-async function findArticles(limit: number, tab?: "popular" | "hot", query?: string) {
+async function findArticles(limit: number, tab?: "popular" | "editorial", query?: string) {
   const filter: Record<string, unknown> = { status: "published" };
 
-  if (tab === "hot") filter.is_featured = true;
+  if (tab === "editorial") filter.is_featured = true;
   if (query) {
     const regex = new RegExp(escapeRegExp(query), "i");
     filter.$or = [{ title: regex }, { excerpt: regex }, { content: regex }];
   }
 
   const sort: Record<string, 1 | -1> = tab === "popular"
-    ? { view_count: -1 }
-    : { created_at: -1 };
+    ? { view_count: -1, published_at: -1, created_at: -1, _id: -1 }
+    : { published_at: -1, created_at: -1, _id: -1 };
   const articles = await ArticleModel.find(filter)
     .populate("author_id", "name avatar username")
     .populate("category_id", "name slug")
@@ -63,7 +63,11 @@ async function findArticles(limit: number, tab?: "popular" | "hot", query?: stri
     isFeatured: Boolean(doc.is_featured),
     viewCount: Number(doc.view_count || 0),
     thumbnailUrl: doc.thumbnail_url || "",
-    createdAt: doc.created_at ? new Date(doc.created_at).toISOString() : "",
+    createdAt: doc.published_at
+      ? new Date(doc.published_at).toISOString()
+      : doc.created_at
+        ? new Date(doc.created_at).toISOString()
+        : "",
     categoryName: populatedValue(doc.category_id, "name") || null,
     authorName:
       populatedValue(doc.author_id, "name") ||
@@ -76,9 +80,9 @@ async function findArticles(limit: number, tab?: "popular" | "hot", query?: stri
 async function loadHomepageArticles(query?: string): Promise<HomepageArticleData> {
   await connectToDatabase();
   const [latest, popular, editorial] = await Promise.all([
-    findArticles(8, undefined, query),
-    findArticles(2, "popular", query),
-    findArticles(3, "hot", query),
+    findArticles(10, undefined, query),
+    findArticles(6, "popular", query),
+    findArticles(6, "editorial", query),
   ]);
 
   return { latest, popular, editorial };
