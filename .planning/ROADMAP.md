@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V5.2 system already exists and is deployed: auth/RBAC, article CMS with SEO/GEO fields, affiliate tracking with the blacklist interceptor, Gemini article generation, insider newsletter, GA4/GSC insights, and CI/CD to the VPS all work today. The journey to done therefore runs: **secure the exposed surface** (public seed route, fallback JWT secrets, leaked Gemini key, XSS/ReDoS vectors) → **make the core metric true** (one coherent CMS flow to create and publish SEO+GEO-ready articles per V5.2) → **meet the SEO contract and performance NFRs** (accurate counts, cached reads, crawl hygiene) → **align the public presentation to the V5.2 §3 Bento standard under the AI AFFILIATE HUB brand** → **harden production** (modular codebase, regression net, resilient deploys, visible errors). Every phase closes evidence-backed gaps from `.planning/codebase/CONCERNS.md`, `GO_LIVE_TASKLIST.md`, and the governing spec — nothing is rebuilt that already works.
+This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V5.2 system already exists and is deployed: auth/RBAC, article CMS with SEO/GEO fields, affiliate tracking with the blacklist interceptor, Gemini article generation, insider newsletter, GA4/GSC insights, and CI/CD to the VPS all work today. The journey to done therefore runs: **secure the exposed surface** (public seed route, fallback JWT secrets, leaked Gemini key, XSS/ReDoS vectors) → **make the core metric true** (one coherent CMS flow to create and publish SEO+GEO-ready articles per V5.2) → **meet the SEO contract and performance NFRs** (accurate counts, cached reads, crawl hygiene) → **align the public presentation to the V5.2 §3 Bento standard under the aidealsuk.com brand** (user decision D-003, overriding the spec's `aiaffiliatehub.com` branding values) → **harden production** (modular codebase, regression net, resilient deploys, visible errors). Every phase closes evidence-backed gaps from `.planning/codebase/CONCERNS.md`, `GO_LIVE_TASKLIST.md`, and the governing spec — nothing is rebuilt that already works.
 
 ## Phases
 
@@ -13,7 +13,7 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
 - [ ] **Phase 1: Security Remediation** - Close the critical exposure holes: destructive seed route, forgeable CMS auth, secrets in source, XSS/ReDoS/abuse vectors
 - [ ] **Phase 2: CMS End-to-End (V5.2)** - One working create→edit→publish flow with SEO/GEO fields, correct RBAC, and the blacklist bulk import + sweeper
 - [ ] **Phase 3: SEO/GEO & Performance Hardening** - Accurate view counts, cached public reads, crawl-clean URLs, verified tracking pipeline
-- [ ] **Phase 4: V5.2 Presentation & Brand Alignment** - Bento 7:5 hero, Breaking News ticker, V5.2 palette, settings-driven AI AFFILIATE HUB branding, branded 404/error pages
+- [ ] **Phase 4: V5.2 Presentation & Brand Alignment** - Bento 7:5 hero, Breaking News ticker, V5.2 palette, settings-driven aidealsuk.com branding (D-003), branded 404/error pages
 - [ ] **Phase 5: Production Readiness** - Modular admin, single canonical schema layer, regression test net, deploy health check + rollback, error monitoring
 
 ## Phase Details
@@ -55,14 +55,14 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
 **Plans**: TBD
 
 ### Phase 4: V5.2 Presentation & Brand Alignment
-**Goal**: The public frontend presents the V5.2 §3 B2B Bento experience under the AI AFFILIATE HUB brand — the governing spec's layout, palette, and settings-driven identity replace the current deviating editorial theme.
+**Goal**: The public frontend presents the V5.2 §3 B2B Bento experience under the aidealsuk.com brand (user decision D-003, overriding the spec's `aiaffiliatehub.com` branding values) — the governing spec's layout, palette, and settings-driven identity replace the current deviating editorial theme.
 **Depends on**: Phase 3
 **Requirements**: PUB-01, PUB-02, PUB-03, SEO-04
 **Success Criteria** (what must be TRUE):
   1. The homepage hero is the Bento 7:5 layout — a large featured card plus two stacked secondary niche cards with view counts and category labels — with a Breaking News ticker directly under the nav linking the featured article
   2. Public pages render in the V5.2 light palette (soft gray background, white cards, Royal Blue primary, Coral Orange conversion CTAs, Mint Emerald verified labels) and are flawless on mobile
   3. Homepage tabs follow the V4 grouping logic — Hot (featured + 7-day interaction), Most Viewed (`view_count DESC`), Newest (`created_at DESC`) — and category pages offer sub-category quick filters
-  4. Site-wide branding and metadata (site title "AI AFFILIATE HUB", canonical aiaffiliatehub.com, geoTarget, theme colors) come from the settings singleton — rebranding needs no code change
+   4. Site-wide branding and metadata (site title, canonical `aidealsuk.com` per D-003, geoTarget, theme colors) come from the settings singleton — production settings carry aidealsuk.com values and rebranding needs no code change
   5. Unknown URLs render a branded 404 with the correct HTTP status and a link home, and server errors render a branded error page instead of raw Next.js screens
 **Plans**: TBD
 **UI hint**: yes

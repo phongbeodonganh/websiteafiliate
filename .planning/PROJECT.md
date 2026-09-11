@@ -61,5 +61,6 @@ Evidence base: codebase map at `.planning/codebase/` (STACK, ARCHITECTURE, STRUC
 | — | *(none locked — table intentionally empty)* | Ingest found 0 ADRs, 0 locked sources | 2026-09-11 |
 | D-001 | V5.2 (`specv2.md`) governs overlapping spec scope; V3/V4 consulted only where V5.2 is silent | Later-revision rule (INGEST-CONFLICTS INFO) | 2026-09-11 |
 | D-002 | MongoDB + Mongoose is the datastore (not the superseded V3/V4 relational schema) | V5.2 governing schema entry | 2026-09-11 |
+| D-003 | Production brand and canonical domain is **aidealsuk.com** — supersedes the V5.2 §1.7/§2.2 branding values (`AI AFFILIATE HUB` / `aiaffiliatehub.com`). The settings-driven branding mechanism (SEO-04) stays; production settings carry aidealsuk.com values. | User decision (2026-09-11), overrides spec branding values — spec remains authoritative only for layout/palette | 2026-09-11 |
 
 Decisions made during execution get logged here with phase attribution.
