@@ -1,0 +1,13 @@
+{
+  "source_path": "D:\\affiliate\\websiteafiliate\\spec.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "BẢN ĐẶC TẢ KỸ THUẬT VÀ KIẾN TRÚC THÔNG TIN (V4.0 EXTENDED)",
+  "summary": "Technical specification V4.0 defining relational database schema, multi-level categories, multi-affiliate-link attachment, click tracking, and Admin vs Editor/Author permission logic for an affiliate news/blog CMS.",
+  "scope": ["database schema (ERD)", "users and role-based permissions", "categories and sub_categories", "articles", "affiliate_links", "article_affiliate_relations", "click_logs", "settings (SEO/GEO configuration)", "CMS dashboard views", "public frontend tabs"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

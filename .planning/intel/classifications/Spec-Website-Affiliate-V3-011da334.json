@@ -1,0 +1,13 @@
+{
+  "source_path": "D:\\affiliate\\websiteafiliate\\Spec_Website_Affiliate_V3.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "BẢN ĐẶC TẢ KỸ THUẬT - WEBSITE AFFILIATE MVP (V3)",
+  "summary": "Technical spec for an affiliate-marketing MVP news/blog site: auth/RBAC, CMS articles, public frontend, click tracking, DB schema, and API contracts.",
+  "scope": ["Auth & RBAC (JWT, multi-tenant data isolation)", "Article Management CMS (draft/published, SEO meta)", "Public Frontend (home, article detail, view count)", "Affiliate Link Management & Click Tracking (Sub-ID, click logs)", "Database Schema (users, articles, affiliate_links, click_logs)", "API Contract (public + CMS endpoints)", "Caching (Redis/File)", "SEO/SSR/SSG"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

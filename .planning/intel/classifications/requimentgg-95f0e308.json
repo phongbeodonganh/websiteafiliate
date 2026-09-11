@@ -1,0 +1,12 @@
+{
+  "source_path": "D:\\affiliate\\websiteafiliate\\requimentgg.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "requimentgg",
+  "summary": "Python prompt-engineering snippet for a Gemini content-marketing generator enforcing four principles: differentiation, repetition, sensory language, quality.",
+  "scope": ["Gemini API", "content marketing", "prompt template", "system instruction"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null
+}
