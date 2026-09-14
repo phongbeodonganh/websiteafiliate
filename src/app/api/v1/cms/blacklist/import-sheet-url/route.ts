@@ -2,22 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { BlacklistModel } from '@/lib/db/models';
 import { extractDomainFromUrl, sweepRetroactiveBlacklist } from '@/lib/blacklist';
-import { headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus_super_secret_jwt_key_2026';
-
-async function verifyAdminAuth() {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
-  try {
-    return jwt.verify(token, JWT_SECRET) as any;
-  } catch {
-    return null;
-  }
-}
+import { getAuthUser } from '@/lib/auth';
 
 // Simple CSV Line Parser handling quotes & commas
 function parseCsvLine(line: string): string[] {
@@ -48,7 +33,7 @@ function parseCsvLine(line: string): string[] {
 // POST /api/v1/cms/blacklist/import-sheet-url
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = getAuthUser(req);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
@@ -128,7 +113,7 @@ export async function POST(req: NextRequest) {
           reason: reason || 'Bắt Ads - Không trả tiền',
           blocked_countries: blockedCountries,
           status: 'active',
-          created_by: user.id,
+          created_by: user.userId,
         },
         { upsert: true, new: true }
       );

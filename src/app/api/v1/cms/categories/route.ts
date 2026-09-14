@@ -3,7 +3,12 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel, SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+
   try {
     await connectToDatabase();
     const allCategories = await CategoryModel.find().sort({ created_at: -1 });

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkUrlAgainstBlacklist, extractDomainFromUrl } from '@/lib/blacklist';
+import { getAuthUser } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
+  const user = getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+
   try {
     const body = await req.json();
     const { url } = body;
