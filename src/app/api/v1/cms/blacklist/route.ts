@@ -2,30 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { BlacklistModel } from '@/lib/db/models';
 import { extractDomainFromUrl, sweepRetroactiveBlacklist } from '@/lib/blacklist';
-import { headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus_super_secret_jwt_key_2026';
-
-async function verifyAdminAuth() {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    return decoded;
-  } catch {
-    return null;
-  }
-}
+import { getAuthUser } from '@/lib/auth';
 
 // GET /api/v1/cms/blacklist
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = getAuthUser(req);
     if (!user) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
@@ -54,7 +36,7 @@ export async function GET() {
 // POST /api/v1/cms/blacklist
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = getAuthUser(req);
     if (!user) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
@@ -82,7 +64,7 @@ export async function POST(req: NextRequest) {
       reason,
       blocked_countries: Array.isArray(blockedCountries) ? blockedCountries : [],
       status: 'active',
-      created_by: user.id,
+      created_by: String(user.userId),
     });
 
     // Run retroactive sweep
@@ -106,7 +88,7 @@ export async function POST(req: NextRequest) {
 // DELETE /api/v1/cms/blacklist
 export async function DELETE(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = getAuthUser(req);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }

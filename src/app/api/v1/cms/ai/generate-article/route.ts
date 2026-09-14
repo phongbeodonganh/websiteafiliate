@@ -5,27 +5,13 @@ import { checkUrlAgainstBlacklist } from '@/lib/blacklist';
 import { scrapeLandingPageWithJina } from '@/lib/scraper';
 import { generateSeoGeoArticleWithGemini } from '@/lib/gemini';
 import { sanitizeGeneratedHtmlContent } from '@/lib/sanitizer';
-import { headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'affiliate_secret_key_v3_super_secure';
-
-async function verifyAdminAuth() {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
-  try {
-    return jwt.verify(token, JWT_SECRET) as any;
-  } catch {
-    return null;
-  }
-}
+import { getAuthUser } from '@/lib/auth';
+import type { Types } from 'mongoose';
 
 // POST /api/v1/cms/ai/generate-article
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = getAuthUser(req);
     if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized. Yêu cầu quyền Admin/Editor.' }, { status: 401 });
     }
@@ -136,7 +122,8 @@ export async function POST(req: NextRequest) {
     const categoryId = defaultCat ? defaultCat._id : undefined;
 
     // Resolve author_id safely from JWT or DB fallback
-    let authorId = user?.userId || user?.id || user?._id;
+    // (canonical AuthPayload carries userId; DB fallback supplies a raw ObjectId)
+    let authorId: string | number | Types.ObjectId | undefined = user?.userId;
     if (!authorId) {
       const adminUser = await UserModel.findOne({ role: 'admin' });
       if (adminUser) authorId = adminUser._id;

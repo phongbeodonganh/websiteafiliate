@@ -3,7 +3,12 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { SettingModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+
   try {
     await connectToDatabase();
     let currentSettings = await SettingModel.findOne();
@@ -63,7 +68,10 @@ export async function GET() {
 
 export async function PUT(req: Request) {
   const currentUser = getAuthUser(req);
-  if (!currentUser || currentUser.role !== 'admin') {
+  if (!currentUser) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+  if (currentUser.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
 
