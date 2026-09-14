@@ -34,7 +34,7 @@
 **Testing:**
 - Vitest **4.1.10** — unit/integration tests (`vitest run` / `vitest` watch)
 - mongodb-memory-server **11.2.0** — in-memory MongoDB for tests (`tests/setup.ts`)
-- tsx **4.23.5** — running TS scripts (`seed`, `scripts/`)
+- tsx **4.23.5** — running TS scripts (`scripts/`; the `npm run seed` script was removed with the seed surface in Phase 01)
 
 **Build/Dev:**
 - Turbopack (built into Next.js 16, no separate config)

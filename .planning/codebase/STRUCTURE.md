@@ -15,7 +15,7 @@
 ├── scripts/              # tsx maintenance scripts (seed, admin bootstrap, CTA injection)
 ├── src/
 │   ├── app/              # Next.js 16 App Router — pages, layouts, API route handlers
-│   │   ├── api/v1/       # REST API: public/ · cms/ · auth/ · cron/ · webhooks/ · seed/
+│   │   ├── api/v1/       # REST API: public/ · cms/ · auth/ · cron/ · webhooks/ (seed/ deleted in Phase 01 SEC-01)
 │   │   ├── admin/        # client-rendered CMS (page.tsx is one ~3.9k-line file)
 │   │   ├── article/[slug]/   # article detail (RSC) + article.module.css
 │   │   ├── bai-viet/[slug]/  # legacy redirect to /article/[slug]
@@ -31,7 +31,7 @@
 │   ├── components/       # public-facing React components (flat, PascalCase)
 │   │   └── admin/        # admin-only components (RichTextEditor, editor/ subfolder)
 │   ├── lib/              # server-side services and utilities
-│   │   ├── db/           # mongodb.ts (connection) · models.ts (11 Mongoose models) · seeds
+│   │   ├── db/           # mongodb.ts (connection) · models.ts (11 Mongoose models) — src/lib/db seeders deleted in Phase 01 (seeding lives in scripts/)
 │   │   ├── email/        # resend.ts · mailer.ts · welcome-email.ts
 │   │   ├── google/       # auth.ts · ga4.ts · gsc.ts · insights.ts
 │   │   ├── insider/      # tokens.ts · subscribers.ts · digest.ts
@@ -56,7 +56,7 @@
 - Key files: `src/app/layout.tsx`, `src/app/page.tsx`, `src/app/news-client.tsx`, `src/app/collection-client.tsx`, `src/app/article/[slug]/page.tsx`, `src/app/admin/page.tsx`
 
 **`src/app/api/v1`:**
-- Purpose: versioned backend. `public/` = unauthenticated reads + tracking + subscribe; `cms/` = JWT-guarded CRUD (role-isolated); `auth/` = login/logout/me; `cron/` = secret-guarded scheduled jobs; `webhooks/` = svix-verified Resend events; `seed/` = unauthenticated DB seeding
+- Purpose: versioned backend. `public/` = unauthenticated reads + tracking + subscribe; `cms/` = JWT-guarded CRUD (role-isolated); `auth/` = login/logout/me; `cron/` = secret-guarded scheduled jobs; `webhooks/` = svix-verified Resend events. The old unauthenticated `seed/` route was deleted in Phase 01 (SEC-01) — re-adding a destructive seed path is blocked by `tests/api/security-regressions.test.ts`
 - Naming: one `route.ts` per endpoint; dynamic segments use `[id]` / `[slug]`
 
 **`src/components`:**
@@ -69,16 +69,17 @@
 - Key files: `src/lib/auth.ts` (JWT/bcrypt), `src/lib/seo.ts` (metadata/JSON-LD), `src/lib/sanitize.ts` (HTML sanitizer), `src/lib/gemini.ts` (AI generation), `src/lib/storage.ts` (R2), `src/lib/blacklist.ts`, `src/lib/homepage-articles.ts` (cached queries), `src/lib/cache-revalidation.ts`
 
 **`src/lib/db`:**
-- Purpose: Mongoose connection + models + seeders
-- Key files: `mongodb.ts` (cached singleton connection), `models.ts` (canonical schemas — snake_case DB fields), `seed-mongodb.ts` (used by `npm run seed`)
-- Legacy, do not use: `schema.ts` (camelCase duplicate), `seed.ts`, `fix-malformed-links.ts`
+- Purpose: Mongoose connection + models
+- Key files: `mongodb.ts` (cached singleton connection), `models.ts` (canonical schemas — snake_case DB fields)
+- Deleted in Phase 01 (SEC-01): `seed-mongodb.ts` (was used by the removed `npm run seed` script), `seed.ts`
+- Legacy, do not use: `schema.ts` (camelCase duplicate), `fix-malformed-links.ts`
 
 **`tests/`:**
 - Purpose: vitest unit + route-handler tests, folder structure mirrors `src/lib` and `src/app/api`
-- Key files: `tests/setup.ts`, `tests/api/auth-login.test.ts`, `tests/api/tracking-redirect.test.ts`, `tests/lib/sanitize.test.ts`
+- Key files: `tests/setup.ts`, `tests/api/auth-login.test.ts`, `tests/api/tracking-redirect.test.ts`, `tests/lib/sanitize.test.ts`, `tests/api/security-regressions.test.ts` (SEC-01/SEC-02 permanent regression gate — plan 06 extends it)
 
 **`scripts/`:**
-- Purpose: one-off maintenance scripts run with `tsx` (admin bootstrap, seeding affiliate links/reviews, CTA injection into articles)
+- Purpose: one-off maintenance scripts run with `tsx` (admin bootstrap + password reset via `create-admin.ts`/`reset-admin.ts` — the ONLY admin recovery path per SEC-01/D-04, seeding affiliate links/reviews, CTA injection into articles)
 
 **Root-level spec/mockup files (not app code):**
 - `Spec_Website_Affiliate_V3.md`, `spec.md`, `specv2.md`, `requimentgg.md`, `seo_geo_article_creator_dashboard.md` — requirement/spec documents
