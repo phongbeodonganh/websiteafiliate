@@ -32,7 +32,7 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
   4. A click on a blacklisted affiliate link shows the warning page with all blacklist-supplied text rendered inert (no HTML/script injection) and no third-party CDN script loaded
   5. Bursts of unauthenticated writes (subscribe / tracking click / redirect) are rate-limited, a crafted ReDoS search pattern does not hang the server, and affiliate `base_url` values are restricted to http(s)
 
-**Plans**: 5/7 plans executed
+**Plans**: 6/7 plans executed
 
 Plans:
 **Wave 1**
@@ -48,7 +48,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 01-06-PLAN.md — Secrets purge, D-07 key precedence, masked settings API, D-08 gates (SEC-02)
+- [x] 01-06-PLAN.md — Secrets purge, D-07 key precedence, masked settings API, D-08 gates (SEC-02)
 - [ ] 01-07-PLAN.md — IP trust fix (last-hop XFF + Nginx overwrite) + ReDoS hardening (SEC-04, D-14)
 
 ### Phase 2: CMS End-to-End (V5.2)
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Remediation | 5/7 | In Progress|  |
+| 1. Security Remediation | 6/7 | In Progress|  |
 | 2. CMS End-to-End (V5.2) | 0/? | Not started | - |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
