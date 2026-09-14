@@ -73,7 +73,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 | SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Complete |
 | SEC-03 | Phase 1 | Complete |
-| SEC-04 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Complete |
 | AUTH-01 | Phase 1 | Complete |
 | AFF-01 | Phase 1 | Complete |
 | AFF-03 | Phase 1 | Complete |
