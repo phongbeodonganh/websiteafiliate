@@ -3,6 +3,15 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ClickLogModel, AffiliateLinkModel, ArticleModel } from '@/lib/db/models';
 import { getClientIp, appendSubId } from '@/lib/utils';
+import { consumeDedupe, consumeRequest } from '@/lib/rateLimit';
+
+// SEC-04 abuse controls (D-12, D-13). Click route policy: over-cap or duplicate
+// clicks NEVER return 429 to real users — the analytics writes (ClickLog insert
+// + click_count $inc) are silently skipped and the normal success envelope is
+// still returned (no behavior change visible to the caller).
+const CLICK_FLOOD_LIMIT = 60; // per IP per window
+const FLOOD_WINDOW_MS = 60 * 1000;
+const DEDUPE_WINDOW_MS = 60 * 1000;
 
 export async function POST(req: Request) {
   try {
@@ -37,18 +46,29 @@ export async function POST(req: Request) {
       );
     }
 
-    await Promise.all([
-      ClickLogModel.create({
-        article_id: article._id,
-        affiliate_link_id: affiliateLink._id,
-        ip_address: getClientIp(req),
-      }),
-      AffiliateLinkModel.findByIdAndUpdate(
-        affiliateLink._id,
-        { $inc: { click_count: 1 } },
-        { new: true, strict: false }
-      ),
-    ]);
+    // SEC-04: flood cap + per-IP+link dedupe — silent skip, no 429 (D-13).
+    // Click route has no ref consumer (unlike redirect's /blocked anchor), so
+    // on skip BOTH the ClickLog insert AND the click_count $inc are dropped.
+    // The success envelope is still returned at the bottom of the function.
+    const ip = getClientIp(req);
+    const floodCap = consumeRequest(`click:${ip}`, CLICK_FLOOD_LIMIT, FLOOD_WINDOW_MS);
+    const isDuplicate = consumeDedupe(`${ip}:${affiliateLink._id.toString()}`, DEDUPE_WINDOW_MS);
+    const skipWrites = !floodCap.allowed || isDuplicate;
+
+    if (!skipWrites) {
+      await Promise.all([
+        ClickLogModel.create({
+          article_id: article._id,
+          affiliate_link_id: affiliateLink._id,
+          ip_address: ip,
+        }),
+        AffiliateLinkModel.findByIdAndUpdate(
+          affiliateLink._id,
+          { $inc: { click_count: 1 } },
+          { new: true, strict: false }
+        ),
+      ]);
+    }
 
     return NextResponse.json({
       status: 'success',
