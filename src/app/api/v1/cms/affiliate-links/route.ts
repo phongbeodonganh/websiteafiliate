@@ -3,6 +3,7 @@ import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { isHttpUrl } from '@/lib/seo';
 
 export async function GET(req: Request) {
   const user = getAuthUser(req);
@@ -61,6 +62,17 @@ export async function POST(req: Request) {
     if (!name || !finalBaseUrl) {
       return NextResponse.json(
         { status: 'error', message: 'Vui lòng nhập Tên chiến dịch và Link gốc' },
+        { status: 400 }
+      );
+    }
+
+    // AFF-01 scheme gate: only http(s) URLs may enter the link store (they become the
+    // 302 redirect destination and the Jina scrape target). Reject BEFORE any DB write.
+    // finalProductUrl always falls back to finalBaseUrl, so it is present whenever
+    // finalBaseUrl passed the required-field check.
+    if (!isHttpUrl(finalBaseUrl) || !isHttpUrl(finalProductUrl)) {
+      return NextResponse.json(
+        { status: 'error', message: 'base_url phải là URL http/https' },
         { status: 400 }
       );
     }
