@@ -59,7 +59,7 @@ describe('GET /api/v1/public/tracking/redirect', () => {
 
     const res = await redirectHandler(redirectRequest(undefined, undefined));
 
-    expect(res.status).toBe(307); // NextResponse.redirect default status
+    expect(res.status).toBe(302); // explicit 302 — consistent with all other branches
     const location = res.headers.get('location');
     expect(location).toMatch(/\/$/);
 

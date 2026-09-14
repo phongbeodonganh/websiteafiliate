@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const fallbackUrl = new URL('/', req.url);
 
   if (!affiliateLinkId || !mongoose.isValidObjectId(affiliateLinkId)) {
-    return NextResponse.redirect(fallbackUrl);
+    return NextResponse.redirect(fallbackUrl, 302);
   }
 
   try {
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     ]);
 
     if (!affiliateLink) {
-      return NextResponse.redirect(fallbackUrl);
+      return NextResponse.redirect(fallbackUrl, 302);
     }
 
     // The ClickLog create result is bound (not discarded): its _id becomes the
@@ -67,6 +67,6 @@ export async function GET(req: Request) {
     return response;
   } catch (error) {
     console.error('Redirect tracking error:', error);
-    return NextResponse.redirect(fallbackUrl);
+    return NextResponse.redirect(fallbackUrl, 302);
   }
 }
