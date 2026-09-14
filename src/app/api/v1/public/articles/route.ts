@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, CategoryModel, SubCategoryModel } from '@/lib/db/models';
+import { escapeRegExp } from '@/lib/utils';
+
+// SEC-04 / T-1-17 ReDoS defense-in-depth: search keywords longer than this are
+// not fed to the RegExp engine. The `escapeRegExp` wrap below already neutralizes
+// backtracking metacharacters (literal-only patterns cannot blow up), but the
+// cap adds a second layer both for engine-warmth and for pathological-literal
+// inputs (no need to compile a 10KB pattern). No 400 on over-cap — search just
+// stops filtering, per the plan's "graceful defense-in-depth" contract.
+const SEARCH_KEYWORD_MAX_LENGTH = 100;
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -31,8 +40,15 @@ export async function GET(req: Request) {
     }
 
     if (searchKeyword && searchKeyword.trim()) {
-      const regex = new RegExp(searchKeyword.trim(), 'i');
-      filter.$or = [{ title: regex }, { excerpt: regex }, { content: regex }];
+      const trimmedKeyword = searchKeyword.trim();
+      // Escape the user-supplied keyword so the compiled RegExp matches it
+      // literally — no metacharacter can produce a catastrophic-backtracking
+      // pattern (T-1-17). Over-cap keywords skip the regex filter gracefully
+      // (no 400, no hang) — the route just returns the unfiltered result set.
+      if (trimmedKeyword.length <= SEARCH_KEYWORD_MAX_LENGTH) {
+        const regex = new RegExp(escapeRegExp(trimmedKeyword), 'i');
+        filter.$or = [{ title: regex }, { excerpt: regex }, { content: regex }];
+      }
     }
 
     const sortOption: Record<string, 1 | -1> = tab === 'popular' ? { view_count: -1 } : { created_at: -1 };
