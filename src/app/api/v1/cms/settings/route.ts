@@ -27,6 +27,16 @@ export async function GET(req: Request) {
 
     const doc = currentSettings.toObject();
 
+    // D-07 / plan 06: never return the raw gemini_api_key. Return a masked
+    // hint (last 4 chars prefixed with a masking bullet run) when a key is
+    // set; omit the field entirely when it is empty. This GET is admin-gated
+    // (plan 04 guard), but masking still applies — defense in depth so a key
+    // typo or log-capture bug can never leak the raw value.
+    const geminiApiKeyHint: string | undefined =
+      typeof doc.gemini_api_key === 'string' && doc.gemini_api_key.length > 0
+        ? `••••••••${doc.gemini_api_key.slice(-4)}`
+        : undefined;
+
     return NextResponse.json({
       status: 'success',
       data: {
@@ -54,6 +64,7 @@ export async function GET(req: Request) {
         bannerText: doc.banner_text,
         footerText: doc.footer_text,
         customCss: doc.custom_css,
+        ...(geminiApiKeyHint !== undefined ? { geminiApiKeyMasked: geminiApiKeyHint } : {}),
         geoLatitude: doc.geo_latitude,
         geoLongitude: doc.geo_longitude,
         geoRegionName: doc.geo_region_name,
@@ -101,6 +112,7 @@ export async function PUT(req: Request) {
       bannerText,
       footerText,
       customCss,
+      geminiApiKey,
       geoLatitude,
       geoLongitude,
       geoRegionName,
@@ -146,6 +158,15 @@ export async function PUT(req: Request) {
     if (bannerText !== undefined) currentSettings.banner_text = bannerText;
     if (footerText !== undefined) currentSettings.footer_text = footerText;
     if (customCss !== undefined) currentSettings.custom_css = customCss;
+    // D-07 / plan 06: accept an optional gemini_api_key and persist it. An
+    // empty string explicitly CLEARS the stored key (admin reset); a
+    // non-empty string replaces it. The raw value is never logged or echoed
+    // — the GET response returns only a masked hint, and the PUT response
+    // shape below shares that masking helper.
+    if (geminiApiKey !== undefined) {
+      const trimmedKey = String(geminiApiKey).trim();
+      currentSettings.gemini_api_key = trimmedKey.length > 0 ? trimmedKey : '';
+    }
     if (geoLatitude !== undefined) currentSettings.geo_latitude = Number(geoLatitude);
     if (geoLongitude !== undefined) currentSettings.geo_longitude = Number(geoLongitude);
     if (geoRegionName !== undefined) currentSettings.geo_region_name = geoRegionName;
@@ -154,6 +175,12 @@ export async function PUT(req: Request) {
 
     await currentSettings.save();
     const doc = currentSettings.toObject();
+
+    // Same masked-hint contract as GET (never echo the raw stored key).
+    const geminiApiKeyHint: string | undefined =
+      typeof doc.gemini_api_key === 'string' && doc.gemini_api_key.length > 0
+        ? `••••••••${doc.gemini_api_key.slice(-4)}`
+        : undefined;
 
     return NextResponse.json({
       status: 'success',
@@ -182,6 +209,7 @@ export async function PUT(req: Request) {
         bannerText: doc.banner_text,
         footerText: doc.footer_text,
         customCss: doc.custom_css,
+        ...(geminiApiKeyHint !== undefined ? { geminiApiKeyMasked: geminiApiKeyHint } : {}),
         geoLatitude: doc.geo_latitude,
         geoLongitude: doc.geo_longitude,
         geoRegionName: doc.geo_region_name,

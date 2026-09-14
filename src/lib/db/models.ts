@@ -259,6 +259,10 @@ export interface ISetting extends Document {
   banner_text?: string;
   footer_text?: string;
   custom_css?: string;
+  // D-07 (plan 06): per-user Gemini API Key secondary source. Optional so the
+  // settings singleton can exist without it; env GEMINI_API_KEY stays primary.
+  // Never returned raw by GET /api/v1/cms/settings — masked hint only.
+  gemini_api_key?: string;
   geo_latitude?: number;
   geo_longitude?: number;
   geo_region_name?: string;
@@ -290,6 +294,11 @@ const SettingSchema = new Schema<ISetting>({
   banner_text: { type: String },
   footer_text: { type: String },
   custom_css: { type: String },
+  // D-07 (plan 06): optional Gemini API Key. Written by the admin-only
+  // settings PUT; read by GET only as a masked hint (last 4 chars). Consumed
+  // as the final fallback in the Gemini key precedence chain after
+  // request userApiKey and env GEMINI_API_KEY.
+  gemini_api_key: { type: String },
   geo_latitude: { type: Number, default: 40.7128 },
   geo_longitude: { type: Number, default: -74.0060 },
   geo_region_name: { type: String, default: 'US-NY' },
