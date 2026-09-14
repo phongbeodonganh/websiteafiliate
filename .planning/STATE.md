@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: V5.2
 current_phase: 01
 current_phase_name: Security Remediation
-status: executing
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-09-14T16:40:51.021Z"
+status: verifying
+stopped_at: Completed 01-07-PLAN.md (Phase 1 ready for verification)
+last_updated: "2026-09-14T16:58:47.639Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 01 execution started
-state_head: 191a7fe9ead8d4f6733b5e5829d5fecc492705ee
+state_head: 38d9bdea5f3b2541ab778b57c58dca16be9592be
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 Phase: 01 (Security Remediation) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-09-14 — Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01-04 | 16.6min | 2 tasks | 10 files |
 | Phase 01 P01-05 | 11min | 2 tasks | 7 files |
 | Phase 01 P01-06 | 4min | 4 tasks | 9 files |
+| Phase 01 P01-07 | 7min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,7 @@ Recent decisions affecting current work:
 - [Phase 01]: [Phase 01] 01-04 AUTH-01 closed: every CMS route (25/39 verb-handlers) verifies through single canonical getAuthUser(req); parameterized 401 gate tests/api/cms-auth-401.test.ts (61 tests) prevents SEC-02 recurrence in CI
 - [Phase 01]: 01-04: auth swap was already present in uncommitted working tree at arrival — committed the existing swap + built the missing parameterized 401 gate (plan's actual new artifact). Per-route 401-vs-403 status pinning preserves the role matrix while failing loudly on silent downgrade
 - [Phase 01]: 01-05: rate-limit all 3 public write endpoints — subscribe hits hard 429+Retry-After at 5/60s/IP (covers /subscribe alias via re-export); click/redirect silent-skip on 60/60s flood cap OR 60s per-IP+link dedupe (no 429 — ClickLog always created on redirect as /blocked ref anchor, only \ skipped on dedupe); failure-lockout login limiter untouched + state-isolated
+- [Phase 01]: 01-07: getClientIp last-hop + Nginx overwrite (D-14) closes XFF first-hop spoofing (T-1-16) — code+config pair; escapeRegExp single shared source in utils.ts applied at both remaining user-text→RegExp sites + 100-char cap (T-1-17) closes the unauthenticated ReDoS vector
 
 ### Pending Todos
 
@@ -108,6 +110,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-14T16:40:50.747Z
-Stopped at: Completed 01-06-PLAN.md
+Last session: 2026-09-14T16:58:37.603Z
+Stopped at: Completed 01-07-PLAN.md (Phase 1 ready for verification)
 Resume file: None
