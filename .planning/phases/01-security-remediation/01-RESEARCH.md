@@ -534,20 +534,13 @@ describe('SEC-02 secret-fallback regression gate (D-08)', () => {
 | A5 | Adding `gemini_api_key` to `SettingSchema` + settings PUT is the minimal D-07 implementation; the admin UI input for it may already exist or be added later (UI change not locked) | Pitfall 2 | If the admin UI never sends it, the secondary source exists but is unused (env stays primary — still spec-compliant) |
 | A6 | No E2E/HTTP-level test needed for "GET /api/v1/seed returns 404" — Next.js 404s unknown API routes by framework behavior; the file-absence + grep-gate assertions are sufficient regression guards (D-03 spirit) | Validation Architecture | If someone adds a *different* destructive route under another path, only the destructive-op grep gate (recommended extension) catches it |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **`blacklist/check` route: guard or relocate?**
-   - What we know: `POST /api/v1/cms/blacklist/check` performs a read-only blacklist lookup with zero auth [VERIFIED: file read this session]; AUTH-01's contract says *every* CMS route goes through `getAuthUser`.
-   - What's unclear: whether the admin UI calls it with the Bearer header (almost certainly yes — the shared admin fetch attaches the token).
-   - Recommendation: add `getAuthUser` (one line + 401 branch); keep the path.
+All three questions were dispositioned as explicit planner decisions in the phase plans:
 
-2. **Lock `GET /api/v1/cms/settings`?**
-   - What we know: it is currently public; `/api/v1/public/settings` already serves the public use case.
-   - Recommendation: out of the audit's explicit scope — leave behavior, but exclude it from the parameterized 401 list with a comment, or lock it in the same task as AUTH-01 (planner's call).
-
-3. **Fate of `mongodb.ts:16-27` env-file parsing fallback**
-   - What we know: CONCERNS #3/tech-debt #8 flag it as a dev-only crutch in production paths; deploy.yml copies `.env.local`/`mongodb.env` into the app dir, so the fallback is load-bearing on the VPS today.
-   - Recommendation: leave untouched this phase (MONGODB_URI isn't one of the literals D-05 lists); revisit in a hygiene phase.
+1. **`blacklist/check` route: guard or relocate?** — RESOLVED: guard in place. Plan 04 Task 1 adds `getAuthUser(req)` + the standard 401 envelope to the POST handler and includes the route in the parameterized 401 table; the path is not relocated.
+2. **Lock `GET /api/v1/cms/settings`?** — RESOLVED: lock it (planner decision per A4). Plan 04 Task 1 guards GET and PUT with `getAuthUser`; key masking and `gemini_api_key` acceptance land with the schema field in plan 06 Task 1. The public use case stays on `/api/v1/public/settings`.
+3. **Fate of `mongodb.ts:16-27` env-file parsing fallback** — RESOLVED: leave untouched this phase. Plan 06 Task 3 explicitly prohibits modifying `src/lib/db/mongodb.ts` (load-bearing on the VPS); revisit in a hygiene phase.
 
 ## Environment Availability
 
