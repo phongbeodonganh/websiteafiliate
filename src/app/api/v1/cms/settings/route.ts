@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SettingModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { isValidCssColor } from '@/lib/sanitize';
 
 export async function GET(req: Request) {
   const user = getAuthUser(req);
@@ -149,6 +150,28 @@ export async function PUT(req: Request) {
       currentSettings.googleAnalyticsId = trimmed;
     }
     if (googleSiteVerification !== undefined) currentSettings.googleSiteVerification = String(googleSiteVerification).trim();
+    // SEC-03 / CONCERNS #11 (plan 06 Task 4): validate primary_color /
+    // accent_color against the same strict hex color-format regex used at
+    // the render boundary (src/app/layout.tsx via sanitizeCssColor). Drop
+    // the request with a 400 naming the offending field BEFORE any in-place
+    // mutation of currentSettings or .save() — the DB document MUST be
+    // untouched on rejection (verified by tests/api/settings-color-
+    // validation.test.ts). custom_css keeps its current handling below: it
+    // remains admin-only trusted content behind this admin-only PUT
+    // (CONCERNS #11 trusted-admin condition, satisfied by plan 04's guard)
+    // — no new rendering mechanism is added for it.
+    if (primaryColor !== undefined && !isValidCssColor(primaryColor)) {
+      return NextResponse.json(
+        { status: 'error', message: 'primaryColor không hợp lệ — phải là mã hex (#RRGGBB, #RGB, #RRGGBBAA hoặc #RGBA)' },
+        { status: 400 }
+      );
+    }
+    if (accentColor !== undefined && !isValidCssColor(accentColor)) {
+      return NextResponse.json(
+        { status: 'error', message: 'accentColor không hợp lệ — phải là mã hex (#RRGGBB, #RGB, #RRGGBBAA hoặc #RGBA)' },
+        { status: 400 }
+      );
+    }
     if (primaryColor !== undefined) currentSettings.primary_color = primaryColor;
     if (accentColor !== undefined) currentSettings.accent_color = accentColor;
     if (themeMode !== undefined) currentSettings.theme_mode = themeMode;

@@ -50,8 +50,7 @@ describe('PUT /api/v1/cms/settings — primary_color/accent_color hex validation
     );
 
     const res = await settingsPutHandler(
-      settingsPutRequest({ primaryColor: 'red; } body{x}' }, token),
-      {} as any
+      settingsPutRequest({ primaryColor: 'red; } body{x}' }, token)
     );
     const json = await res.json();
 
@@ -74,8 +73,7 @@ describe('PUT /api/v1/cms/settings — primary_color/accent_color hex validation
     );
 
     const res = await settingsPutHandler(
-      settingsPutRequest({ accentColor: 'url(javascript:alert(1))' }, token),
-      {} as any
+      settingsPutRequest({ accentColor: 'url(javascript:alert(1))' }, token)
     );
     const json = await res.json();
 
@@ -96,8 +94,7 @@ describe('PUT /api/v1/cms/settings — primary_color/accent_color hex validation
     );
 
     const res = await settingsPutHandler(
-      settingsPutRequest({ primaryColor: '#0f172a' }, token),
-      {} as any
+      settingsPutRequest({ primaryColor: '#0f172a' }, token)
     );
 
     expect(res.status).toBe(200);
@@ -114,8 +111,7 @@ describe('PUT /api/v1/cms/settings — primary_color/accent_color hex validation
     );
 
     const res = await settingsPutHandler(
-      settingsPutRequest({ accentColor: '#f59e0b' }, token),
-      {} as any
+      settingsPutRequest({ accentColor: '#f59e0b' }, token)
     );
 
     expect(res.status).toBe(200);
@@ -133,8 +129,7 @@ describe('PUT /api/v1/cms/settings — primary_color/accent_color hex validation
 
     // PUT a totally unrelated field; the colors must not change.
     const res = await settingsPutHandler(
-      settingsPutRequest({ siteTitle: 'Unrelated Title' }, token),
-      {} as any
+      settingsPutRequest({ siteTitle: 'Unrelated Title' }, token)
     );
     expect(res.status).toBe(200);
 
