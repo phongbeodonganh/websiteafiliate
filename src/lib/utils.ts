@@ -53,17 +53,40 @@ export function isValidObjectId(id: string): boolean {
   return /^[0-9a-fA-F]{24}$/.test(id);
 }
 
-// Lấy IP từ Request
+// Lấy IP từ Request.
+//
+// D-14 (SEC-04: IP spoofing): parse the LAST trusted hop of X-Forwarded-For
+// (the entry appended by our own Nginx — see DEPLOY.md §8), NOT the first.
+// The first entry is attacker-controlled and was previously forgeable, which
+// defeated plan 05's limiter keying. Paired with the Nginx overwrite directive
+// (`X-Forwarded-For $remote_addr`) in DEPLOY.md §8, last-hop yields exactly
+// one attacker-unforgeable value. X-Real-IP remains the secondary source, and
+// the '127.0.0.1' default is preserved (plan 05's limiter + existing tests
+// key on the export signature and this default — prohibition #4 in 01-07-PLAN).
 export function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    const entries = forwarded.split(',');
+    // LAST hop = most-recent trusted proxy (ours); the first entries may be
+    // attacker-supplied and are deliberately ignored.
+    return entries[entries.length - 1].trim();
   }
   const realIp = req.headers.get('x-real-ip');
   if (realIp) {
     return realIp;
   }
   return '127.0.0.1';
+}
+
+// Escapes regex metacharacters in a user-supplied string so it can be compiled
+// into a RegExp that matches the literal text only — the ReDoS defense
+// (T-1-17 / SEC-04). Relocated here from src/lib/homepage-articles.ts so the
+// public articles search and the blacklist sweeper share a single source
+// (PATTERNS.md "utils.ts escapeRegExp relocation"). Keep the regex body
+// byte-identical to the original — it is the proven shape already used by the
+// homepage query path.
+export function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // Trích xuất số % hoa hồng từ chuỗi commission (ví dụ "30% recurring" -> 30)
