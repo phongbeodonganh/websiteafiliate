@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 01
 current_phase_name: Security Remediation
 status: executing
-stopped_at: Completed 01-04-PLAN.md
-last_updated: "2026-09-14T15:51:13.387Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-09-14T16:10:44.358Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 01 execution started
-state_head: 2d28c12deb43f54186befc7ec79910b39253fbb6
+state_head: c421e0840fb90bc467d1d8de51152e81ebd2e658
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 01 (Security Remediation) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 01 execution started
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01-02 | 5min | 2 tasks | 7 files |
 | Phase 01 P01-03 | 4min | 2 tasks | 4 files |
 | Phase 01 P01-04 | 16.6min | 2 tasks | 10 files |
+| Phase 01 P01-05 | 11min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,7 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-03: PUT scheme gate sits after the 404 check and before the base_url assignment - 404-first semantics preserved, rejected schemes never reach assignment
 - [Phase 01]: [Phase 01] 01-04 AUTH-01 closed: every CMS route (25/39 verb-handlers) verifies through single canonical getAuthUser(req); parameterized 401 gate tests/api/cms-auth-401.test.ts (61 tests) prevents SEC-02 recurrence in CI
 - [Phase 01]: 01-04: auth swap was already present in uncommitted working tree at arrival — committed the existing swap + built the missing parameterized 401 gate (plan's actual new artifact). Per-route 401-vs-403 status pinning preserves the role matrix while failing loudly on silent downgrade
+- [Phase 01]: 01-05: rate-limit all 3 public write endpoints — subscribe hits hard 429+Retry-After at 5/60s/IP (covers /subscribe alias via re-export); click/redirect silent-skip on 60/60s flood cap OR 60s per-IP+link dedupe (no 429 — ClickLog always created on redirect as /blocked ref anchor, only \ skipped on dedupe); failure-lockout login limiter untouched + state-isolated
 
 ### Pending Todos
 
@@ -105,6 +107,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-14T15:51:13.361Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-09-14T16:10:18.121Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None
