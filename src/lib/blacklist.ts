@@ -1,5 +1,6 @@
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { BlacklistModel, AffiliateLinkModel } from '@/lib/db/models';
+import { escapeRegExp } from '@/lib/utils';
 
 /**
  * Extract root domain and hostname from any URL string or raw domain input.
@@ -136,7 +137,13 @@ export async function sweepRetroactiveBlacklist(targetDomainOrUrl: string): Prom
   await connectToDatabase();
 
   const { hostname, rootDomain } = extractDomainFromUrl(targetDomainOrUrl);
-  const searchRegex = new RegExp(rootDomain || hostname || targetDomainOrUrl, 'i');
+  // Wrap the search argument in escapeRegExp before compilation: this input is
+  // admin/sheet-supplied text, not a literal — without escaping it could carry
+  // regex metacharacters and form a catastrophic-backtracking pattern (T-1-17).
+  // Single shared source (src/lib/utils.ts) shared with the public articles
+  // search and the homepage query (PATTERNS.md "ReDoS fix sites").
+  const searchRegexSource = escapeRegExp(rootDomain || hostname || targetDomainOrUrl);
+  const searchRegex = new RegExp(searchRegexSource, 'i');
 
   const matchingLinks = await AffiliateLinkModel.find({
     base_url: { $regex: searchRegex },
