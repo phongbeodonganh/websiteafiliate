@@ -5,9 +5,24 @@ import { isEmailConfigured } from '@/lib/email/mailer';
 import { sendInsiderConfirmationEmail } from '@/lib/email/welcome-email';
 import { getInsiderSiteUrl, unsubscribeInsider } from '@/lib/insider/subscribers';
 import { createInsiderToken } from '@/lib/insider/tokens';
+import { consumeRequest } from '@/lib/rateLimit';
+import { getClientIp } from '@/lib/utils';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONFIRMATION_RESEND_COOLDOWN_MS = 60 * 1000;
+
+// SEC-04 abuse controls (D-12, D-13). Subscribe over-limit returns a hard 429
+// with Retry-After. Threshold is a tunable constant — user-delegated starting
+// point per RESEARCH.md Pattern 3.
+const SUBSCRIBE_LIMIT = 5; // requests per IP per window
+const SUBSCRIBE_WINDOW_MS = 60 * 1000;
+
+function tooManyRequests(retryAfterSeconds: number) {
+  return NextResponse.json(
+    { status: 'error', message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau ít phút.' },
+    { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+  );
+}
 
 function getConfirmationTtlMs() {
   const configuredHours = Number.parseInt(process.env.INSIDER_CONFIRM_TOKEN_TTL_HOURS || '24', 10);
@@ -17,6 +32,15 @@ function getConfirmationTtlMs() {
 
 export async function POST(req: Request) {
   try {
+    // SEC-04: hard 429 at the top of the try block. The /subscribe alias
+    // (src/app/api/v1/public/subscribe/route.ts) re-exports this POST, so the
+    // same cap covers both paths (prohibition: one handler, both paths covered).
+    const rateLimitKey = `subscribe:${getClientIp(req)}`;
+    const consume = consumeRequest(rateLimitKey, SUBSCRIBE_LIMIT, SUBSCRIBE_WINDOW_MS);
+    if (!consume.allowed) {
+      return tooManyRequests(consume.retryAfterSeconds ?? 1);
+    }
+
     const body = await req.json().catch(() => null) as { email?: unknown } | null;
     const cleanEmail = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
     if (!EMAIL_PATTERN.test(cleanEmail) || cleanEmail.length > 254) {

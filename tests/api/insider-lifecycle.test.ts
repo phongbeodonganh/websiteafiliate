@@ -15,6 +15,7 @@ import { createInsiderToken } from '@/lib/insider/tokens';
 import { POST as createHandler } from '@/app/api/v1/public/insider/route';
 import { GET as confirmLinkHandler, POST as confirmHandler } from '@/app/api/v1/public/insider/confirm/route';
 import { GET as unsubscribeLinkHandler, POST as unsubscribeHandler } from '@/app/api/v1/public/insider/unsubscribe/route';
+import { _resetForTests } from '@/lib/rateLimit';
 
 function jsonRequest(url: string, token: string) {
   return new Request(url, {
@@ -31,6 +32,11 @@ describe('Insider confirmation and unsubscribe APIs', () => {
   });
 
   beforeEach(() => {
+    // 01-05 Pitfall 3: clear the new count-based limiter Map state (module-level,
+    // shared across tests in a file via fileParallelism:false). Without this the
+    // 5/60s subscribe cap trips mid-suite because every `it` hits createHandler
+    // from the default IP (127.0.0.1).
+    _resetForTests();
     emailMocks.sendEmail.mockReset();
     emailMocks.sendEmail.mockResolvedValue({ id: 'test-confirmation-email-id' });
   });
