@@ -32,12 +32,12 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
   4. A click on a blacklisted affiliate link shows the warning page with all blacklist-supplied text rendered inert (no HTML/script injection) and no third-party CDN script loaded
   5. Bursts of unauthenticated writes (subscribe / tracking click / redirect) are rate-limited, a crafted ReDoS search pattern does not hang the server, and affiliate `base_url` values are restricted to http(s)
 
-**Plans**: 7 plans
+**Plans**: 1/7 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — `/blocked` interception vertical: RSC warning page, 302 redirect swap, XSS-safe rendering (SEC-03, AFF-03)
+- [x] 01-01-PLAN.md — `/blocked` interception vertical: RSC warning page, 302 redirect swap, XSS-safe rendering (SEC-03, AFF-03)
 - [ ] 01-02-PLAN.md — Seed surface deletion + reset-admin CLI + security regression gate (SEC-01)
 - [ ] 01-03-PLAN.md — Affiliate base_url http(s) scheme validation at the write boundary (AFF-01)
 
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Remediation | 0/5 | Not started | - |
+| 1. Security Remediation | 1/7 | In Progress|  |
 | 2. CMS End-to-End (V5.2) | 0/? | Not started | - |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
