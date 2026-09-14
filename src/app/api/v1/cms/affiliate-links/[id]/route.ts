@@ -3,6 +3,7 @@ import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { isHttpUrl } from '@/lib/seo';
 
 export async function PUT(
   req: Request,
@@ -26,6 +27,16 @@ export async function PUT(
 
     if (!link) {
       return NextResponse.json({ status: 'error', message: 'Link not found' }, { status: 404 });
+    }
+
+    // AFF-01 scheme gate: a provided base_url must be http(s) BEFORE assignment —
+    // a rejected value leaves the stored document untouched. When base_url is absent
+    // from the body the update proceeds unchanged (partial-update semantics).
+    if (base_url !== undefined && !isHttpUrl(base_url)) {
+      return NextResponse.json(
+        { status: 'error', message: 'base_url phải là URL http/https' },
+        { status: 400 }
+      );
     }
 
     if (name !== undefined) link.name = name;
