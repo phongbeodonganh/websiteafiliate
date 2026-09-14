@@ -142,8 +142,11 @@ interface RouteEntry {
   path: string;
   expectedNoAuthStatus: 401 | 403;
   hasParamsArg: boolean;
+  // The handler's parameter list varies across routes (Request vs NextRequest;
+  // some take a {params} second arg, some do not). Accept any call signature that
+  // returns a Response/Promise<Response> — we control argument shape at each call site.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handler: (req: Request, ctx?: any) => Promise<Response> | Response;
+  handler: (...args: any[]) => Promise<Response> | Response;
 }
 
 const ROUTES: RouteEntry[] = [

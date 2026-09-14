@@ -6,7 +6,6 @@ import { scrapeLandingPageWithJina } from '@/lib/scraper';
 import { generateSeoGeoArticleWithGemini } from '@/lib/gemini';
 import { sanitizeGeneratedHtmlContent } from '@/lib/sanitizer';
 import { getAuthUser } from '@/lib/auth';
-import type { Types } from 'mongoose';
 
 // POST /api/v1/cms/ai/generate-article
 export async function POST(req: NextRequest) {
@@ -121,12 +120,15 @@ export async function POST(req: NextRequest) {
     const defaultCat = await CategoryModel.findOne({});
     const categoryId = defaultCat ? defaultCat._id : undefined;
 
-    // Resolve author_id safely from JWT or DB fallback
-    // (canonical AuthPayload carries userId; DB fallback supplies a raw ObjectId)
-    let authorId: string | number | Types.ObjectId | undefined = user?.userId;
+    // Resolve author_id safely from JWT or DB fallback. Mongoose casts a string into
+    // an ObjectId field; coerce types string|number (canonical AuthPayload.userId) and
+    // raw ObjectId paths down to string so ArticleModel.create stays tsc-clean and
+    // behaves identically to the existing `String(user.userId) -> author_id` convention
+    // used by the canonical-blacklist routes.
+    let authorId: string | undefined = user?.userId !== undefined ? String(user.userId) : undefined;
     if (!authorId) {
       const adminUser = await UserModel.findOne({ role: 'admin' });
-      if (adminUser) authorId = adminUser._id;
+      if (adminUser) authorId = String(adminUser._id);
     }
 
     if (!authorId) {
