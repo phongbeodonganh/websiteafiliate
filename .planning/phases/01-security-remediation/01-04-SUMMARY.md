@@ -260,3 +260,10 @@ None - no external service configuration required.
 ---
 *Phase: 01-security-remediation*
 *Completed: 2026-09-14*
+
+## Self-Check: PASSED
+- Files exist: 10/10 modified+created route/test files + `01-04-SUMMARY.md` all present on disk
+- Commits verified: `d916a4d` (Task 1: swap + new gate test), `f9aedde` (Task 2: tsc fixes), `2d28c12` (SUMMARY)
+- Full suite at close: 13 files / 130 tests passing; `tsc --noEmit` exit 0; the parameterized 401 table 61/61; inventory guard zero drift
+- MEASURED commits via `git rev-list --count 99ba4f0c..HEAD` = 2 production commits matching the plan's estimate of 2 tasks (`2d28c12` is a docs-only SUMMARY commit, separate from the per-task commits per git-integration commit_points convention)
+- Auth swap state in source by Node inventory sweep: 25/25 CMS routes use `getAuthUser`; 0 routes carry a route-local JWT secret / `verifyAdminAuth` / `next/headers` import / `jwt.verify` call outside `src/lib/auth.ts`

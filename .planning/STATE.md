@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 01
 current_phase_name: Security Remediation
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-09-14T11:31:44.837Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-09-14T15:51:13.387Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 01 execution started
-state_head: 4bdaf8ddb01da40ad7a8187a91fd750260a693e8
+state_head: 2d28c12deb43f54186befc7ec79910b39253fbb6
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 01 (Security Remediation) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 01 execution started
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01-01 | 7min | 2 tasks | 5 files |
 | Phase 01 P01-02 | 5min | 2 tasks | 7 files |
 | Phase 01 P01-03 | 4min | 2 tasks | 4 files |
+| Phase 01 P01-04 | 16.6min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-03: strict isHttpUrl lives next to normalizeHttpUrl without reusing it - display-layer silent fallback and security-boundary reject are an intentional documented pair (AFF-01)
 - [Phase 01]: 01-03: POST product_url scheme gate is one combined check (finalProductUrl always falls back to finalBaseUrl once the required-field check passed)
 - [Phase 01]: 01-03: PUT scheme gate sits after the 404 check and before the base_url assignment - 404-first semantics preserved, rejected schemes never reach assignment
+- [Phase 01]: [Phase 01] 01-04 AUTH-01 closed: every CMS route (25/39 verb-handlers) verifies through single canonical getAuthUser(req); parameterized 401 gate tests/api/cms-auth-401.test.ts (61 tests) prevents SEC-02 recurrence in CI
+- [Phase 01]: 01-04: auth swap was already present in uncommitted working tree at arrival — committed the existing swap + built the missing parameterized 401 gate (plan's actual new artifact). Per-route 401-vs-403 status pinning preserves the role matrix while failing loudly on silent downgrade
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-14T11:31:44.810Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-09-14T15:51:13.361Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None
