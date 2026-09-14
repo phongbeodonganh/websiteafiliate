@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 01
 current_phase_name: Security Remediation
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-09-14T11:18:16.211Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-09-14T11:31:44.837Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 01 execution started
-state_head: 2f1c79f74f1f56b3fadc97735655df2cfa4156be
+state_head: 4bdaf8ddb01da40ad7a8187a91fd750260a693e8
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 7
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 01 (Security Remediation) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 01 execution started
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 |------|----------|-------|-------|
 | Phase 01 P01-01 | 7min | 2 tasks | 5 files |
 | Phase 01 P01-02 | 5min | 2 tasks | 7 files |
+| Phase 01 P01-03 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-01: /blocked styled with Tailwind arbitrary values on globals.css tokens inside page.tsx; CTA uses plain anchor for zero client JS; redirect-route fallback branches normalized to explicit 302
 - [Phase 01]: ﻿SEC-01 closed: all three seed files + npm entry point deleted in ONE commit; permanent regression gate (fs-absence + destructive-op scan + counter-vacuity) runs on every npm test
 - [Phase 01]: ﻿Admin password recovery is CLI-only (D-04): scripts/reset-admin.ts upserts admin, never echoes the password; DEPLOY.md section 13 documents it and the no-web-path-by-design rule
+- [Phase 01]: 01-03: strict isHttpUrl lives next to normalizeHttpUrl without reusing it - display-layer silent fallback and security-boundary reject are an intentional documented pair (AFF-01)
+- [Phase 01]: 01-03: POST product_url scheme gate is one combined check (finalProductUrl always falls back to finalBaseUrl once the required-field check passed)
+- [Phase 01]: 01-03: PUT scheme gate sits after the 404 check and before the base_url assignment - 404-first semantics preserved, rejected schemes never reach assignment
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-14T11:17:39.387Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-09-14T11:31:44.810Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
