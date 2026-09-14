@@ -14,6 +14,7 @@ import {
   normalizeSiteUrl,
   sanitizeStoredJsonLd,
 } from "@/lib/seo";
+import { sanitizeCssColor } from "@/lib/sanitize";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -110,8 +111,17 @@ export default async function RootLayout({
   const geoPlace = sysSettings?.geo_placename || "New York";
   const lat = sysSettings?.geo_latitude ?? 40.7128;
   const lng = sysSettings?.geo_longitude ?? -74.0060;
-  const primaryColor = sysSettings?.primary_color || "#111111";
-  const accentColor = sysSettings?.accent_color || "#000000";
+  // SEC-03 / CONCERNS #11 (plan 06 Task 4): route the stored admin color
+  // reads through sanitizeCssColor before the <style> interpolation below.
+  // A dirty stored value (one written before this phase's validator, or a
+  // stored XSS attempt via another write path) falls back to the site
+  // defaults rather than reaching every visitor's DOM. The write boundary
+  // (PUT /api/v1/cms/settings) rejects malformed values with 400 via
+  // isValidCssColor; this render boundary is belt-and-braces for historical
+  // rows. Defaults match the previous || fallbacks so the happy path is
+  // visually unchanged.
+  const primaryColor = sanitizeCssColor(sysSettings?.primary_color, "#111111");
+  const accentColor = sanitizeCssColor(sysSettings?.accent_color, "#000000");
   const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
   const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);
