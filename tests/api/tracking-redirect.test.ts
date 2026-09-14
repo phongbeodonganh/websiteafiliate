@@ -80,15 +80,20 @@ describe('GET /api/v1/public/tracking/redirect', () => {
     expect(after).toBe(before);
   });
 
-  it('does not redirect to the real offer for a blacklisted affiliate link (shows warning page instead)', async () => {
+  it('redirects a blacklisted affiliate link to /blocked?ref=<24-hex> with no-store, never to the offer', async () => {
     const { affiliateLink, article } = await seedLinkAndArticle({ status: 'blacklisted' });
 
     const res = await redirectHandler(redirectRequest(article._id.toString(), affiliateLink._id.toString()));
 
-    // Blacklisted links render an inline HTML warning page (200), not a redirect to the real offer.
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('Đã Chặn Liên Kết Rủi Ro');
+    // Blacklisted links 302 to the /blocked intermediate page (D-11), never to the real offer.
+    expect(res.status).toBe(302);
+    const location = res.headers.get('location');
+    expect(location).toBeTruthy();
+    const locationUrl = new URL(location!);
+    expect(locationUrl.pathname).toBe('/blocked');
+    // Only a server-generated 24-hex ObjectId travels through the URL (D-10).
+    expect(locationUrl.searchParams.get('ref')).toMatch(/^[0-9a-fA-F]{24}$/);
+    expect(res.headers.get('cache-control')).toBe('no-store');
 
     // A blacklisted link still logs the click attempt (created before the blacklist check runs).
     const logs = await ClickLogModel.find({ affiliate_link_id: affiliateLink._id });

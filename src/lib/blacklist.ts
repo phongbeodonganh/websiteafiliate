@@ -97,7 +97,7 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
           isBlacklisted: true,
           projectName: item.project_name || item.extracted_domain,
           matchedDomain: item.extracted_domain,
-          reason: item.reason || 'Sàn lừa đảo / Không trả hoa hồng',
+          reason: item.reason || 'Flagged by the AIDEALSUK safety review — fraud or unpaid commissions.',
           blockedCountries: item.blocked_countries || [],
           matchType: 'exact_url',
         };
@@ -117,7 +117,7 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
           isBlacklisted: true,
           projectName: item.project_name || item.extracted_domain,
           matchedDomain: item.extracted_domain || itemRoot,
-          reason: item.reason || 'Sàn lừa đảo / Không trả hoa hồng',
+          reason: item.reason || 'Flagged by the AIDEALSUK safety review — fraud or unpaid commissions.',
           blockedCountries: item.blocked_countries || [],
           matchType: 'domain',
         };
