@@ -28,7 +28,14 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
   3. Source contains zero secret literals (JWT secrets, Gemini key, leaked project ID); starting without a required secret fails fast with an actionable error message
   4. A click on a blacklisted affiliate link shows the warning page with all blacklist-supplied text rendered inert (no HTML/script injection) and no third-party CDN script loaded
   5. Bursts of unauthenticated writes (subscribe / tracking click / redirect) are rate-limited, a crafted ReDoS search pattern does not hang the server, and affiliate `base_url` values are restricted to http(s)
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — `/blocked` interception vertical: RSC warning page, 302 redirect swap, XSS-safe rendering (SEC-03, AFF-03)
+- [ ] 01-02-PLAN.md — Seed surface deletion + reset-admin CLI + security regression gate (SEC-01)
+- [ ] 01-03-PLAN.md — Affiliate base_url http(s) scheme validation at the write boundary (AFF-01)
+- [ ] 01-04-PLAN.md — Canonical JWT auth swap on 7 CMS routes + secrets purge + D-08 gates (SEC-02, AUTH-01)
+- [ ] 01-05-PLAN.md — Abuse controls: rate limiting, click dedupe, IP trust fix, ReDoS hardening (SEC-04)
 
 ### Phase 2: CMS End-to-End (V5.2)
 **Goal**: An admin can create and publish an SEO+GEO-ready article end-to-end through one coherent CMS flow per the governing V5.2 spec — correct RBAC, working edit loop, taxonomy and user management, and the blacklist import with retroactive sweeper.
@@ -86,7 +93,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Remediation | 0/? | Not started | - |
+| 1. Security Remediation | 0/5 | Not started | - |
 | 2. CMS End-to-End (V5.2) | 0/? | Not started | - |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
