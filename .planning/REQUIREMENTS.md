@@ -48,7 +48,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 
 ## Security (V3 NFR STANDING; CONCERNS audit)
 
-- **SEC-01 — No unauthenticated destructive endpoint:** the public seed route is removed or secret-gated and refuses to run in production; it must never `deleteMany` users/settings. [CONCERNS #1] — status: **gap** (currently unauthenticated GET/POST wipes every collection)
+- **SEC-01 — No unauthenticated destructive endpoint:** the public seed route is removed or secret-gated and refuses to run in production; it must never `deleteMany` users/settings. [CONCERNS #1] — status: **complete** (route + seed libs + npm script deleted in 01-02; regression gate `tests/api/security-regressions.test.ts` runs on every `npm test`)
 - **SEC-02 — No secrets in source:** zero secret literals (JWT fallback strings in 5 CMS routes, hardcoded Gemini API key + leaked project ID); required secrets are env-only with loud, actionable failure. [CONCERNS #2, #4; INTEGRATIONS warnings] — status: **gap**
 - **SEC-03 — XSS-safe rendering of all content:** article HTML sanitization (existing) extended to the blacklist warning page (escape all interpolated data, drop Play CDN) and admin CSS/color injection points constrained (color-format validation). [V3 NFR XSS STANDING; CONCERNS #5, #11] — status: **partial**
 - **SEC-04 — Abuse controls on public inputs:** rate limiting (existing per-IP sliding window pattern) on public write endpoints (subscribe, tracking click/redirect); ReDoS-safe search (`escapeRegExp` everywhere user text becomes a RegExp); trusted client-IP parsing (don't trust first XFF hop blindly). [CONCERNS #6, #7, #8] — status: **gap**
@@ -70,7 +70,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEC-01 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Pending |
 | SEC-03 | Phase 1 | Pending |
 | SEC-04 | Phase 1 | Pending |

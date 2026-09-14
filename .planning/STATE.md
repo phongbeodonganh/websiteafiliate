@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 01
 current_phase_name: Security Remediation
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-09-14T11:06:15.046Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-09-14T11:18:16.211Z"
 last_activity: 2026-09-14
 last_activity_desc: Phase 01 execution started
-state_head: a1d7bcf009ffb549b1a9abe19e5149d4d097970a
+state_head: 2f1c79f74f1f56b3fadc97735655df2cfa4156be
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 01 (Security Remediation) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-09-14 — Phase 01 execution started
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01-01 | 7min | 2 tasks | 5 files |
+| Phase 01 P01-02 | 5min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - D-002: MongoDB + Mongoose is the datastore (V3/V4 relational schemas superseded)
 - [Phase 01]: 01-01: /blocked is a standalone DB-backed RSC; ref is the only URL-borne value (24-hex ClickLog id) validated before any DB call - D-09/D-10/D-11 implemented as planned
 - [Phase 01]: 01-01: /blocked styled with Tailwind arbitrary values on globals.css tokens inside page.tsx; CTA uses plain anchor for zero client JS; redirect-route fallback branches normalized to explicit 302
+- [Phase 01]: ﻿SEC-01 closed: all three seed files + npm entry point deleted in ONE commit; permanent regression gate (fs-absence + destructive-op scan + counter-vacuity) runs on every npm test
+- [Phase 01]: ﻿Admin password recovery is CLI-only (D-04): scripts/reset-admin.ts upserts admin, never echoes the password; DEPLOY.md section 13 documents it and the no-web-path-by-design rule
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-14T11:06:08.037Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-09-14T11:17:39.387Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
