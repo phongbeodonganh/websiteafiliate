@@ -1,7 +1,8 @@
 ---
 phase: "1"
 slug: "security-remediation"
-status: draft
+status: approved
+reviewed_at: "2026-09-14"
 shadcn_initialized: false
 preset: none
 created: "2026-09-14"
@@ -50,6 +51,7 @@ No design-system package to enumerate (`Tool: none`) — no Component Inventory 
 | Blacklist warning page | `/blocked` (`src/app/blocked/page.tsx`, NEW) | Async React Server Component, `dynamic = 'force-dynamic'` | Blocked-with-data, blocked-minimal (no countries), DB-failure fail-closed. Missing/invalid/unknown `ref` and not-longer-blocked → `redirect('/')` before render (no page state) |
 
 **Layout decision (locked default):** `/blocked` renders as a **standalone editorial result page** (InsiderResult precedent) — full-viewport canvas, no `EditorialHeader`/`EditorialFooter` chrome. Rationale: (1) the replaced inline page is a chrome-less centered card and D-11 changes only the rendering mechanism; (2) `EditorialHeader` is a client component doing auth/search work irrelevant to a security interstitial; (3) the standalone page is DB-failure-tolerant. It still *is* the current theme: editorial canvas, brand masthead, Plus Jakarta Sans display, ink/white palette, hard-shadow shell. Root-layout inheritances (`SocialFloatingBar`, `PublicMotion`) remain as-is — same as the existing insider result pages; do not touch the root layout in this phase.
+**Focal point:** the accent-red status mark above the H1 — the only saturated element on the ink/white canvas; eye order: status mark → eyebrow → H1 → description → receipt → CTA.
 
 ---
 
@@ -179,12 +181,12 @@ No third-party registries declared; no vetting gate required.
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
-- [ ] Dimension 7 Inventory Provenance: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS (FLAG resolved — focal point declared in Layout decision)
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
+- [x] Dimension 7 Inventory Provenance: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-09-14 (gsd-ui-checker — APPROVED, 1 non-blocking FLAG applied)
