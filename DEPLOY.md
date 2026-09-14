@@ -278,6 +278,32 @@ Nếu `git reset`/`npm install`/`npm run build` lỗi, workflow dừng ngay (nh�
 
 ---
 
+## 13. Reset admin password (CLI)
+
+**Không có bất kỳ đường dẫn web nào để lấy lại/khôi phục mật khẩu admin — đây là quyết định bảo mật cố ý** (SEC-01/D-04: route seed từng cho phép xoá sạch DB + reset mật khẩu admin từ internet đã bị xoá hẳn và có regression gate chặn việc tái xuất hiện). Khôi phục duy nhất qua CLI, chạy ngay trên VPS, trong thư mục app:
+
+```bash
+cd ~/websiteafiliate
+npx tsx scripts/reset-admin.ts <username> <password>
+```
+
+Ví dụ:
+
+```bash
+npx tsx scripts/reset-admin.ts admin "MatKhauMoi-BaoMat-2026!"
+```
+
+Hành vi của [scripts/reset-admin.ts](scripts/reset-admin.ts):
+
+- **Upsert** (creates-or-resets): username chưa tồn tại → tạo mới user với role `admin`, status `active`; đã tồn tại → đặt lại mật khẩu (bcrypt hash) và kích hoạt lại tài khoản.
+- Chỉ in ra `username` và `id` của user — **không bao giờ in/log giá trị mật khẩu**.
+- Thiếu tham số → in dòng usage và thoát mã 1 mà không chạm vào DB.
+- Yêu cầu `MONGODB_URI` trong `.env.local` (lazy-load, như app) — chạy được ngay sau bước 5 của hướng dẫn này.
+
+Sau khi reset, đăng nhập lại CMS bằng mật khẩu mới. Script này cũng là cách tạo admin đầu tiên (cùng cấu trúc với `scripts/create-admin.ts`).
+
+---
+
 ## Checklist trước khi coi là "go-live" thật
 
 Tham khảo [GO_LIVE_TASKLIST.md](GO_LIVE_TASKLIST.md) và [R2_IMAGE_STORAGE_TASKLIST.md](R2_IMAGE_STORAGE_TASKLIST.md) — các mục sau **ảnh hưởng trực tiếp bước deploy này**:
