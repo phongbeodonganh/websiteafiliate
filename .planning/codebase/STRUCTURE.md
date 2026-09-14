@@ -19,6 +19,7 @@
 │   │   ├── admin/        # client-rendered CMS (page.tsx is one ~3.9k-line file)
 │   │   ├── article/[slug]/   # article detail (RSC) + article.module.css
 │   │   ├── bai-viet/[slug]/  # legacy redirect to /article/[slug]
+│   │   ├── blocked/        # blacklist warning page (RSC, DB-backed via ClickLog ref, noindex)
 │   │   ├── category/[slug]/  # category collection page
 │   │   ├── insider/      # double opt-in result pages (success/failed)
 │   │   ├── latest|hottest|editorial-picks|affiliates/  # thin collection pages
