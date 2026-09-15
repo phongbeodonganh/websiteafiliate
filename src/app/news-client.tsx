@@ -109,6 +109,16 @@ export default function TechFinanceNewsClient({
   const [popular, setPopular] = useState<Article[]>(initialData?.popular || []);
   const [editorial, setEditorial] = useState<Article[]>(initialData?.editorial || []);
   const activeQuery = searchParams.get("q")?.trim() || "";
+  const insiderResult = searchParams.get("insider");
+  const insiderMessage = insiderResult === 'confirmed'
+    ? 'Your AIDEALSUK Insider subscription is confirmed.'
+    : insiderResult === 'already-active'
+      ? 'This email is already an AIDEALSUK Insider.'
+    : insiderResult === 'unsubscribed'
+      ? 'You have been unsubscribed from AIDEALSUK Insider.'
+      : insiderResult === 'invalid'
+        ? 'This Insider link is invalid or has expired.'
+        : '';
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
   const [requestNonce, setRequestNonce] = useState(0);
@@ -199,6 +209,10 @@ export default function TechFinanceNewsClient({
     <main className={styles.page}>
       <EditorialBackdrop section="NEWSROOM" />
       <EditorialHeader initialSearchQuery={activeQuery} />
+
+      {insiderMessage && (
+        <p className={styles.statusMessage} role="status" aria-live="polite">{insiderMessage}</p>
+      )}
 
       {!activeQuery && (
         <section className={styles.heroIntro} aria-labelledby="homepage-hero-title" data-motion="fade">

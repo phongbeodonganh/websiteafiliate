@@ -98,7 +98,7 @@ export default async function RootLayout({
   // (set in src/proxy.ts) and stamp it onto its own inline bootstrap scripts —
   // otherwise statically-optimized routes (e.g. /admin, /admin/login) ship
   // those scripts with no nonce and the CSP in proxy.ts blocks them outright.
-  await headers();
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   let sysSettings;
   try {
@@ -115,6 +115,8 @@ export default async function RootLayout({
   const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
   const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);
+  const gaId = sysSettings?.googleAnalyticsId || "";
+  const gscVerification = sysSettings?.googleSiteVerification || "";
 
   return (
     <html lang={sysSettings?.hreflang || "en"} className="h-full antialiased dark">
@@ -126,6 +128,9 @@ export default async function RootLayout({
         <meta name="geo.placename" content={geoPlace} />
         <meta name="geo.position" content={`${lat};${lng}`} />
         <meta name="ICBM" content={`${lat}, ${lng}`} />
+        {gscVerification && (
+          <meta name="google-site-verification" content={gscVerification} />
+        )}
         <style dangerouslySetInnerHTML={{
           __html: `
             :root {
@@ -142,6 +147,26 @@ export default async function RootLayout({
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: safeSchemaJsonld }}
           />
+        )}
+        {gaId && (
+          <>
+            <script
+              async
+              nonce={nonce}
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            />
+            <script
+              nonce={nonce}
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaId}');
+                `,
+              }}
+            />
+          </>
         )}
       </head>
       <body className="min-h-full flex flex-col font-sans antialiased selection:bg-[#0D766E]/15 selection:text-[#0D766E]">

@@ -22,7 +22,7 @@ export default function LeadCapture({ variant = 'editorial' }: LeadCaptureProps)
     setMessage(null);
 
     try {
-      const res = await fetch('/api/v1/public/subscribe', {
+      const res = await fetch('/api/v1/public/insider', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -55,15 +55,15 @@ export default function LeadCapture({ variant = 'editorial' }: LeadCaptureProps)
         {/* ── Left Column: Value Proposition & Editorial Summary ── */}
         <div className={editorial ? 'space-y-4' : 'lg:col-span-7 space-y-5'}>
           <div className={`inline-flex items-center gap-2 border bg-white/5 px-3.5 py-1 text-[10px] font-mono font-bold uppercase tracking-widest ${editorial ? 'border-[#85DDD5]/35 text-[#85DDD5]' : 'border-white/20 text-neutral-300'}`}>
-            <span>Weekly Intelligence Dispatch</span>
+            <span>Daily Intelligence Dispatch</span>
           </div>
 
           <h2 className={`${editorial ? 'text-2xl md:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-extrabold tracking-tight leading-tight text-white font-['Plus_Jakarta_Sans',sans-serif]`}>
-            Get the signal before the week gets noisy.
+            Stay Ahead of the AI Industry With a Daily Briefing
           </h2>
 
           <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed max-w-xl font-sans">
-            Join tech leaders, founders, and developers receiving <strong className="text-white font-semibold">zero-noise tool audits</strong>, workflow blueprints, and editorial deal alerts.
+            Get a concise daily summary of the latest and hottest AI stories, plus selected editorial deal alerts.
           </p>
 
           {/* Key Editorial Highlights Grid */}

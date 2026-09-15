@@ -209,17 +209,31 @@ const ClickLogSchema = new Schema<IClickLog>({
 export interface ISubscriber extends Document {
   email: string;
   subscribed_at: Date;
+  status?: 'pending' | 'active' | 'unsubscribed';
+  confirmation_sent_at?: Date;
+  confirmation_expires_at?: Date;
+  confirmed_at?: Date;
+  unsubscribed_at?: Date;
   email_status?: 'sent' | 'opened';
   last_email_id?: string;
   opened_at?: Date;
+  last_digest_at?: Date;
+  last_digest_key?: string;
 }
 
 const SubscriberSchema = new Schema<ISubscriber>({
   email: { type: String, required: true, unique: true },
   subscribed_at: { type: Date, default: Date.now },
+  status: { type: String, enum: ['pending', 'active', 'unsubscribed'], default: 'pending', index: true },
+  confirmation_sent_at: { type: Date },
+  confirmation_expires_at: { type: Date },
+  confirmed_at: { type: Date },
+  unsubscribed_at: { type: Date },
   email_status: { type: String, enum: ['sent', 'opened'], default: 'sent' },
   last_email_id: { type: String },
-  opened_at: { type: Date }
+  opened_at: { type: Date },
+  last_digest_at: { type: Date },
+  last_digest_key: { type: String, index: true },
 });
 
 // 9. Setting
@@ -236,6 +250,8 @@ export interface ISetting extends Document {
   ogImageUrl?: string;
   schemaJsonld?: string;
   headScripts?: string;
+  googleAnalyticsId?: string;
+  googleSiteVerification?: string;
   primary_color?: string;
   accent_color?: string;
   theme_mode?: string;
@@ -265,6 +281,8 @@ const SettingSchema = new Schema<ISetting>({
   ogImageUrl: { type: String },
   schemaJsonld: { type: String },
   headScripts: { type: String },
+  googleAnalyticsId: { type: String },
+  googleSiteVerification: { type: String },
   primary_color: { type: String, default: '#0f172a' },
   accent_color: { type: String, default: '#f59e0b' },
   theme_mode: { type: String, default: 'dark' },
@@ -281,6 +299,19 @@ const SettingSchema = new Schema<ISetting>({
   updated_at: { type: Date, default: Date.now }
 });
 
+// 10. InsightsCache (cached GA4 / GSC report payloads, avoids hitting Google API quotas on every dashboard load)
+export interface IInsightsCache extends Document {
+  key: string;
+  data: any;
+  fetchedAt: Date;
+}
+
+const InsightsCacheSchema = new Schema<IInsightsCache>({
+  key: { type: String, required: true, unique: true },
+  data: { type: Schema.Types.Mixed },
+  fetchedAt: { type: Date, default: Date.now },
+});
+
 // Model Exports (preventing overwrite model errors in Next.js hot reload)
 export const UserModel: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 export const CategoryModel: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
@@ -292,6 +323,7 @@ export const ArticleAffiliateRelationModel: Model<IArticleAffiliateRelation> = m
 export const ClickLogModel: Model<IClickLog> = mongoose.models.ClickLog || mongoose.model<IClickLog>('ClickLog', ClickLogSchema);
 export const SubscriberModel: Model<ISubscriber> = mongoose.models.Subscriber || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema);
 export const SettingModel: Model<ISetting> = mongoose.models.Setting || mongoose.model<ISetting>('Setting', SettingSchema);
+export const InsightsCacheModel: Model<IInsightsCache> = mongoose.models.InsightsCache || mongoose.model<IInsightsCache>('InsightsCache', InsightsCacheSchema);
 
 export async function syncAffiliateNumericFields() {
   try {

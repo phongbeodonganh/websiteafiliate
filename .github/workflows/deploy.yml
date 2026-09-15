@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,14 +21,47 @@ jobs:
       - name: Run test suite
         run: npm test
 
-      - name: Build (catch compile/type errors before touching the VPS)
+      # `output: 'standalone'` (next.config.ts) makes this produce a
+      # self-contained server bundle under .next/standalone. Built here,
+      # on a runner with plenty of RAM, instead of on the 4GB VPS.
+      - name: Build
         run: npm run build
 
+      - name: Package standalone bundle
+        run: |
+          cp -r public .next/standalone/public
+          cp -r .next/static .next/standalone/.next/static
+          tar -czf standalone.tar.gz -C .next/standalone .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-bundle
+          path: |
+            standalone.tar.gz
+            ecosystem.config.js
+          retention-days: 1
+
   deploy:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy over SSH
+      - uses: actions/download-artifact@v4
+        with:
+          name: standalone-bundle
+
+      - name: Copy bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: standalone.tar.gz,ecosystem.config.js
+          target: ~/websiteafiliate
+
+      # No `npm install` / `next build` here — the VPS only unpacks the
+      # bundle built in CI and reloads pm2. env files are kept outside the
+      # unpacked app dir so they survive every deploy untouched.
+      - name: Extract and restart
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -37,8 +70,15 @@ jobs:
           script: |
             set -e
             cd ~/websiteafiliate
-            git fetch origin feature/namdt25-develop
-            git reset --hard origin/feature/namdt25-develop
-            npm install
-            npm run build
-            pm2 reload websiteafiliate
+            rm -rf app_new
+            mkdir app_new
+            tar -xzf standalone.tar.gz -C app_new
+            rm standalone.tar.gz
+            cp .env.local app_new/.env.local
+            [ -f mongodb.env ] && cp mongodb.env app_new/mongodb.env
+            rm -rf app_old
+            [ -d app ] && mv app app_old
+            mv app_new app
+            rm -rf app_old
+            pm2 delete ecosystem.config.js > /dev/null 2>&1 || true
+            pm2 start ecosystem.config.js

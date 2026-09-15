@@ -86,13 +86,26 @@ JWT_SECRET="<dán-secret-vừa-sinh-ở-trên>"
 MONGODB_URI="mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/websiteafiliate?retryWrites=true&w=majority"
 NODE_ENV=production
 
+# Resend + AIDEALSUK Insider (see INSIDER_EMAIL_SETUP.md)
+NEXT_PUBLIC_SITE_URL="https://aidealsuk.com"
+EMAIL_SITE_NAME="AIDEALSUK"
+EMAIL_FROM="AIDEALSUK Insider <insider@aidealsuk.com>"
+EMAIL_REPLY_TO="support@aidealsuk.com"
+RESEND_API="<Resend API key>"
+RESEND_WEBHOOK_SECRET="<Resend webhook signing secret>"
+INSIDER_TOKEN_SECRET="<random secret, at least 32 bytes>"
+INSIDER_CRON_SECRET="<different random secret, at least 32 bytes>"
+INSIDER_CONFIRM_TOKEN_TTL_HOURS=24
+INSIDER_DIGEST_LATEST_LIMIT=5
+INSIDER_DIGEST_HOTTEST_LIMIT=3
+
 # Cloudflare R2 (giống hệt giá trị trong .env.local ở máy local — bucket dùng chung)
 R2_ACCOUNT_ID="7929e845b9844a3cdb2cab8314760931"
 R2_BUCKET_NAME="affiliate-storage"
 R2_ACCESS_KEY_ID="<copy từ .env.local local>"
 R2_SECRET_ACCESS_KEY="<copy từ .env.local local>"
 R2_ENDPOINT="https://7929e845b9844a3cdb2cab8314760931.r2.cloudflarestorage.com"
-R2_PUBLIC_URL="https://pub-953bb290427d4613aef7ab843d88f8a5.r2.dev"
+R2_PUBLIC_URL="https://media.aidealsuk.com"
 ```
 
 > Lưu ý: `JWT_SECRET` này **phải khác** secret đang dùng ở máy dev local — nếu trùng, ai có secret dev cũng ký được token hợp lệ trên production.
@@ -277,4 +290,4 @@ Tham khảo [GO_LIVE_TASKLIST.md](GO_LIVE_TASKLIST.md) và [R2_IMAGE_STORAGE_TAS
 - [x] SEO-01/SEO-02 (`sitemap.ts`, `robots.ts`) — đã làm, tự hoạt động đúng sau khi deploy, không cần thêm thao tác gì
 - [x] SEO-03 (`next/image`) — đã làm, cần domain R2/Unsplash nằm trong `next.config.ts` remotePatterns (đã cấu hình sẵn)
 - [ ] SEC-01 (mật khẩu MongoDB Atlas bị lộ) — vẫn đang bị block, cần chủ sở hữu Atlas xử lý
-- [ ] R2-03 (custom domain cho ảnh R2) — đang tạm dùng `pub-*.r2.dev`, làm sau khi đổi nameserver `aidealsuk.com` sang Cloudflare (không bắt buộc để go-live, chỉ tối ưu thêm)
+- [x] R2-03 (custom domain cho ảnh R2) — đã gắn `media.aidealsuk.com`, nhớ đổi `R2_PUBLIC_URL` trên server production sang giá trị mới rồi restart app (bước 6)
