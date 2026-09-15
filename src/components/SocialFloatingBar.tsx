@@ -65,7 +65,7 @@ export default function SocialFloatingBar() {
   return (
     <aside
       aria-label="Social links"
-      className="fixed right-6 top-1/2 -translate-y-1/2 z-[940] hidden md:flex flex-col gap-2.5 transition-all duration-300"
+      className="fixed right-6 top-1/2 -translate-y-1/2 z-[940] hidden min-[1536px]:flex flex-col gap-2.5"
     >
       {SOCIAL_LINKS.map((item) => (
         <a
@@ -75,20 +75,19 @@ export default function SocialFloatingBar() {
           rel="noopener noreferrer"
           aria-label={item.name}
           title={item.name}
-          className="group relative flex items-center justify-center h-11 w-11 border border-white/20 bg-black/90 text-white shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-white/50 hover:bg-black active:scale-95"
+          className="group relative flex items-center justify-center h-11 w-11 border border-white/20 bg-black/90 text-white transition-colors duration-200 hover:border-white/50 hover:bg-black"
         >
-          {/* Subtle colored glow on hover */}
           <span
-            className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-200 pointer-events-none"
+            className="absolute inset-0 opacity-0 group-hover:opacity-15 transition-opacity duration-200 pointer-events-none"
             style={{ backgroundColor: item.brandColor }}
           />
 
-          <span className="relative z-10 transition-transform duration-200 group-hover:scale-110">
+          <span className="relative z-10">
             {item.icon}
           </span>
 
           {/* Tooltip on left hover */}
-          <span className="absolute right-full mr-3 px-2.5 py-1 bg-black text-white text-[11px] font-semibold whitespace-nowrap border border-white/20 opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-200 pointer-events-none shadow-lg">
+          <span className="absolute right-full mr-3 px-2.5 py-1 bg-black text-white text-[11px] font-semibold whitespace-nowrap border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
             {item.name}
           </span>
         </a>

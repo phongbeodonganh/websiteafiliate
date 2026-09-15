@@ -5,12 +5,13 @@ import { useEffect, useRef } from 'react';
 interface ArticleContentProps {
   className: string;
   html: string;
+  id?: string;
 }
 
 const MIN_COLUMN_WEIGHT = 10;
 const MAX_COLUMN_WEIGHT = 80;
 
-export default function ArticleContent({ className, html }: ArticleContentProps) {
+export default function ArticleContent({ className, html, id }: ArticleContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,5 +53,5 @@ export default function ArticleContent({ className, html }: ArticleContentProps)
     });
   }, [html]);
 
-  return <div ref={contentRef} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div ref={contentRef} id={id} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }

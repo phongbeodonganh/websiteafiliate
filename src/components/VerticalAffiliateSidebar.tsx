@@ -14,11 +14,13 @@ interface AffiliateItem {
 interface VerticalAffiliateSidebarProps {
   hideWhenEmpty?: boolean;
   sticky?: boolean;
+  variant?: 'default' | 'article';
 }
 
-export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky = true }: VerticalAffiliateSidebarProps) {
+export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky = true, variant = 'default' }: VerticalAffiliateSidebarProps) {
   const [items, setItems] = useState<AffiliateItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const article = variant === 'article';
 
   useEffect(() => {
     const controller = new AbortController();
@@ -37,9 +39,9 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
   if (!loading && hideWhenEmpty && items.length === 0) return null;
 
   return (
-    <aside className={`w-full self-start border border-[#E2E2DE] border-t-2 border-t-black bg-white p-[22px] ${sticky ? 'lg:sticky lg:top-[98px]' : ''}`} aria-label="Recommended affiliate deals">
-      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500">Partner Links</p>
-      <h2 className="mb-[22px] text-[26px] font-bold uppercase leading-none text-black">Top Deals</h2>
+    <aside className={`w-full self-start border border-[#E2E2DE] border-t-[3px] border-t-black bg-white p-[22px] text-black ${sticky ? 'lg:sticky lg:top-[98px]' : ''}`} aria-label="Recommended affiliate deals">
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-[#0D766E]">Partner Links</p>
+      <h2 className="mb-[22px] text-[26px] font-bold uppercase leading-none text-black">{article ? 'Sponsor Desk' : 'Top Deals'}</h2>
 
       {loading && (
         <div className="flex items-center gap-2 border-t border-[#E2E2DE] py-6 text-xs font-bold uppercase text-neutral-500">
@@ -57,7 +59,7 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
             key={item.id}
             data-motion="rise"
             style={{ '--motion-delay': `${index * 55}ms` } as React.CSSProperties}
-            className={`${index >= 2 ? 'hidden lg:block' : 'block'} clickable-card relative min-w-[min(280px,82vw)] cursor-pointer snap-start border-b border-[#E2E2DE] py-5 lg:min-w-0`}
+            className={`${index >= 2 ? 'hidden lg:block' : 'block'} clickable-card group relative min-w-[min(280px,82vw)] cursor-pointer snap-start border-b border-[#E2E2DE] py-5 lg:min-w-0`}
           >
             <a
               href={`/api/v1/public/tracking/redirect?affiliate_link_id=${item.id}`}
@@ -69,7 +71,7 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
             <div className="mb-3 inline-flex items-center gap-1 bg-black px-2 py-1 text-[9px] font-bold uppercase text-white">
               <Star size={9} fill="currentColor" /> Pick #{index + 1}
             </div>
-            <h3 className="mb-3 text-base font-bold leading-tight text-black">{item.name}</h3>
+            <h3 className="mb-3 text-base font-bold leading-tight text-black transition-colors group-hover:text-[#0D766E]">{item.name}</h3>
             <p className="mb-2 flex items-center gap-2 text-xs text-neutral-600">
               <ShieldCheck size={13} /> {item.commission || 'Exclusive Offer'}
             </p>
@@ -80,7 +82,7 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
               href={`/api/v1/public/tracking/redirect?affiliate_link_id=${item.id}`}
               target="_blank"
               rel="nofollow sponsored"
-              className="flex w-full items-center justify-between border border-black bg-black px-4 py-3 text-[10px] font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
+              className="flex w-full items-center justify-between border border-black bg-black px-4 py-3 text-[10px] font-bold uppercase text-white transition-colors duration-150 hover:border-[#0D766E] hover:bg-[#0D766E]"
             >
               View deal <ArrowRight size={13} />
             </a>
@@ -90,7 +92,7 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
 
       <Link
         href="/affiliates"
-        className="mt-5 flex items-center justify-between border-t border-black pt-4 text-[10px] font-bold uppercase text-black"
+        className="mt-5 flex items-center justify-between border-t border-black pt-4 text-[10px] font-bold uppercase text-black transition-colors hover:text-[#0D766E]"
       >
         All affiliate deals <ArrowRight size={13} />
       </Link>

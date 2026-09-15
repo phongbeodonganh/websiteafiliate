@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     await connectToDatabase();
     const filter: Record<string, any> = { status: 'published' };
 
-    if (tab === 'hot') {
+    if (tab === 'editorial' || tab === 'hot') {
       filter.is_featured = true;
     }
 
@@ -35,7 +35,9 @@ export async function GET(req: Request) {
       filter.$or = [{ title: regex }, { excerpt: regex }, { content: regex }];
     }
 
-    const sortOption: Record<string, 1 | -1> = tab === 'popular' ? { view_count: -1 } : { created_at: -1 };
+    const sortOption: Record<string, 1 | -1> = tab === 'popular'
+      ? { view_count: -1, published_at: -1, created_at: -1, _id: -1 }
+      : { published_at: -1, created_at: -1, _id: -1 };
 
     const total = await ArticleModel.countDocuments(filter);
     const totalPages = Math.ceil(total / limit);
@@ -63,7 +65,7 @@ export async function GET(req: Request) {
         metaTitle: doc.meta_title,
         metaDescription: doc.meta_description,
         thumbnailUrl: doc.thumbnail_url,
-        createdAt: doc.created_at,
+        createdAt: doc.published_at || doc.created_at,
         updatedAt: doc.updated_at,
         authorName: (doc.author_id as any)?.name || (doc.author_id as any)?.username || 'Unknown Tác giả',
         authorAvatar: (doc.author_id as any)?.avatar || 'A',
