@@ -89,7 +89,8 @@ export default function CategoryArticleSections() {
       .then(setCategories)
       .catch((fetchError: unknown) => {
         if (fetchError instanceof DOMException && fetchError.name === 'AbortError') return;
-        setError(fetchError instanceof Error ? fetchError.message : 'Could not load categories');
+        console.error('Unable to load homepage categories:', fetchError);
+        setError('Topic sections are temporarily unavailable.');
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoaded(true);
@@ -119,7 +120,8 @@ export default function CategoryArticleSections() {
             : item,
         ),
       );
-    } catch {
+    } catch (loadMoreError) {
+      console.error(`Unable to load more articles in ${category.name}:`, loadMoreError);
       setError(`Could not load more articles in ${category.name}.`);
     } finally {
       setLoadingMore((current) => ({ ...current, [category.slug]: false }));
@@ -150,7 +152,7 @@ export default function CategoryArticleSections() {
                 <Link
                   href={`/category/${category.slug}`}
                   role="button"
-                  className="border border-black bg-black px-4 py-2 text-[10px] font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]"
+                  className="border border-black bg-black px-4 py-2 text-[10px] font-bold uppercase text-white transition-colors duration-150 hover:bg-neutral-800"
                 >
                   View all category
                 </Link>
@@ -162,7 +164,7 @@ export default function CategoryArticleSections() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.articles.map((article, index) => (
-                  <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02]" data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
+                  <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white" data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
                     <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">
                       <PublicArticleImage src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full" loading="lazy" />
                     </Link>
@@ -190,7 +192,7 @@ export default function CategoryArticleSections() {
                   type="button"
                   disabled={loadingMore[category.slug]}
                   onClick={() => void viewMore(category)}
-                  className="flex items-center gap-2 border border-black bg-black px-7 py-3 text-xs font-bold uppercase text-white transition-transform duration-150 hover:-translate-y-0.5 hover:scale-[1.02] disabled:cursor-wait disabled:opacity-50"
+                  className="flex items-center gap-2 border border-black bg-black px-7 py-3 text-xs font-bold uppercase text-white transition-colors duration-150 hover:bg-neutral-800 disabled:cursor-wait disabled:opacity-50"
                 >
                   {loadingMore[category.slug] && <Loader2 size={15} className="animate-spin" />}
                   {loadingMore[category.slug] ? 'Loading' : 'View more'}
