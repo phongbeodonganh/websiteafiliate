@@ -1,10 +1,11 @@
 ---
 phase: "2"
 slug: "cms-end-to-end-v5-2"
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: "2026-09-20"
+reviewed_at: "2026-09-20"
 ---
 
 # Phase 2 — UI Design Contract
@@ -225,31 +226,80 @@ Binding behavior for the executor (from D-01..D-16 + CONTEXT.md). This section i
 12. **Sweep status semantics (D-07).** A swept campaign is `blacklisted`, distinct from a manually-set `inactive`. The admin Affiliate Campaigns view must present these as different states (blacklisted chips in rose, inactive in slate) so the two are never confused.
 13. **Re-sweep is manual and reversible (D-08).** A `Re-sweep blacklist` control runs on the blacklist tab, re-runs the sweep over current entries, and restores campaigns currently `blacklisted` that no longer match any active entry back to `active` — never touching manually-set `inactive`. Report swept and restored counts per the Copywriting rows.
 14. **Focus & keyboard.** All new controls are focusable with visible focus (`focus-visible:outline` in the block's hue); modal traps are inherited from the existing modal pattern; `Esc` closes modals via the existing close button behavior.
+15. **Icon-only control labels (accessibility).** Every icon-only action carries both a `title` and an `aria-label` naming its target — the FAQ row delete pattern (`title="Remove this question"`, `aria-label="Remove FAQ row {index}"`) extends to the table row edit/delete icon buttons (`aria-label="Edit {name}"` / `aria-label="Delete {name}"`), the Re-sweep icon if rendered icon-only, and any new icon-only control added in this phase. An icon with no accessible name is a defect.
 15. **Reduced motion.** The shell's `animate-in`/pulse/hover-scale motion is inherited; do not add new motion beyond the existing spinner.
 
 ---
 
 ## UI Considerations
 
-Applicable state considerations resolved: 8 covered, 3 backstop, 0 unresolved.
+Applicable state considerations resolved: 31 covered, 26 backstop, 0 unresolved.
+
+Resolved by the ui-consideration probe over 9 surfaces (57 applicable state considerations). The `E{n}` ids match the probe element list: E1 article editor form, E2 FAQ row editor, E3 category/sub-category selectors, E4 user management, E5 taxonomy management, E6 blacklist import + Re-sweep, E7 admin shell/sidebar nav, E8 auth-fetch error toast, E9 admin data tables.
+
+- ✅ covered → a plain truth string lifted into `must_haves.truths`.
+- 🧪 backstop → a flat scalar `{ statement, verification: backstop }`; at verify time, no explicit evidence → `insufficient_spec → human_needed` (never a silent pass, #1154).
+- ⚠ unresolved → an explicit planner assumption (surfaced, never silently dropped). **None in this phase.**
 
 | Category | Element(s) | Status | Resolution / Reason |
 |----------|------------|--------|---------------------|
-| empty | Blacklist table | ✅ covered | `No blocked domains yet.` + next-step copy (Copywriting Contract) when `blacklistList` is empty |
-| empty | User list | ✅ covered | `No team members yet. Use "Add New Team Member" to create one.` |
-| empty | FAQ rows | ✅ covered | `No FAQ pairs yet. Add a question to embed FAQPage structured data on the public article.` |
-| empty | Category list | ✅ covered | Existing empty grid state + `Add Main Category (Level 1)` CTA |
-| empty | Article editor load failure | ✅ covered | Inline error panel (`This article couldn't be loaded.` / reload or go back) — never an empty editor (D-03/D-04) |
-| loading | Article save / fetch / import / Re-sweep | ✅ covered | Existing spinner-on-disabled-button pattern; the shared helper must clear loading state in a `finally` on every path, including non-2xx |
-| error | Any CMS fetch non-2xx | ✅ covered | Status-mapped error toast (Copywriting Contract) — the structural fix for silent 401s (D-03) |
-| partial | FAQ rows with one field filled | ✅ covered | Incomplete rows dropped on save, silently (D-10); no error, no toast |
-| partial | Sheet import with 0 valid rows | ✅ covered | `Nothing to import. No valid domain rows were found in that sheet.` |
-| partial | Category with no sub-categories | ✅ covered | Sub-select hidden; management tab shows the empty sub-category line |
-| zero-one-many | Blacklist / user / article tables | ✅ covered | Empty copy above; 1..n render normally; singular/plural handled in Re-sweep and import result strings |
-| zero-one-many | Re-sweep result counts | ✅ covered | `Swept {n} … restored {m} …` with `1 campaign`/`n campaigns` pluralization; `No campaigns needed changing.` when both are 0 |
-| overflow | Long sheet-supplied domains / reasons / article titles | 🧪 backstop | Existing `truncate`/`max-w-[…]` classes on table cells; long values must wrap or truncate, never break the table layout — visual backstop |
-| long-text | Server `message` passed through to the 400 toast | 🧪 backstop | Server messages can be long/Vietnamese; the toast wraps (`max-w-sm`, `break-words`) rather than clipping — visual backstop |
-| long-text | Re-sweep / import count strings at 3–4 digits | 🧪 backstop | No layout shift when counts grow; held-out visual check |
+| empty | E1 article editor form | ✅ covered | Create-new mode renders the blank editor form as the expected state; the only "no data" failure is the load-failure panel below |
+| loading | E1 article editor form | ✅ covered | Save/fetch shows the spinner-on-disabled-button; the shared D-03 helper clears loading in a `finally` on every path including non-2xx |
+| error | E1 article editor form | ✅ covered | Status-mapped error toast on non-2xx; load failure renders the inline `This article couldn't be loaded.` panel — never an empty editor (D-03/D-04) |
+| partial | E1 article editor form | 🧪 backstop | Partially filled forms with optional GEO fields empty still save (D-09) — held-out test that no GEO field blocks save |
+| overflow | E1 article editor form | 🧪 backstop | Long content in inputs/textarea wraps without breaking the editor layout |
+| long-text | E1 article editor form | 🧪 backstop | Long title/content reflows; no font-size reduction to fit |
+| empty | E2 FAQ row editor | ✅ covered | `No FAQ pairs yet. Add a question to embed FAQPage structured data on the public article.` |
+| loading | E2 FAQ row editor | 🧪 backstop | Add/remove is local state — no async load path; held-out check |
+| error | E2 FAQ row editor | 🧪 backstop | Row operations are local; no error path exists |
+| populated | E2 FAQ row editor | ✅ covered | 1..n `{question, answer}` rows render in the violet GEO block, each with a Trash2 remove (D-10) |
+| partial | E2 FAQ row editor | ✅ covered | Rows with an empty question or answer are dropped from `faq_schema` silently on save (D-10) |
+| overflow | E2 FAQ row editor | 🧪 backstop | Long question/answer text wraps inside the row; no horizontal scroll |
+| zero-one-many | E2 FAQ row editor | ✅ covered | Zero → empty copy; one → single row; many → rows stack with a consistent gap (D-10) |
+| long-text | E2 FAQ row editor | 🧪 backstop | Very long Q/A reflows within the row |
+| empty | E3 category / sub-category selectors | ✅ covered | No category selected blocks save with `Choose a primary category.` (D-12) |
+| loading | E3 category / sub-category selectors | 🧪 backstop | Taxonomy list loads with the admin shell; no separate in-flight UI |
+| error | E3 category / sub-category selectors | 🧪 backstop | Taxonomy fetch failure surfaces via the shared non-2xx toast |
+| partial | E3 category / sub-category selectors | ✅ covered | Category with no children hides the sub-select; sub-category clears when the parent changes (D-12) |
+| long-text | E3 category / sub-category selectors | 🧪 backstop | Long category names truncate in the select without resizing the layout |
+| empty | E4 user management | ✅ covered | `No team members yet. Use "Add New Team Member" to create one.` |
+| loading | E4 user management | 🧪 backstop | List loads with the shell; held-out check that the list spinner clears |
+| error | E4 user management | ✅ covered | Non-2xx user save/load surfaces the shared error toast |
+| populated | E4 user management | ✅ covered | Rows render name, role badge, status dot, and avatar fallback (D-14) |
+| partial | E4 user management | 🧪 backstop | Missing avatar falls back to the first letter of name/username |
+| overflow | E4 user management | 🧪 backstop | Long names/emails truncate in the row without a layout break |
+| zero-one-many | E4 user management | ✅ covered | Empty copy above; 1..n render normally (D-14) |
+| long-text | E4 user management | 🧪 backstop | Long names wrap/truncate in the row and the edit modal |
+| empty | E5 taxonomy management | ✅ covered | Existing empty grid + `Add Main Category (Level 1)` CTA (pin the exact string during implementation — checker note) |
+| loading | E5 taxonomy management | 🧪 backstop | Grid loads with the shell; held-out check |
+| error | E5 taxonomy management | ✅ covered | Non-2xx category/sub-category save surfaces the shared error toast |
+| populated | E5 taxonomy management | ✅ covered | Populated category/sub-category grid renders normally |
+| partial | E5 taxonomy management | 🧪 backstop | Category with no sub-categories shows the empty sub-category line |
+| overflow | E5 taxonomy management | 🧪 backstop | Long category names wrap/truncate in grid cells |
+| zero-one-many | E5 taxonomy management | 🧪 backstop | Grid reads at 0/1/many categories without a layout break |
+| long-text | E5 taxonomy management | 🧪 backstop | Long names reflow within the cell |
+| empty | E6 blacklist import + Re-sweep | ✅ covered | `No blocked domains yet. Paste a Google Sheet URL to bulk-import, or add a domain manually.` |
+| loading | E6 blacklist import + Re-sweep | ✅ covered | Importing / Re-sweeping shows the spinner + disabled button (D-05, D-08) |
+| error | E6 blacklist import + Re-sweep | ✅ covered | Status-mapped import errors (invalid URL, non-public sheet, server error) |
+| populated | E6 blacklist import + Re-sweep | ✅ covered | Success toast with imported (+ swept where available) counts (D-05) |
+| partial | E6 blacklist import + Re-sweep | ✅ covered | `Nothing to import. No valid domain rows were found in that sheet.` |
+| overflow | E6 blacklist import + Re-sweep | 🧪 backstop | Long sheet-supplied domain strings truncate/wrap in the table |
+| zero-one-many | E6 blacklist import + Re-sweep | ✅ covered | `Swept {n} … restored {m} …` with singular/plural; `No campaigns needed changing.` at 0 (D-08) |
+| long-text | E6 blacklist import + Re-sweep | 🧪 backstop | Count strings at 3–4 digits cause no layout shift |
+| loading | E7 admin shell / sidebar nav | 🧪 backstop | Role/tab visibility resolves before render; no nav-level loading state |
+| error | E7 admin shell / sidebar nav | 🧪 backstop | Nav has no fetch; permission denial renders `You don't have access to this section.` (D-13) |
+| overflow | E7 admin shell / sidebar nav | 🧪 backstop | Long tab labels do not break the sidebar width |
+| long-text | E7 admin shell / sidebar nav | 🧪 backstop | Long tab labels truncate/wrap in the nav item |
+| overflow | E8 auth-fetch error toast | ✅ covered | Toast wraps (`max-w-sm`, `break-words`) rather than clipping (D-03) |
+| long-text | E8 auth-fetch error toast | ✅ covered | Long/Vietnamese server `message` passed through on 400 wraps in the toast |
+| empty | E9 admin data tables | ✅ covered | Per-table empty copy (blacklist / users / categories rows above) |
+| loading | E9 admin data tables | ✅ covered | Existing spinner-on-disabled-button pattern; cleared in `finally` |
+| error | E9 admin data tables | ✅ covered | Any non-2xx fetch surfaces the shared error toast (D-03) |
+| populated | E9 admin data tables | ✅ covered | Tables render populated rows at typical volume |
+| partial | E9 admin data tables | 🧪 backstop | Rows missing optional fields (e.g. avatar) render without a blank cell |
+| overflow | E9 admin data tables | ✅ covered | Existing `truncate`/`max-w-[…]` classes wrap or truncate long values |
+| zero-one-many | E9 admin data tables | ✅ covered | Empty copy at 0; 1..n render normally; singular/plural in result strings |
+| long-text | E9 admin data tables | ✅ covered | Long sheet-supplied domains/reasons wrap or truncate, never break the table |
 
 ---
 
@@ -266,12 +316,12 @@ No third-party registries declared; no vetting gate required. No new packages ar
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
-- [ ] Dimension 7 Inventory Provenance: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS (FLAG resolved — icon-only aria-label rule added to Interaction Contract §15)
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
+- [x] Dimension 7 Inventory Provenance: PASS
 
-**Approval:** pending
+**Approval:** approved 2026-09-20 (gsd-ui-checker — APPROVED, 1 non-blocking FLAG applied)
