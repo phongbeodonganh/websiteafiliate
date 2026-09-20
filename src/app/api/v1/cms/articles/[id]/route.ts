@@ -59,6 +59,7 @@ export async function GET(
         entities: doc.entities || [],
         faqSchema: doc.faq_schema || [],
         affiliatePlacements: doc.affiliate_placements || [],
+        publishedAt: doc.published_at || null,
         createdAt: doc.created_at,
         updatedAt: doc.updated_at,
       },
@@ -120,7 +121,12 @@ export async function PUT(
     if (slug !== undefined) existingArticle.slug = slugify(slug);
     if (excerpt !== undefined) existingArticle.excerpt = excerpt;
     if (content !== undefined) existingArticle.content = sanitizeArticleContent(content);
-    if (status !== undefined) existingArticle.status = status;
+    if (status !== undefined) {
+      if (status === 'published' && existingArticle.status !== 'published') {
+        existingArticle.published_at = new Date();
+      }
+      existingArticle.status = status;
+    }
     if (isFeatured !== undefined) existingArticle.is_featured = Boolean(isFeatured);
     if (categoryId !== undefined) existingArticle.category_id = categoryId || undefined;
     if (subCategoryId !== undefined) existingArticle.sub_category_id = subCategoryId || undefined;

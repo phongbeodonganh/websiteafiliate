@@ -137,6 +137,7 @@ export interface IArticle extends Document {
   entities?: string[];
   faq_schema?: { question: string; answer: string }[];
   affiliate_placements?: { affiliate_link_id: mongoose.Types.ObjectId; position_label: string }[];
+  published_at?: Date;
   created_at: Date;
   updated_at: Date;
 }
@@ -171,6 +172,7 @@ const ArticleSchema = new Schema<IArticle>({
       position_label: { type: String, default: 'top_cta' },
     },
   ],
+  published_at: { type: Date },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
 });

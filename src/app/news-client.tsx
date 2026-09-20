@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import LeadCapture from "@/components/LeadCapture";
@@ -60,6 +61,10 @@ function descriptionFor(article: Article) {
   return description.length > 150 ? `${description.slice(0, 147)}...` : description;
 }
 
+function featuredDescriptionFor(article: Article) {
+  return plainText(article.excerpt) || descriptionFor(article);
+}
+
 function readingTime(article: Article) {
   const words = plainText(article.content).split(" ").filter(Boolean).length;
   return `${Math.max(1, Math.ceil(words / 220))} MIN READ`;
@@ -116,6 +121,9 @@ export default function TechFinanceNewsClient({
         : '';
   const [loading, setLoading] = useState(!initialData);
   const [error, setError] = useState("");
+  const [requestNonce, setRequestNonce] = useState(0);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [featuredPaused, setFeaturedPaused] = useState(false);
   const isInitialRequest = useRef(true);
   const hasMatchingInitialData = useRef(Boolean(initialData && activeQuery === initialQuery));
 
@@ -128,9 +136,9 @@ export default function TechFinanceNewsClient({
     setLoading(true);
     setError("");
     const controller = new AbortController();
-    const latestParams = new URLSearchParams({ limit: "8" });
-    const popularParams = new URLSearchParams({ tab: "popular", limit: "2" });
-    const editorialParams = new URLSearchParams({ tab: "hot", limit: "3" });
+    const latestParams = new URLSearchParams({ limit: "10" });
+    const popularParams = new URLSearchParams({ tab: "popular", limit: "6" });
+    const editorialParams = new URLSearchParams({ tab: "editorial", limit: "6" });
     if (activeQuery) {
       latestParams.set("q", activeQuery);
       popularParams.set("q", activeQuery);
@@ -156,7 +164,26 @@ export default function TechFinanceNewsClient({
       });
 
     return () => controller.abort();
-  }, [activeQuery]);
+  }, [activeQuery, requestNonce]);
+
+  // Each lane keeps one clear meaning: latest by publication time, popular by
+  // views, and editorial by the explicit isFeatured choice in the CMS.
+  const featuredArticles = latest.slice(0, 5);
+  const activeFeaturedIndex = featuredArticles.length
+    ? featuredIndex % featuredArticles.length
+    : 0;
+  const featured = featuredArticles[activeFeaturedIndex];
+
+  useEffect(() => {
+    if (featuredPaused || featuredArticles.length < 2) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) return;
+
+    const timer = window.setInterval(() => {
+      setFeaturedIndex((current) => (current + 1) % featuredArticles.length);
+    }, 7000);
+    return () => window.clearInterval(timer);
+  }, [featuredArticles.length, featuredPaused]);
 
   function clearSearch() {
     setError("");
@@ -166,12 +193,17 @@ export default function TechFinanceNewsClient({
     }
   }
 
-  const featured = latest.find((article) => article.isFeatured) || latest[0];
-  const latestArticles = latest.filter((article) => article.id !== featured?.id).slice(0, 5);
-  const editorialFiltered = editorial.filter((article) => article.id !== featured?.id);
-  const displayEditorial = editorialFiltered.length >= 3
-    ? editorialFiltered.slice(0, 3)
-    : latest.filter((article) => article.id !== featured?.id).slice(0, 3);
+  function retryArticles() {
+    setError("");
+    setLoading(true);
+    setRequestNonce((current) => current + 1);
+  }
+
+  const secondaryArticles = popular
+    .map((article, index) => ({ article, rank: index + 1 }))
+    .filter(({ article }) => article.id !== featured?.id)
+    .slice(0, 2);
+  const displayEditorial = editorial.filter((article) => article.id !== featured?.id).slice(0, 3);
 
   return (
     <main className={styles.page}>
@@ -182,116 +214,248 @@ export default function TechFinanceNewsClient({
         <p className={styles.statusMessage} role="status" aria-live="polite">{insiderMessage}</p>
       )}
 
+      {!activeQuery && (
+        <section className={styles.heroIntro} aria-labelledby="homepage-hero-title" data-motion="fade">
+          <div className={styles.heroSignal} aria-hidden="true" />
+          <div className={styles.heroScan} aria-hidden="true"><span /></div>
+          <div className={styles.heroCopy}>
+            <p className={styles.heroEyebrow}>Independent intelligence for the AI economy</p>
+            <h1 id="homepage-hero-title">
+              <span className={styles.heroTitleLine}>Read the signal.</span>
+              <span className={styles.heroTitleAccent}>Build what comes next.</span>
+            </h1>
+            <p className={styles.heroLede}>
+              Sharp reporting on artificial intelligence, money, and the tools worth your attention—edited for people making real decisions.
+            </p>
+            <div className={styles.heroActions}>
+              <Link className={styles.heroPrimaryAction} href="/latest">
+                Read Latest News <ArrowUpRight aria-hidden="true" />
+              </Link>
+              <Link className={styles.heroSecondaryAction} href="/affiliates">
+                Explore AI Tools <ArrowUpRight aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+
+          <aside className={styles.signalPanel} aria-label="AIDEALSUK coverage desk">
+            <div className={styles.signalPanelHeader}>
+              <span>AIDEALSUK / SIGNAL DESK</span>
+              <span className={styles.signalStatus}><i aria-hidden="true" /> Current edition</span>
+            </div>
+            <p className={styles.signalKicker}>What we track</p>
+            <div className={styles.signalTopics}>
+              <div><span>Reporting</span><strong>AI systems &amp; automation</strong></div>
+              <div><span>Markets</span><strong>Capital, policy &amp; finance</strong></div>
+              <div><span>Reviews</span><strong>Tools worth paying for</strong></div>
+            </div>
+            <p className={styles.signalFootnote}>Clarity over volume. Evidence over hype.</p>
+          </aside>
+        </section>
+      )}
+
       {activeQuery && !loading && (
         <div className={styles.resultsBar}>
           Results for “{activeQuery}”
           <button type="button" onClick={clearSearch}>Clear</button>
         </div>
       )}
-      {error && <p className={styles.statusMessage}>Unable to load articles: {error}</p>}
-      {loading && (
-        <div className={styles.loadingScreen} role="status" aria-live="polite">
-          <span className={styles.loadingSpinner} aria-hidden="true" />
-          <p>Loading articles...</p>
+      {loading && !featured && (
+        <div className={`${styles.shell} ${styles.stateShell}`} role="status" aria-live="polite" aria-label="Loading the latest stories">
+          <div className={`${styles.featured} ${styles.featuredSkeleton}`} aria-hidden="true">
+            <span className={styles.skeletonEyebrow} />
+            <span className={styles.skeletonTitle} />
+            <span className={styles.skeletonTitleShort} />
+            <span className={styles.skeletonCopy} />
+            <span className={styles.skeletonCopyShort} />
+          </div>
+          <div className={`${styles.hottest} ${styles.listSkeleton}`} aria-hidden="true">
+            <span className={styles.skeletonHeading} />
+            <span className={styles.skeletonRow} />
+            <span className={styles.skeletonRow} />
+          </div>
+          <div className={`${styles.latest} ${styles.listSkeleton}`} aria-hidden="true">
+            <span className={styles.skeletonHeading} />
+            <span className={styles.skeletonRow} />
+            <span className={styles.skeletonRow} />
+            <span className={styles.skeletonRow} />
+          </div>
+          <span className={styles.srOnly}>Loading articles...</span>
         </div>
       )}
-      {!loading && !error && !featured && <p className={styles.statusMessage}>No published articles found.</p>}
+
+      {!loading && !featured && (
+        <section className={styles.newsState} aria-live="polite">
+          <p className={styles.eyebrow}>{error ? "NEWSROOM UNAVAILABLE" : activeQuery ? "NO MATCHES" : "NEWSROOM"}</p>
+          <h1>{error ? "We couldn't load the latest stories." : activeQuery ? `No stories found for “${activeQuery}”.` : "No published stories yet."}</h1>
+          <p>
+            {error
+              ? "The newsroom feed did not respond. Try again to reload the latest reporting."
+              : activeQuery
+                ? "Try another search, or return to the complete latest-news feed."
+                : "New reporting will appear here as soon as it is published."}
+          </p>
+          <div className={styles.newsStateActions}>
+            {error && <button type="button" onClick={retryArticles}>Try again</button>}
+            {activeQuery && <button type="button" className={styles.secondaryAction} onClick={clearSearch}>Clear search</button>}
+            <Link href="/latest" className={styles.secondaryAction}>Browse latest</Link>
+          </div>
+          {error && <details><summary>Technical details</summary><p>{error}</p></details>}
+        </section>
+      )}
 
       {featured && (
-        <>
-          <div className={styles.shell}>
-            <section className={`${styles.featured} clickable-card`} aria-labelledby="featured-title" data-motion="rise">
+        <section className={styles.storyDesk} aria-labelledby="story-desk-title">
+          <div className={styles.storyDeskHeader} data-motion="rise">
+            <div>
+              <p className={styles.eyebrow}>{activeQuery ? "SEARCH DESK" : "NEWSROOM UPDATE"}</p>
+              <h2 id="story-desk-title">{activeQuery ? "MATCHING STORIES" : "LATEST NEWS"}</h2>
+            </div>
+            <Link href="/latest">All latest news <ArrowUpRight aria-hidden="true" /></Link>
+          </div>
+
+          <div className={styles.bentoGrid}>
+            <section
+              className={`${styles.featured} ${styles.bentoLead}`}
+              aria-labelledby="featured-title"
+              aria-roledescription="carousel"
+              aria-label="Latest published stories"
+              data-motion="rise"
+              data-paused={featuredPaused ? "true" : undefined}
+              onMouseEnter={() => setFeaturedPaused(true)}
+              onMouseLeave={() => setFeaturedPaused(false)}
+              onFocusCapture={() => setFeaturedPaused(true)}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) setFeaturedPaused(false);
+              }}
+            >
               <div className={styles.sectionRule} />
               <div className={styles.featuredAccent} />
-              <div className={styles.featuredCopy}>
-                <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "FEATURED STORY"}</p>
+              <Link className={styles.featuredMedia} href={articleHref(featured)} aria-label={`Read ${featured.title}`}>
+                <PublicArticleImage key={featured.id} src={imageFor(featured)} alt="" loading="eager" fetchPriority="high" />
+              </Link>
+              <div className={styles.featuredShade} aria-hidden="true" />
+              <div className={styles.featuredCopy} key={featured.id} aria-live="polite" aria-atomic="true">
+                <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "LATEST PUBLISHED"}</p>
                 <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
-                <p className={styles.lede}>{descriptionFor(featured)}</p>
+                <p className={styles.lede}>{featuredDescriptionFor(featured)}</p>
                 <p className={styles.meta}>
                   By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
                 </p>
                 <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <span aria-hidden="true">&rarr;</span></Link>
               </div>
-              <Link className={styles.featuredMedia} href={articleHref(featured)}>
-                <PublicArticleImage src={imageFor(featured)} alt={featured.title} loading="eager" fetchPriority="high" />
-              </Link>
-            </section>
-
-            <section className={styles.hottest} aria-labelledby="hottest-title" data-motion="rise">
-              <div className={styles.sectionRule} />
-              <h2 id="hottest-title">HOTTEST ARTICLES</h2>
-              <p className={styles.meta}>MOST READ TODAY</p>
-              {popular.map((article, index) => (
-                <article className={`${styles.hotItem} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${index * 60}ms` } as React.CSSProperties}>
-                  <strong>{String(index + 1).padStart(2, "0")}</strong>
-                  <div>
-                    <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt)} &middot; {article.viewCount} VIEWS</p>
-                    <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
+              {featuredArticles.length > 1 && (
+                <div className={styles.featuredControls} aria-label="Featured story controls">
+                  <button
+                    type="button"
+                    onClick={() => setFeaturedIndex((current) => (current - 1 + featuredArticles.length) % featuredArticles.length)}
+                    aria-label="Previous featured story"
+                    title="Previous story"
+                  >
+                    <ChevronLeft aria-hidden="true" />
+                  </button>
+                  <div className={styles.featuredDots}>
+                    {featuredArticles.map((article, index) => (
+                      <button
+                        type="button"
+                        key={article.id}
+                        className={index === activeFeaturedIndex ? styles.featuredDotActive : undefined}
+                        onClick={() => setFeaturedIndex(index)}
+                        aria-label={`Show featured story ${index + 1}`}
+                        aria-current={index === activeFeaturedIndex ? "true" : undefined}
+                      />
+                    ))}
                   </div>
-                  <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
-                </article>
-              ))}
-              <Link className={styles.sectionViewAll} href="/hottest">VIEW ALL HOTTEST ARTICLES</Link>
+                  <button
+                    type="button"
+                    onClick={() => setFeaturedIndex((current) => (current + 1) % featuredArticles.length)}
+                    aria-label="Next featured story"
+                    title="Next story"
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                </div>
+              )}
             </section>
 
-            <aside className={styles.latest} aria-labelledby="latest-title" data-motion="rise" style={{ '--motion-delay': '70ms' } as React.CSSProperties}>
-              <div className={styles.sectionRule} />
-              <h2 id="latest-title">LATEST ARTICLES</h2>
-              <div className={styles.latestList}>
-                {latestArticles.map((article) => (
-                  <article className={`${styles.latestItem} clickable-card`} key={article.id} data-motion="rise">
-                    <Link href={articleHref(article)}><PublicArticleImage src={imageFor(article)} alt="" loading="lazy" /></Link>
-                    <div>
-                      <p className={styles.meta}>By {article.authorName || "Staff"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {article.categoryName || "NEWS"}</p>
+            {secondaryArticles.map(({ article, rank }, index) => (
+              <article
+                className={`${styles.bentoCard} ${styles.bentoSecondary} clickable-card`}
+                key={article.id}
+                data-motion="rise"
+                style={{ '--motion-delay': `${70 + index * 60}ms` } as React.CSSProperties}
+              >
+                <div className={styles.bentoCardMedia}>
+                  <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
+                  <span>{String(rank).padStart(2, "0")}</span>
+                </div>
+                <div className={styles.bentoCardBody}>
+                  <p className={styles.meta}>MOST READ #{rank} &middot; {article.viewCount.toLocaleString("en-US")} VIEWS</p>
+                  <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
+                  <p>{descriptionFor(article)}</p>
+                  <span className={styles.bentoRead}>Read story <ArrowUpRight aria-hidden="true" /></span>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {displayEditorial.length > 0 && (
+            <section className={styles.editorialShelf} aria-labelledby="editorial-picks-title">
+              <div className={styles.editorialShelfHeader} data-motion="rise">
+                <div>
+                  <p className={styles.eyebrow}>SELECTED BY THE EDITORS</p>
+                  <h3 id="editorial-picks-title">EDITORIAL PICKS</h3>
+                  <p>Stories selected for their depth, usefulness, and lasting relevance.</p>
+                </div>
+                <Link href="/editorial-picks">View all picks <ArrowUpRight aria-hidden="true" /></Link>
+              </div>
+              <div className={styles.editorialShelfGrid}>
+                {displayEditorial.map((article, index) => (
+                  <article
+                    className={`${styles.bentoCard} ${styles.bentoEditorialCard} clickable-card`}
+                    key={article.id}
+                    data-motion="rise"
+                    style={{ '--motion-delay': `${190 + index * 55}ms` } as React.CSSProperties}
+                  >
+                    <div className={styles.bentoCardMedia}>
+                      <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
+                    </div>
+                    <div className={styles.bentoCardBody}>
+                      <p className={styles.meta}>EDITOR&apos;S PICK &middot; {article.categoryName || "NEWS"} &middot; {readingTime(article)}</p>
                       <h3><Link className="card-stretched-link" href={articleHref(article)}>{article.title}</Link></h3>
+                      <p>{descriptionFor(article)}</p>
+                      <span className={styles.bentoRead}>Read selected story <ArrowUpRight aria-hidden="true" /></span>
                     </div>
                   </article>
                 ))}
               </div>
-              <Link className={styles.sectionViewAll} href="/latest">VIEW ALL LATEST ARTICLES</Link>
-            </aside>
-          </div>
-
-          <div className={styles.editorialSection} data-motion="rise">
-            <section className={styles.editorial} aria-labelledby="editorial-title">
-              <div className={styles.sectionRule} />
-              <p className={styles.eyebrow}>CURATED BY OUR EDITORS</p>
-              <h2 id="editorial-title">EDITORIAL PICKS</h2>
-              <div className={styles.editorialGrid}>
-                {displayEditorial.map((article, idx) => (
-                  <article className={`${styles.editorialCard} clickable-card`} key={article.id} data-motion="rise" style={{ '--motion-delay': `${idx * 60}ms` } as React.CSSProperties}>
-                    <div className={styles.editorialCardMedia}>
-                      <PublicArticleImage src={imageFor(article)} alt={article.title} loading="lazy" />
-                    </div>
-                    <p className={styles.meta}>
-                      {article.categoryName || "NEWS"} &middot; {formatDate(article.createdAt) || relativeTime(article.createdAt)} &middot; {readingTime(article)}
-                    </p>
-                    <h3>
-                      <Link className="card-stretched-link" href={articleHref(article)}>
-                        {article.title}
-                      </Link>
-                    </h3>
-                    <p className={styles.editorialExcerpt}>{descriptionFor(article)}</p>
-                  </article>
-                ))}
-              </div>
-              <Link className={styles.sectionViewAll} href="/editorial-picks">VIEW ALL EDITORIAL PICKS</Link>
             </section>
+          )}
+
+          <div className={styles.storyDeskFooter}>
+            <Link href="/hottest">View the full most-read ranking</Link>
           </div>
-        </>
+        </section>
       )}
-
-      <div className={styles.affiliateSection} data-motion="rise">
-        <TopPicksWidget variant="editorial" viewAllHref="/affiliates" />
-      </div>
-
-      <div className={styles.leadCapture} data-motion="fade">
-        <LeadCapture variant="editorial" />
-      </div>
 
       <div className={styles.categorySections}>
         <CategoryArticleSections />
       </div>
+
+      <section className={styles.conversionZone} aria-labelledby="conversion-title" data-motion="rise">
+        <div className={styles.conversionHeading}>
+          <p className={styles.heroEyebrow}>Go deeper. Spend smarter.</p>
+          <h2 id="conversion-title">THE INSIDER DESK</h2>
+          <p>Editor-vetted offers and one useful weekly briefing—built for readers who want an edge without the noise.</p>
+        </div>
+        <div className={styles.conversionGrid}>
+          <div className={styles.affiliateSection}>
+            <TopPicksWidget variant="editorial" viewAllHref="/affiliates" />
+          </div>
+          <div className={styles.leadCapture}>
+            <LeadCapture variant="editorial" />
+          </div>
+        </div>
+      </section>
 
       <EditorialFooter />
     </main>

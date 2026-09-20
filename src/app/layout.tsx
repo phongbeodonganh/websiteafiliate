@@ -179,7 +179,7 @@ export default async function RootLayout({
           </>
         )}
       </head>
-      <body className="min-h-full flex flex-col bg-[#F8F9FA] text-slate-700 font-sans selection:bg-[#FF6B6B]/20 selection:text-[#FF6B6B]">
+      <body className="min-h-full flex flex-col font-sans antialiased selection:bg-[#0D766E]/15 selection:text-[#0D766E]">
         <PublicMotion />
         <SocialFloatingBar />
         {children}
