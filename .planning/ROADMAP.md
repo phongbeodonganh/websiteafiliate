@@ -11,7 +11,7 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Security Remediation** - Close the critical exposure holes: destructive seed route, forgeable CMS auth, secrets in source, XSS/ReDoS/abuse vectors
+- [x] **Phase 1: Security Remediation** - Close the critical exposure holes: destructive seed route, forgeable CMS auth, secrets in source, XSS/ReDoS/abuse vectors (completed 2026-09-20)
 - [ ] **Phase 2: CMS End-to-End (V5.2)** - One working create→edit→publish flow with SEO/GEO fields, correct RBAC, and the blacklist bulk import + sweeper
 - [ ] **Phase 3: SEO/GEO & Performance Hardening** - Accurate view counts, cached public reads, crawl-clean URLs, verified tracking pipeline
 - [ ] **Phase 4: V5.2 Presentation & Brand Alignment** - Bento 7:5 hero, Breaking News ticker, V5.2 palette, settings-driven aidealsuk.com branding (D-003), branded 404/error pages
@@ -119,7 +119,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Remediation | 7/7 | In Progress|  |
+| 1. Security Remediation | 7/7 | Complete    | 2026-09-20 |
 | 2. CMS End-to-End (V5.2) | 0/? | Not started | - |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
