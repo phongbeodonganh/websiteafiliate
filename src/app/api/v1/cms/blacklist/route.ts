@@ -7,7 +7,7 @@ import { getAuthUser } from '@/lib/auth';
 // GET /api/v1/cms/blacklist
 export async function GET(req: NextRequest) {
   try {
-    const user = getAuthUser(req);
+    const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/cms/blacklist
 export async function POST(req: NextRequest) {
   try {
-    const user = getAuthUser(req);
+    const user = await getAuthUser(req);
     if (!user) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
 // DELETE /api/v1/cms/blacklist
 export async function DELETE(req: NextRequest) {
   try {
-    const user = getAuthUser(req);
+    const user = await getAuthUser(req);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }
 
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }

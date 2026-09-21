@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }

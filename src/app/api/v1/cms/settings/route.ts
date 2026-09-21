@@ -5,7 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 import { isValidCssColor } from '@/lib/sanitize';
 
 export async function GET(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
   }
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const currentUser = getAuthUser(req);
+  const currentUser = await getAuthUser(req);
   if (!currentUser) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
   }

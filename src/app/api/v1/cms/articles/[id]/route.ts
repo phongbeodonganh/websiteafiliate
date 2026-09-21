@@ -11,7 +11,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }
@@ -75,7 +75,7 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }
@@ -162,7 +162,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }

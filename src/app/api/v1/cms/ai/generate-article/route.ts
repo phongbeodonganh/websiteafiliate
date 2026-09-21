@@ -10,7 +10,7 @@ import { getAuthUser } from '@/lib/auth';
 // POST /api/v1/cms/ai/generate-article
 export async function POST(req: NextRequest) {
   try {
-    const user = getAuthUser(req);
+    const user = await getAuthUser(req);
     if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized. Yêu cầu quyền Admin/Editor.' }, { status: 401 });
     }
