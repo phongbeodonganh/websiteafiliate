@@ -85,7 +85,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 | AUTH-02 | Phase 2 | Complete |
 | AUTH-03 | Phase 2 | Complete |
 | AUTH-04 | Phase 2 | Complete |
-| AFF-04 | Phase 2 | Pending |
+| AFF-04 | Phase 2 | Complete |
 | SEO-01 | Phase 3 | Pending |
 | SEO-02 | Phase 3 | Pending |
 | SEO-03 | Phase 3 | Pending |
