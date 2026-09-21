@@ -19,6 +19,7 @@ import ArticleTableOfContents from '@/components/ArticleTableOfContents';
 import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
+import { buildFaqPageSchema } from '@/lib/faq-jsonld';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
@@ -175,11 +176,17 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     })),
   };
 
+  // C-1: FAQPage JSON-LD dựng từ faq_schema; null khi không có cặp hoàn chỉnh.
+  const faqPageSchema = buildFaqPageSchema(doc.faq_schema);
+
   return (
     <div className={styles.page}>
       <EditorialBackdrop section={categoryName || 'ARTICLE'} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }} />
+      {faqPageSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqPageSchema) }} />
+      )}
       <EditorialHeader />
       <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 
