@@ -373,6 +373,7 @@ export default function AdminDashboardPage() {
   const [showImportSheetModal, setShowImportSheetModal] = useState(false);
   const [importSheetUrl, setImportSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1HNAJ6F_EBzVs0bqBfC2mt2pFQHCtCNlIRGXDRnNvEuQ/edit?gid=802654639#gid=802654639');
   const [isImportingSheet, setIsImportingSheet] = useState(false);
+  const [isReSweeping, setIsReSweeping] = useState(false);
   const [activeBlacklistTab, setActiveBlacklistTab] = useState<'repository' | 'rules'>('repository');
   const [blProjectName, setBlProjectName] = useState('');
   const [blWebsiteUrl, setBlWebsiteUrl] = useState('');
@@ -613,29 +614,65 @@ export default function AdminDashboardPage() {
 
   const handleImportGoogleSheetUrl = async () => {
     if (!importSheetUrl) {
-      alert('Vui lòng nhập URL Google Sheet.');
+      showCmsToast('error', 'Paste a public Google Sheet URL to import.');
       return;
     }
     setIsImportingSheet(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/v1/cms/blacklist/import-sheet-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ sheetUrl: importSheetUrl }),
-      });
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        alert(`📥 NẠP THÀNH CÔNG NGUYÊN SHEET GOOGLE!\n\n📊 Thống kê:\n- Đã nạp thành công: ${data.data.totalImported} domain/dự án cấm từ Google Sheet.\n- Tự động làm sạch: ${data.data.totalSweptCampaigns} chiến dịch affiliate bị ảnh hưởng.`);
-        setShowImportSheetModal(false);
-        loadAllData();
-      } else {
-        alert(`Lỗi nạp Google Sheet: ${data.message}`);
+      const result = await cmsFetch<{ totalImported: number; csvExportUrl: string }>(
+        '/api/v1/cms/blacklist/import-sheet-url',
+        { method: 'POST', body: { sheetUrl: importSheetUrl }, token }
+      );
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
       }
+      const n = result.data.totalImported;
+      // D-05: the sweep runs after the response, so the copy is eventual — it must
+      // not promise a final swept count.
+      showCmsToast(
+        'success',
+        `Imported ${n} domain${n === 1 ? '' : 's'} from the Google Sheet. The retroactive sweep is running in the background — affected campaigns will appear as blacklisted shortly.`
+      );
+      setShowImportSheetModal(false);
+      loadAllData();
     } catch {
-      alert('Không thể kết nối hoặc nạp Google Sheet');
+      handleCmsFailure(0);
     } finally {
       setIsImportingSheet(false);
+    }
+  };
+
+  // D-08: manual re-sweep — re-run the sweep over current blacklist entries AND
+  // restore campaigns no longer matching any active entry back to `active`. Never
+  // touches a manually-inactive campaign.
+  const handleReSweepBlacklist = async () => {
+    setIsReSweeping(true);
+    const token = localStorage.getItem('token');
+    try {
+      const result = await cmsFetch<{ swept: number; restored: number }>(
+        '/api/v1/cms/blacklist/re-sweep',
+        { method: 'POST', token }
+      );
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
+      }
+      const { swept, restored } = result.data;
+      if (swept === 0 && restored === 0) {
+        showCmsToast('success', 'Re-sweep complete. No campaigns needed changing.');
+      } else {
+        showCmsToast(
+          'success',
+          `Re-sweep complete. Swept ${swept} campaign${swept === 1 ? '' : 's'} to blacklisted; restored ${restored} campaign${restored === 1 ? '' : 's'} to active.`
+        );
+      }
+      loadAllData();
+    } catch {
+      handleCmsFailure(0);
+    } finally {
+      setIsReSweeping(false);
     }
   };
 
@@ -2777,6 +2814,11 @@ export default function AdminDashboardPage() {
                         BLACKLISTED
                       </span>
                     )}
+                    {link.status === 'inactive' && (
+                      <span className="bg-slate-500/10 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-600/40">
+                        INACTIVE
+                      </span>
+                    )}
                   </div>
                   {link.productUrl && (
                     <span className="text-[11px] text-cyan-400 font-mono truncate max-w-[180px] block opacity-80 mt-0.5">
@@ -2859,6 +2901,17 @@ export default function AdminDashboardPage() {
               className="px-4 py-2.5 rounded-xl font-bold text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer"
             >
               <FileSpreadsheet size={16} /> 📥 Nạp Cả Sheet Google (Tự Động 100%)
+            </button>
+            <button
+              type="button"
+              disabled={isReSweeping}
+              onClick={handleReSweepBlacklist}
+              title="Re-run the blacklist sweep and restore campaigns no longer blocked"
+              aria-label="Re-run the blacklist sweep and restore campaigns no longer blocked"
+              className="px-4 py-2.5 rounded-xl font-bold text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={isReSweeping ? 'animate-spin' : ''} />
+              {isReSweeping ? 'Re-sweeping…' : 'Re-sweep blacklist'}
             </button>
             <LuxuryButton onClick={() => setShowAddBlacklistModal(true)} className="py-2.5 px-4 text-xs">
               <Plus size={16} /> Thêm Domain Cấm
