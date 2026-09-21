@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: V5.2
-current_phase: 2
+current_phase: 02
 current_phase_name: CMS End-to-End (V5.2)
 status: executing
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-09-21T03:13:08.350Z"
-last_activity: 2026-09-20
-last_activity_desc: Phase 01 complete, transitioned to Phase 2
-state_head: 4e415520914b52b1f18032f4dc893cd9ed4e2650
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-09-21T04:05:29.453Z"
+last_activity: 2026-09-21
+last_activity_desc: Phase 02 execution started
+state_head: 5f36abedb665b8085d1b4da8b1b50a122c8d824d
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 0
   total_plans: 13
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-11)
 
 **Core value:** Admin can create and publish SEO+GEO-ready affiliate articles end-to-end per the governing V5.2 spec, with every click tracked, attributed, and blacklist-protected.
-**Current focus:** Phase 01 — Security Remediation
+**Current focus:** Phase 02 — CMS End-to-End (V5.2)
 
 ## Current Position
 
-Phase: 2 (CMS End-to-End (V5.2)) — READY TO EXECUTE
-Plan: Not started
+Phase: 02 (CMS End-to-End (V5.2)) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-09-20 — Phase 01 complete, transitioned to Phase 2
+Last activity: 2026-09-21 — Phase 02 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01-05 | 11min | 2 tasks | 7 files |
 | Phase 01 P01-06 | 4min | 4 tasks | 9 files |
 | Phase 01 P01-07 | 7min | 2 tasks | 7 files |
+| Phase 02 P01 | 9min | 2 tasks | 31 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 01]: 01-04: auth swap was already present in uncommitted working tree at arrival — committed the existing swap + built the missing parameterized 401 gate (plan's actual new artifact). Per-route 401-vs-403 status pinning preserves the role matrix while failing loudly on silent downgrade
 - [Phase 01]: 01-05: rate-limit all 3 public write endpoints — subscribe hits hard 429+Retry-After at 5/60s/IP (covers /subscribe alias via re-export); click/redirect silent-skip on 60/60s flood cap OR 60s per-IP+link dedupe (no 429 — ClickLog always created on redirect as /blocked ref anchor, only \ skipped on dedupe); failure-lockout login limiter untouched + state-isolated
 - [Phase 01]: 01-07: getClientIp last-hop + Nginx overwrite (D-14) closes XFF first-hop spoofing (T-1-16) — code+config pair; escapeRegExp single shared source in utils.ts applied at both remaining user-text→RegExp sites + 100-char cap (T-1-17) closes the unauthenticated ReDoS vector
+- [Phase 02]: 02-01: getAuthUser is now async (Promise<AuthPayload|null>) and enforces D-15 with one indexed UserModel.findById status gate; malformed/non-ObjectId userId fails closed via Types.ObjectId.isValid pre-check (null, never CastError into 500) — Closes the 24h existing-token window for deactivated/deleted accounts across all 27 CMS routes without per-route duplication
+- [Phase 02]: 02-01: every test whose principal must PASS the guard seeds an active UserModel and signs with its real ObjectId _id; non-ObjectId literals are reserved for fail-closed rejection cases (insider-admin editor-token stays 403) — The fail-closed path only guarantees rejection; it cannot make a pass-case token succeed
 
 ### Pending Todos
 
@@ -110,6 +113,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-20T05:10:25.719Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: D:/affiliate/websiteafiliate/.planning/phases/02-cms-end-to-end-v5-2/02-UI-SPEC.md
+Last session: 2026-09-21T04:04:59.897Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
