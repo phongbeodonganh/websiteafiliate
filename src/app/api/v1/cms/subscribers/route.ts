@@ -5,7 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 import { getCurrentGmtPlus12Period } from '@/lib/insider/digest';
 
 export async function GET(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }

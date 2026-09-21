@@ -8,7 +8,7 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 // SVG is intentionally excluded — it can embed <script>/event-handler XSS payloads
 // that would execute wherever the "image" is rendered.
 export async function POST(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }

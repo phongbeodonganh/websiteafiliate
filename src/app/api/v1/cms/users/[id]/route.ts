@@ -7,7 +7,7 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const currentUser = getAuthUser(req);
+  const currentUser = await getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
@@ -50,7 +50,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const currentUser = getAuthUser(req);
+  const currentUser = await getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }

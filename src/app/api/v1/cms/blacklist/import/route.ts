@@ -7,7 +7,7 @@ import { getAuthUser } from '@/lib/auth';
 // POST /api/v1/cms/blacklist/import
 export async function POST(req: NextRequest) {
   try {
-    const user = getAuthUser(req);
+    const user = await getAuthUser(req);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }

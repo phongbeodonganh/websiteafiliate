@@ -33,6 +33,8 @@ import { readdirSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import jwt from 'jsonwebtoken';
 import { blacklistToken } from '@/lib/tokenBlacklist';
+import { connectToDatabase } from '@/lib/db/mongodb';
+import { UserModel } from '@/lib/db/models';
 
 // Canonical handlers — one import per route file. The [id]-route imports carry the
 // literal bracket segment; TS resolves them like any import path.
@@ -446,8 +448,18 @@ describe('AUTH-01 — logout-blacklisted canonical token rejected uniformly (Pit
 
   it('control: a fresh canonical admin token is NOT rejected on cms/blacklist GET (sanity — proves the rejection above is the blacklist, not a misconfiguration)', async () => {
     const route = ROUTES.find((r) => r.routeFile.endsWith('cms/blacklist/route.ts') && r.verb === 'GET')!;
+    // D-15: the async guard now looks up the principal in the DB, so the control
+    // principal must be a real, active user — otherwise the guard would reject it
+    // for the wrong reason (missing user) and the sanity assertion would be vacuous.
+    await connectToDatabase();
+    const freshAdmin = await UserModel.create({
+      username: `fresh-admin-${Date.now()}-${Math.random()}`,
+      password_hash: 'irrelevant-not-used-in-this-test',
+      role: 'admin',
+      status: 'active',
+    });
     const freshToken = jwt.sign(
-      { userId: 4, username: 'fresh-admin', role: 'admin' },
+      { userId: freshAdmin._id.toString(), username: freshAdmin.username, role: 'admin' },
       CANONICAL_TEST_SECRET,
       { expiresIn: '1h' }
     );

@@ -4,7 +4,7 @@ import { UserModel, ArticleModel } from '@/lib/db/models';
 import { getAuthUser, hashPassword } from '@/lib/auth';
 
 export async function GET(req: Request) {
-  const currentUser = getAuthUser(req);
+  const currentUser = await getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
     return NextResponse.json(
       { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền xem danh sách nhân sự' },
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const currentUser = getAuthUser(req);
+  const currentUser = await getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
     return NextResponse.json(
       { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền thêm nhân sự' },

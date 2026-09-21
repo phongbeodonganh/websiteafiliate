@@ -12,7 +12,7 @@ vi.mock('@/lib/email/mailer', () => ({
 }));
 
 import { signToken } from '@/lib/auth';
-import { ArticleModel, SubscriberModel } from '@/lib/db/models';
+import { ArticleModel, SubscriberModel, UserModel } from '@/lib/db/models';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { POST as sendNowHandler } from '@/app/api/v1/cms/insider/send-now/route';
 import { POST as cronDigestHandler } from '@/app/api/v1/cron/insider-digest/route';
@@ -45,7 +45,16 @@ describe('POST /api/v1/cms/insider/send-now', () => {
     const previousSecret = process.env.INSIDER_CRON_SECRET;
     delete process.env.INSIDER_CRON_SECRET;
     try {
-      const adminToken = signToken({ userId: 'admin-id', username: 'admin', role: 'admin' });
+      // D-15: the guard resolves the principal in the DB, so the admin token must
+      // be signed with a real active user's ObjectId (fail-closed rejects literals).
+      await connectToDatabase();
+      const admin = await UserModel.create({
+        username: 'insider-admin-cron-unset',
+        password_hash: 'irrelevant-not-used-in-this-test',
+        role: 'admin',
+        status: 'active',
+      });
+      const adminToken = signToken({ userId: admin._id.toString(), username: admin.username, role: 'admin' });
       const response = await sendNowHandler(requestWithToken(adminToken));
       expect(response.status).toBe(503);
     } finally {
@@ -61,6 +70,14 @@ describe('POST /api/v1/cms/insider/send-now', () => {
 
     try {
       await connectToDatabase();
+      // D-15: seed a real active admin (distinct username from test 2 — `username`
+      // is unique) and sign the admin token with its ObjectId so the guard passes.
+      const admin = await UserModel.create({
+        username: 'insider-admin-cron-set',
+        password_hash: 'irrelevant-not-used-in-this-test',
+        role: 'admin',
+        status: 'active',
+      });
       const subscriber = await SubscriberModel.create({
         email: 'manual-then-cron@example.com',
         status: 'active',
@@ -76,7 +93,7 @@ describe('POST /api/v1/cms/insider/send-now', () => {
         created_at: new Date('2020-01-01T00:00:00.000Z'),
       });
 
-      const adminToken = signToken({ userId: 'admin-id', username: 'admin', role: 'admin' });
+      const adminToken = signToken({ userId: admin._id.toString(), username: admin.username, role: 'admin' });
       const manualResponse = await sendNowHandler(requestWithToken(adminToken));
       const manualPayload = await manualResponse.json();
 

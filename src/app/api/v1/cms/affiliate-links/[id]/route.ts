@@ -9,7 +9,7 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json(
       { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền quản lý Link Affiliate' },
@@ -79,7 +79,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json(
       { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền quản lý Link Affiliate' },
