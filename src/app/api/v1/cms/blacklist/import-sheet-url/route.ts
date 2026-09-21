@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { BlacklistModel } from '@/lib/db/models';
-import { extractDomainFromUrl, sweepRetroactiveBlacklist } from '@/lib/blacklist';
+import { extractDomainFromUrl, sweepDomains } from '@/lib/blacklist';
+import { scheduleAfterResponse } from '@/lib/schedule-after-response';
 import { getAuthUser } from '@/lib/auth';
 
 // Simple CSV Line Parser handling quotes & commas
@@ -71,8 +72,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    let importedCount = 0;
-    let sweptCampaignsCount = 0;
+    const importedDomains: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -118,18 +118,22 @@ export async function POST(req: NextRequest) {
         { upsert: true, new: true }
       );
 
-      importedCount++;
+      importedDomains.push(domainToSave);
+    }
 
-      // Trigger retroactive sweep for each imported domain
-      const sweepRes = await sweepRetroactiveBlacklist(domainToSave);
-      sweptCampaignsCount += sweepRes.totalUpdatedLinks;
+    // D-05: the retroactive sweep runs AFTER the response is sent, so a 300-row
+    // paste does not serialize 300+ DB writes behind this HTTP response. The sweep
+    // is scheduled only on the success path, after the rows are persisted
+    // (Pitfall 2). The response deliberately reports no synchronous swept count —
+    // the UI copy is eventual.
+    if (importedDomains.length > 0) {
+      scheduleAfterResponse(() => sweepDomains(importedDomains));
     }
 
     return NextResponse.json({
       status: 'success',
       data: {
-        totalImported: importedCount,
-        totalSweptCampaigns: sweptCampaignsCount,
+        totalImported: importedDomains.length,
         csvExportUrl,
       },
     });
