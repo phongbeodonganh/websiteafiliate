@@ -2053,9 +2053,11 @@ export default function AdminDashboardPage() {
     };
 
     const updateFaqRow = (index: number, field: 'question' | 'answer', val: string) => {
-      const updated = [...faqRows];
-      updated[index][field] = val;
-      setFaqRows(updated);
+      // Clone-then-set (immutable) so React sees a new array AND new row object —
+      // a shallow copy would still alias the row, mutating state in place.
+      setFaqRows(
+        faqRows.map((row, i) => (i === index ? { ...row, [field]: val } : row))
+      );
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -2398,36 +2400,49 @@ export default function AdminDashboardPage() {
                     onClick={addFaqRow}
                     className="text-[10px] bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 px-2.5 py-1 rounded font-bold border border-purple-500/30"
                   >
-                    + Thêm Câu Hỏi
+                    + Add question
                   </button>
                 </div>
-                <div className="space-y-2">
-                  {faqRows.map((row, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={row.question}
-                        onChange={(e) => updateFaqRow(idx, 'question', e.target.value)}
-                        placeholder="Câu hỏi (Question)..."
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                      />
-                      <input
-                        type="text"
-                        value={row.answer}
-                        onChange={(e) => updateFaqRow(idx, 'answer', e.target.value)}
-                        placeholder="Câu trả lời (Answer)..."
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFaqRow(idx)}
-                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                {faqRows.length === 0 ? (
+                  <p className="text-xs text-slate-500">
+                    No FAQ pairs yet. Add a question to embed FAQPage structured data on the public article.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {faqRows.map((row, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={row.question}
+                          onChange={(e) => updateFaqRow(idx, 'question', e.target.value)}
+                          placeholder="Question…"
+                          aria-label={`FAQ question ${idx + 1}`}
+                          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
+                        />
+                        <input
+                          type="text"
+                          value={row.answer}
+                          onChange={(e) => updateFaqRow(idx, 'answer', e.target.value)}
+                          placeholder="Answer…"
+                          aria-label={`FAQ answer ${idx + 1}`}
+                          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFaqRow(idx)}
+                          title="Remove this question"
+                          aria-label={`Remove FAQ row ${idx + 1}`}
+                          className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-slate-500">
+                  Rows with an empty question or answer are ignored when saving.
+                </p>
               </div>
             </div>
 

@@ -218,4 +218,75 @@ describe('POST → GET → PUT → GET /api/v1/cms/articles — edit round trip 
       'footer_banner',
     ]);
   });
+
+  // D-10 / CMS-02: the editor builds `faqSchema` as
+  // `faqRows.filter((f) => f.question.trim() && f.answer.trim())` — incomplete
+  // rows are dropped silently, with no toast and no blocking. The API stores
+  // exactly what it receives, so a client-filtered payload must round-trip as
+  // the complete pair only.
+  it('stores exactly the complete FAQ pair when an incomplete row was filtered client-side (D-10)', async () => {
+    const { token } = await seedAdmin();
+
+    const clientFiltered = [
+      { question: 'Is this pair complete?', answer: 'Yes — both sides are non-empty.' },
+    ];
+
+    const createRes = await postArticle(
+      jsonRequest(
+        'POST',
+        token,
+        { ...GEO_PAYLOAD, slug: 'faq-filtered-roundtrip', faqSchema: clientFiltered },
+        'http://localhost/api/v1/cms/articles'
+      )
+    );
+    expect(createRes.status).toBe(201);
+    const id = (await createRes.json()).data.id as string;
+
+    // A later edit adds one incomplete row to the form, but the client filter
+    // drops it before the payload is built — only the complete pair is sent.
+    const putRes = await putArticle(
+      jsonRequest(
+        'PUT',
+        token,
+        { faqSchema: [{ question: 'Still complete?', answer: 'Still non-empty.' }] },
+        `http://localhost/api/v1/cms/articles/${id}`
+      ),
+      params(id)
+    );
+    expect(putRes.status).toBe(200);
+
+    const afterRes = await getArticle(
+      getRequest(token, `http://localhost/api/v1/cms/articles/${id}`),
+      params(id)
+    );
+    const afterJson = await afterRes.json();
+    expect(afterJson.data.faqSchema).toHaveLength(1);
+    expect(afterJson.data.faqSchema[0]).toMatchObject({
+      question: 'Still complete?',
+      answer: 'Still non-empty.',
+    });
+  });
+
+  it('stores an empty FAQ array and still saves when no rows remain (D-10)', async () => {
+    const { token } = await seedAdmin();
+
+    const createRes = await postArticle(
+      jsonRequest(
+        'POST',
+        token,
+        { ...GEO_PAYLOAD, slug: 'faq-empty-roundtrip', faqSchema: [] },
+        'http://localhost/api/v1/cms/articles'
+      )
+    );
+    expect(createRes.status).toBe(201);
+    const id = (await createRes.json()).data.id as string;
+
+    const readRes = await getArticle(
+      getRequest(token, `http://localhost/api/v1/cms/articles/${id}`),
+      params(id)
+    );
+    const readJson = await readRes.json();
+    expect(readJson.data.faqSchema).toEqual([]);
+    expect(readJson.data.status).toBe('published');
+  });
 });
