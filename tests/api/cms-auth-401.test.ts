@@ -49,6 +49,7 @@ import { POST as blacklistCheckPOST } from '@/app/api/v1/cms/blacklist/check/rou
 import { POST as blacklistImportPOST } from '@/app/api/v1/cms/blacklist/import/route';
 import { POST as blacklistSheetPOST } from '@/app/api/v1/cms/blacklist/import-sheet-url/route';
 import { POST as quickBlacklistPOST } from '@/app/api/v1/cms/blacklist/quick-blacklist/route';
+import { POST as reSweepPOST } from '@/app/api/v1/cms/blacklist/re-sweep/route';
 import { GET as categoriesGET, POST as categoriesPOST } from '@/app/api/v1/cms/categories/route';
 import { PUT as categoryPUT, DELETE as categoryDELETE } from '@/app/api/v1/cms/categories/[id]/route';
 import { GET as clickLogsGET } from '@/app/api/v1/cms/click-logs/route';
@@ -180,6 +181,8 @@ const ROUTES: RouteEntry[] = [
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/blacklist/import/route.ts', path: '/api/v1/cms/blacklist/import', expectedNoAuthStatus: 401, hasParamsArg: false, handler: blacklistImportPOST },
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/blacklist/import-sheet-url/route.ts', path: '/api/v1/cms/blacklist/import-sheet-url', expectedNoAuthStatus: 401, hasParamsArg: false, handler: blacklistSheetPOST },
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/blacklist/quick-blacklist/route.ts', path: '/api/v1/cms/blacklist/quick-blacklist', expectedNoAuthStatus: 401, hasParamsArg: false, handler: quickBlacklistPOST },
+  // blacklist/re-sweep — admin-only re-sweep + restore (D-08). Combined guard, 401 like its siblings.
+  { verb: 'POST', routeFile: 'src/app/api/v1/cms/blacklist/re-sweep/route.ts', path: '/api/v1/cms/blacklist/re-sweep', expectedNoAuthStatus: 401, hasParamsArg: false, handler: reSweepPOST },
 
   // categories (GET → 401; admin-only writes → 403)
   { verb: 'GET', routeFile: 'src/app/api/v1/cms/categories/route.ts', path: '/api/v1/cms/categories', expectedNoAuthStatus: 401, hasParamsArg: false, handler: categoriesGET },
