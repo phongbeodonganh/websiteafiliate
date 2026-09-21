@@ -64,14 +64,14 @@ Plans:
   4. An admin manages users (role, status, name, avatar) and the two-level AI-niche taxonomy (categories + sub-categories)
   5. An admin pastes a Google Sheet URL and the blacklist imports with root domains extracted, and matching active affiliate campaigns are deactivated by the retroactive sweeper
 
-**Plans**: 2/6 plans executed
+**Plans**: 3/6 plans executed
 
 Plans:
 **Wave 1**
 
 - [x] 02-01-PLAN.md — Async `getAuthUser` inactive/missing-user lockout across all 27 CMS routes (AUTH-04, D-15, C-2)
 - [x] 02-02-PLAN.md — FAQPage JSON-LD on the public article page + canonical placement render order (CMS-02, CMS-03, C-1, A2)
-- [ ] 02-03-PLAN.md — Editor consolidation: delete orphan editors, shared auth-fetch helper, no-empty-editor guard (CMS-01, CMS-05, D-01/D-02/D-03/D-04)
+- [x] 02-03-PLAN.md — Editor consolidation: delete orphan editors, shared auth-fetch helper, no-empty-editor guard (CMS-01, CMS-05, D-01/D-02/D-03/D-04)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Remediation | 7/7 | Complete    | 2026-09-20 |
-| 2. CMS End-to-End (V5.2) | 2/6 | In Progress|  |
+| 2. CMS End-to-End (V5.2) | 3/6 | In Progress|  |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |

@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 02
 current_phase_name: CMS End-to-End (V5.2)
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-09-21T04:30:39.130Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-09-21T05:39:59.419Z"
 last_activity: 2026-09-21
 last_activity_desc: Phase 02 execution started
-state_head: 4626023dfd4c9b22126b8bf747809de214a82700
+state_head: bc02275835125e5afdc9e975c1b59c2a0aa82f76
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 02 (CMS End-to-End (V5.2)) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-09-21 — Phase 02 execution started
 
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01-07 | 7min | 2 tasks | 7 files |
 | Phase 02 P01 | 9min | 2 tasks | 31 files |
 | Phase 02 P02 | 11min | 2 tasks | 5 files |
+| Phase 02 P03 | 49min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,8 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-01: every test whose principal must PASS the guard seeds an active UserModel and signs with its real ObjectId _id; non-ObjectId literals are reserved for fail-closed rejection cases (insider-admin editor-token stays 403) — The fail-closed path only guarantees rejection; it cannot make a pass-case token succeed
 - [Phase 02]: 02-02: buildFaqPageSchema is a zero-dependency pure builder; completeness rule mirrors the editor's trim() filter exactly and non-string values are dropped defensively (CMS-02, C-1)
 - [Phase 02]: 02-02: canonical placement order pinned as top_cta -> middle_comparison -> footer_banner (A2); unknown/legacy labels rank after the canonical three and are never dropped; stability is explicit via original-index tiebreaker (CMS-03, Pitfall 6)
+- [Phase 02]: 02-03: cmsFetch normalizes every CMS call into an explicit { ok } result and also flags an HTTP-200 error envelope as failure — res.ok alone would permit a silent success (D-03, T-02-09)
+- [Phase 02]: 02-03: the two orphaned admin editor routes are deleted AND proven unreachable by an fs-absence + src-wide grep gate — CMS-05 is satisfied by absence by construction, not by unlinking (D-01/D-02, T-02-10)
 
 ### Pending Todos
 
@@ -116,6 +119,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-21T04:30:39.064Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-09-21T05:39:59.348Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

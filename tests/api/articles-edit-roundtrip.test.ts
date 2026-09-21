@@ -188,7 +188,7 @@ describe('POST → GET → PUT → GET /api/v1/cms/articles — edit round trip 
       params(id)
     );
     const readJson = await readRes.json();
-    expect(readJson.data.affiliatePlacements.map((p: any) => p.position_label)).toEqual([
+    expect(readJson.data.affiliatePlacements.map((p: { position_label: string }) => p.position_label)).toEqual([
       'top_cta',
       'middle_comparison',
       'footer_banner',
