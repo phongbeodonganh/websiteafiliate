@@ -1,6 +1,6 @@
 /**
  * AFF-04 / D-05 — the Google Sheet import returns immediately and schedules the
- * sweep after the response.
+ * sweep after the response; plus the D-08 re-sweep route contract.
  *
  * Proves:
  *   - The import POST persists rows and returns `{ status:'success', data:{ totalImported } }`
@@ -9,14 +9,16 @@
  *     request scope in a direct route-handler test) and marks a matching active link
  *     blacklisted after the background promise settles — and the import does NOT
  *     throw E468 / "outside a request scope".
- *
- * The D-08 re-sweep route cases are added in Task 2.
+ *   - `POST /api/v1/cms/blacklist/re-sweep` is admin-only: 401 with no token, 401
+ *     with an editor token (the combined sibling-blacklist-write guard), 200 for an
+ *     admin — and a manually `inactive` campaign stays `inactive` across it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel, BlacklistModel, UserModel } from '@/lib/db/models';
 import { signToken } from '@/lib/auth';
 import { POST as importSheetPOST } from '@/app/api/v1/cms/blacklist/import-sheet-url/route';
+import { POST as reSweepPOST } from '@/app/api/v1/cms/blacklist/re-sweep/route';
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/ABC123/edit#gid=0';
 const CSV_BODY = [
@@ -43,6 +45,16 @@ function importRequest(token?: string, sheetUrl: string = SHEET_URL) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ sheetUrl }),
+  });
+}
+
+function reSweepRequest(token?: string) {
+  return new Request('http://localhost/api/v1/cms/blacklist/re-sweep', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   });
 }
 
@@ -92,5 +104,58 @@ describe('POST /api/v1/cms/blacklist/import-sheet-url — non-blocking import (D
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect((await AffiliateLinkModel.findById(link._id))?.status).toBe('blacklisted');
+  });
+});
+
+describe('POST /api/v1/cms/blacklist/re-sweep � admin-only sweep + restore (D-08)', () => {
+  it('returns 401 with no token', async () => {
+    const res = await reSweepPOST(reSweepRequest() as never);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 with an editor token (sibling blacklist-write guard, not 403)', async () => {
+    const token = await seedActiveUser('editor');
+    const res = await reSweepPOST(reSweepRequest(token) as never);
+    expect(res.status).toBe(401);
+  });
+
+  it('an admin re-sweep reports both counts and never touches a manually-inactive campaign', async () => {
+    const token = await seedActiveUser('admin');
+    await connectToDatabase();
+
+    await BlacklistModel.create({
+      website_url: 'https://blocked.com',
+      extracted_domain: 'blocked.com',
+      reason: 'test',
+      match_type: 'domain',
+      status: 'active',
+    });
+
+    const match = await AffiliateLinkModel.create({
+      name: 'match',
+      base_url: 'https://blocked.com/x',
+      status: 'active',
+    });
+    const orphan = await AffiliateLinkModel.create({
+      name: 'orphan',
+      base_url: 'https://orphan.com/x',
+      status: 'blacklisted',
+    });
+    const manuallyInactive = await AffiliateLinkModel.create({
+      name: 'inactive',
+      base_url: 'https://blocked.com/promo',
+      status: 'inactive',
+    });
+
+    const res = await reSweepPOST(reSweepRequest(token) as never);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.status).toBe('success');
+    expect(json.data.swept).toBe(1);
+    expect(json.data.restored).toBe(1);
+    expect((await AffiliateLinkModel.findById(match._id))?.status).toBe('blacklisted');
+    expect((await AffiliateLinkModel.findById(orphan._id))?.status).toBe('active');
+    expect((await AffiliateLinkModel.findById(manuallyInactive._id))?.status).toBe('inactive');
   });
 });
