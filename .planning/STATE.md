@@ -5,15 +5,15 @@ current_phase: 02
 current_phase_name: CMS End-to-End (V5.2)
 status: executing
 stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-09-21T07:31:43.326Z"
+last_updated: "2026-09-21T08:32:39.966Z"
 last_activity: 2026-09-21
 last_activity_desc: Phase 02 execution started
-state_head: 478b360b04c61dd79baded70d5a87c3ed81efd40
+state_head: 504266ff6a512ec0161a961088cdd2eebb530199
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -102,6 +102,7 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-05: PUT /api/v1/cms/users/:id drops password from the destructure/assignment entirely (no password_hash write) while adding avatar to both the apply step and the response — D-14 + CLI-only recovery (Phase 1 D-04) preserved
 - [Phase 02]: 02-04: import returns immediately and the batched sweep runs post-response via a scheduleAfterResponse seam that degrades to fire-and-forget outside a request scope; response reports totalImported only (D-05/D-06)
 - [Phase 02]: 02-04: domain matching is hostname equality/subdomain suffix (never a raw substring regex), so badsite.com matches sub.badsite.com but not notbadsite.com or badsite.com.evil.net; restore only flips blacklisted-no-longer-matching links and never touches inactive (D-06/D-07/D-08)
+- [Phase 02]: 02-06: callable seedTaxonomy() (create-only-when-absent, never deletes); editor required-category guard leaves GEO optional (D-09); FAQ filter drops incomplete rows (D-10) — D-11 idempotency testable in isolation; D-09/D-10 preserved by omission from the save guard and payload filter
 
 ### Pending Todos
 

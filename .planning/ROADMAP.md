@@ -64,7 +64,7 @@ Plans:
   4. An admin manages users (role, status, name, avatar) and the two-level AI-niche taxonomy (categories + sub-categories)
   5. An admin pastes a Google Sheet URL and the blacklist imports with root domains extracted, and matching active affiliate campaigns are deactivated by the retroactive sweeper
 
-**Plans**: 5/6 plans executed
+**Plans**: 6/6 plans executed
 
 Plans:
 **Wave 1**
@@ -83,7 +83,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 02-06-PLAN.md — V5.2 §1.2 taxonomy seed (idempotent) + editor category/FAQ/GEO alignment (CMS-04, D-09/D-10/D-11/D-12)
+- [x] 02-06-PLAN.md — V5.2 §1.2 taxonomy seed (idempotent) + editor category/FAQ/GEO alignment (CMS-04, D-09/D-10/D-11/D-12)
 
 ### Phase 3: SEO/GEO & Performance Hardening
 
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Remediation | 7/7 | Complete    | 2026-09-20 |
-| 2. CMS End-to-End (V5.2) | 5/6 | In Progress|  |
+| 2. CMS End-to-End (V5.2) | 6/6 | In Progress|  |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
