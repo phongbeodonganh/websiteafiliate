@@ -62,6 +62,12 @@ import {
   Info,
 } from 'lucide-react';
 
+// D-13: the admin-only CMS tab ids. Used both by `renderContent` (permission-denied
+// fallback for a non-admin that reaches one via URL) and as the single source of
+// truth for which tabs only an admin may see. Every backing route keeps its 403 —
+// this set is a UI contract, not the access control.
+const ADMIN_ONLY_TABS = new Set(['insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
+
 // Reusable Luxury Button Component
 const LuxuryButton = ({ children, variant = 'primary', className = '', ...props }: any) => {
   const baseStyle =
@@ -4148,6 +4154,28 @@ export default function AdminDashboardPage() {
     if (activeTab === 'links' && currentUser.role === 'admin') return <LinksView />;
     if (activeTab === 'blacklist' && currentUser.role === 'admin') return <BlacklistView />;
     if (activeTab === 'settings' && currentUser.role === 'admin') return <SettingsView />;
+
+    // D-13: a known admin-only tab reached by a non-admin (e.g. via URL) renders the
+    // permission contract — never the generic "Under Construction..." placeholder and
+    // never another user's data. UI hiding is cosmetic; the backing routes keep their
+    // 403 (proven by tests/api/cms-rbac-affiliate-403.test.ts).
+    if (currentUser.role !== 'admin' && ADMIN_ONLY_TABS.has(activeTab)) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
+          <div className="flex items-center gap-2 text-rose-400">
+            <ShieldAlert size={20} />
+            <span className="text-sm font-bold">Access denied</span>
+          </div>
+          <p className="text-slate-400 text-sm">You don&apos;t have access to this section.</p>
+          <button
+            onClick={() => navigate({ tab: 'articles' })}
+            className="text-xs font-bold text-rose-400 hover:text-rose-300 underline underline-offset-4"
+          >
+            Back to Articles
+          </button>
+        </div>
+      );
+    }
 
     return <div className="text-slate-500 flex items-center justify-center h-64 text-sm">Under Construction...</div>;
   };
