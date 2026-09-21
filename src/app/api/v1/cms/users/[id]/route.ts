@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { UserModel } from '@/lib/db/models';
-import { getAuthUser, hashPassword } from '@/lib/auth';
+import { getAuthUser } from '@/lib/auth';
 
 export async function PUT(
   req: Request,
@@ -15,7 +15,11 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, role, status, password } = body;
+    // D-14: the CMS must never set/reset/change a password for an existing user —
+    // `password` is not destructured and is never assigned. Password recovery stays
+    // CLI-only (Phase 1 D-04, scripts/reset-admin.ts). A request carrying `password`
+    // is a no-op on `password_hash`.
+    const { name, role, status, avatar } = body;
 
     await connectToDatabase();
     const userDoc = await UserModel.findById(id);
@@ -27,7 +31,7 @@ export async function PUT(
     if (name !== undefined) userDoc.name = name;
     if (role !== undefined) userDoc.role = role;
     if (status !== undefined) userDoc.status = status;
-    if (password) userDoc.password_hash = await hashPassword(password);
+    if (avatar !== undefined) userDoc.avatar = avatar;
 
     await userDoc.save();
 
@@ -39,6 +43,7 @@ export async function PUT(
         role: userDoc.role,
         name: userDoc.name,
         status: userDoc.status,
+        avatar: userDoc.avatar,
       },
     });
   } catch (error) {
