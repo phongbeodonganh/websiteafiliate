@@ -1899,6 +1899,10 @@ export default function AdminDashboardPage() {
           ? editingArticle.faq_list
           : [{ question: '', answer: '' }]
     );
+    // D-12: inline validation for the required Level-1 category. Set on a blocked
+    // save, cleared the moment a category is chosen. GEO fields are never part of
+    // this guard (D-09).
+    const [categoryError, setCategoryError] = useState<string | null>(null);
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
     // này, KHÔNG dùng chung previewArticle/navigate() của trang ngoài, vì
@@ -2057,11 +2061,20 @@ export default function AdminDashboardPage() {
     const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
 
+      // D-12: a top-level category is required. Only title/slug/content/category
+      // are required and `status` must be set; no GEO field participates (D-09).
       const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
       if (isContentEmpty) {
         showCmsToast('error', 'Add a title, slug, and content before saving.');
         return;
       }
+
+      if (!categoryId) {
+        setCategoryError('Choose a primary category.');
+        showCmsToast('error', 'Choose a primary category.');
+        return;
+      }
+      setCategoryError(null);
 
       const token = localStorage.getItem('token');
 
@@ -2487,6 +2500,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => {
                     setCategoryId(e.target.value);
                     setSubCategoryId('');
+                    if (e.target.value) setCategoryError(null);
                   }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
                 >
@@ -2497,11 +2511,14 @@ export default function AdminDashboardPage() {
                     </option>
                   ))}
                 </select>
+                {categoryError && (
+                  <p className="mt-1 text-xs text-rose-400">{categoryError}</p>
+                )}
               </div>
 
               {selectedCategoryObj && selectedCategoryObj.subCategories?.length > 0 && (
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Sub-Category (Level 2)</label>
+                  <label className="block text-xs text-slate-400 mb-1">Sub-category (optional)</label>
                   <select
                     value={subCategoryId}
                     onChange={(e) => setSubCategoryId(e.target.value)}
