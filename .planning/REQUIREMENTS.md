@@ -77,11 +77,11 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 | AUTH-01 | Phase 1 | Complete |
 | AFF-01 | Phase 1 | Complete |
 | AFF-03 | Phase 1 | Complete |
-| CMS-01 | Phase 2 | Pending |
+| CMS-01 | Phase 2 | Complete |
 | CMS-02 | Phase 2 | Complete |
 | CMS-03 | Phase 2 | Complete |
 | CMS-04 | Phase 2 | Pending |
-| CMS-05 | Phase 2 | Pending |
+| CMS-05 | Phase 2 | Complete |
 | AUTH-02 | Phase 2 | Pending |
 | AUTH-03 | Phase 2 | Pending |
 | AUTH-04 | Phase 2 | Pending |
