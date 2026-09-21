@@ -64,7 +64,7 @@ Plans:
   4. An admin manages users (role, status, name, avatar) and the two-level AI-niche taxonomy (categories + sub-categories)
   5. An admin pastes a Google Sheet URL and the blacklist imports with root domains extracted, and matching active affiliate campaigns are deactivated by the retroactive sweeper
 
-**Plans**: 3/6 plans executed
+**Plans**: 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -75,7 +75,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-05-PLAN.md — User management (role/status/name/avatar, no password) + RBAC regression suite + admin-tab hiding (AUTH-02, AUTH-03, AUTH-04, D-13/D-14/D-16)
+- [x] 02-05-PLAN.md — User management (role/status/name/avatar, no password) + RBAC regression suite + admin-tab hiding (AUTH-02, AUTH-03, AUTH-04, D-13/D-14/D-16)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -139,7 +139,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Remediation | 7/7 | Complete    | 2026-09-20 |
-| 2. CMS End-to-End (V5.2) | 3/6 | In Progress|  |
+| 2. CMS End-to-End (V5.2) | 4/6 | In Progress|  |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
