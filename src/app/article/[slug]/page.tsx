@@ -20,6 +20,7 @@ import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { buildFaqPageSchema } from '@/lib/faq-jsonld';
+import { sortPlacementsByPosition } from '@/lib/placement-order';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
@@ -95,15 +96,17 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const authorAvatar = populatedAuthor?.avatar;
   const keyTakeaways = Array.isArray(doc.key_takeaways) ? doc.key_takeaways.map((item) => item.trim()).filter(Boolean) : [];
   const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
-  const placements = populatedPlacements
-    .filter((placement) => placement.affiliate_link_id?._id)
-    .map((placement) => ({
-      positionLabel: placement.position_label as string,
-      link: {
-        id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
-        commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
-      },
-    }));
+  const placements = sortPlacementsByPosition(
+    populatedPlacements
+      .filter((placement) => placement.affiliate_link_id?._id)
+      .map((placement) => ({
+        positionLabel: placement.position_label as string,
+        link: {
+          id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
+          commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
+        },
+      }))
+  );
 
   // Separate first placement for Editor's Verdict (mid-article)
   const verdictPlacement = placements[0] || null;
