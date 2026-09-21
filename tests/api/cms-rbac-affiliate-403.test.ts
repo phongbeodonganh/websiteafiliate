@@ -14,6 +14,8 @@
  * weaken the test (plan Task 2 step 3).
  */
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel, UserModel } from '@/lib/db/models';
 import { signToken } from '@/lib/auth';
@@ -194,3 +196,44 @@ describe('AUTH-03 — the same verbs succeed for an admin token (role-based gate
     expect(await AffiliateLinkModel.findById(link._id)).toBeNull();
   });
 });
+
+/**
+ * D-13 source contract — the admin-tab hiding + permission-denied fallback is a UI
+ * half of RBAC (defense in depth lives on the routes, above). These assertions read
+ * the admin shell source and pin:
+ *   - the permission copy `You don't have access to this section.` is present;
+ *   - every admin-only nav item sits inside the `currentUser.role === 'admin'` gate;
+ *   - `NavItem` returns null for a mismatched `requiredRole`.
+ * A future edit that silently drops the fallback fails here.
+ */
+describe('D-13 — admin shell source contract (hidden tabs + permission fallback)', () => {
+  const adminPagePath = join(process.cwd(), 'src/app/admin/page.tsx');
+  const source = readFileSync(adminPagePath, 'utf8');
+
+  it('renders the permission-denied copy with a link back to Articles', () => {
+    expect(source).toContain("You don&apos;t have access to this section.");
+    expect(source).toContain('Back to Articles');
+    expect(source).toContain('ADMIN_ONLY_TABS');
+  });
+
+  it('keeps the generic Under Construction copy for unknown tabs only', () => {
+    expect(source).toContain('Under Construction...');
+  });
+
+  it('gates every admin-only NavItem inside the role check', () => {
+    const adminGateStart = source.indexOf("currentUser.role === 'admin' && (");
+    expect(adminGateStart).toBeGreaterThan(-1);
+
+    const adminOnlyTabIds = ['insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings'];
+    for (const tabId of adminOnlyTabIds) {
+      const navItemIndex = source.indexOf(`<NavItem id="${tabId}"`);
+      expect(navItemIndex, `NavItem ${tabId} present`).toBeGreaterThan(-1);
+      expect(navItemIndex, `NavItem ${tabId} sits after the admin gate`).toBeGreaterThan(adminGateStart);
+    }
+  });
+
+  it('NavItem returns null for a mismatched requiredRole', () => {
+    expect(source).toContain('if (requiredRole && currentUser.role !== requiredRole) return null;');
+  });
+});
+
