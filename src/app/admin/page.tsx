@@ -315,6 +315,16 @@ export default function AdminDashboardPage() {
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('editor');
 
+  // D-14: edit-user modal state. Covers role/status/name/avatar ONLY — there is
+  // deliberately no password control (password recovery is CLI-only, Phase 1 D-04).
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editUserName, setEditUserName] = useState('');
+  const [editUserRole, setEditUserRole] = useState('editor');
+  const [editUserStatus, setEditUserStatus] = useState<'active' | 'inactive'>('active');
+  const [editUserAvatar, setEditUserAvatar] = useState('');
+  const [savingEditUser, setSavingEditUser] = useState(false);
+
   // Category & Sub-Category Modal States
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategoryObj, setEditingCategoryObj] = useState<any>(null);
@@ -811,6 +821,50 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       alert('Failed to add user');
+    }
+  };
+
+  // D-14: open the edit modal seeded with the row's current values. No password.
+  const openEditUserModal = (u: any) => {
+    setEditingUser(u);
+    setEditUserName(u.name || '');
+    setEditUserRole(u.role || 'editor');
+    setEditUserStatus(u.status === 'inactive' ? 'inactive' : 'active');
+    setEditUserAvatar(u.avatar || '');
+    setShowEditUserModal(true);
+  };
+
+  // D-14: persist role/status/name/avatar via PUT /api/v1/cms/users/:id through the
+  // shared auth-fetch helper (D-03) so a non-2xx surfaces the status-mapped error
+  // toast instead of failing silently. No password is ever sent.
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    const token = localStorage.getItem('token');
+    setSavingEditUser(true);
+    try {
+      const result = await cmsFetch(`/api/v1/cms/users/${editingUser.id}`, {
+        method: 'PUT',
+        token,
+        body: {
+          name: editUserName,
+          role: editUserRole,
+          status: editUserStatus,
+          avatar: editUserAvatar,
+        },
+      });
+
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
+      }
+
+      showCmsToast('success', 'Team member updated.');
+      setShowEditUserModal(false);
+      setEditingUser(null);
+      loadUsersData();
+    } finally {
+      setSavingEditUser(false);
     }
   };
 
@@ -1513,7 +1567,12 @@ export default function AdminDashboardPage() {
                   </div>
                 </td>
                 <td className="p-4 text-right">
-                  <button className="p-2 text-slate-400 hover:text-white" title="Edit User">
+                  <button
+                    onClick={() => openEditUserModal(u)}
+                    className="p-2 text-slate-400 hover:text-white"
+                    title="Edit User"
+                    aria-label={`Edit ${u.name || u.username}`}
+                  >
                     <Edit size={16} />
                   </button>
                 </td>
@@ -3083,12 +3142,96 @@ export default function AdminDashboardPage() {
                     Lưu Vào Blacklist & Sweeper Ngầm
                   </LuxuryButton>
                 </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
-      </div>
-    );
+        </div>
+      )}
+
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white">Edit team member</h3>
+              <button
+                onClick={() => setShowEditUserModal(false)}
+                className="text-slate-400 hover:text-white"
+                title="Close"
+                aria-label="Close edit member dialog"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  placeholder="e.g. John Miller"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Role</label>
+                <select
+                  value={editUserRole}
+                  onChange={(e) => setEditUserRole(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="editor">Editor (Isolated Content)</option>
+                  <option value="author">Author (Article Creator)</option>
+                  <option value="admin">Administrator (Full Access)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Status</label>
+                <select
+                  value={editUserStatus}
+                  onChange={(e) => setEditUserStatus(e.target.value === 'inactive' ? 'inactive' : 'active')}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                {editUserStatus === 'inactive' && (
+                  <p className="mt-2 text-xs text-amber-400/80">
+                    Inactive users are locked out immediately — their existing sessions stop working on the next request.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Avatar</label>
+                <input
+                  type="text"
+                  value={editUserAvatar}
+                  onChange={(e) => setEditUserAvatar(e.target.value)}
+                  placeholder="Optional — first letter of name or username is used when empty"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Passwords are managed outside the CMS. Use the reset-admin CLI to recover an account.
+              </p>
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <LuxuryButton type="submit" disabled={savingEditUser} className="py-2 px-5 text-xs">
+                  {savingEditUser ? 'Saving…' : 'Save changes'}
+                </LuxuryButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   };
 
   // Categories & Sub-Categories View
