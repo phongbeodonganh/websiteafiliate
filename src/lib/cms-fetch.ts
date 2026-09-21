@@ -71,8 +71,13 @@ export async function cmsFetch<T>(
 ): Promise<CmsFetchResult<T>> {
   const { method, body, token, signal } = options;
 
+  // FormData uploads must pass through untouched: the browser sets the multipart
+  // Content-Type (with its boundary) itself, so we neither stringify the body nor
+  // set a Content-Type header.
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   let response: Response;
@@ -80,7 +85,12 @@ export async function cmsFetch<T>(
     response = await fetch(path, {
       method: method || 'GET',
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? (body as FormData)
+            : JSON.stringify(body),
       signal,
     });
   } catch {

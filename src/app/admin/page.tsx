@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { generateObjectId } from '@/lib/utils';
+import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import {
   LayoutDashboard,
@@ -52,6 +53,7 @@ import {
   Upload,
   FileSpreadsheet,
   AlertTriangle,
+  AlertCircle,
   Send,
   Loader2,
   Radio,
@@ -268,6 +270,43 @@ export default function AdminDashboardPage() {
   const [subscriberSearchQuery, setSubscriberSearchQuery] = useState('');
   const [sendingInsiderDigest, setSendingInsiderDigest] = useState(false);
   const [insiderDispatchNotice, setInsiderDispatchNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // D-03: shell-level error/success toast for every CMS call routed through the
+  // shared auth-fetch helper. Error toasts persist until dismissed; success
+  // toasts auto-dismiss (~3s). Mirrors the insiderDispatchNotice shape.
+  const [cmsToast, setCmsToast] = useState<{ type: 'success' | 'error'; text: string; showSignIn?: boolean } | null>(null);
+  const cmsToastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showCmsToast = (
+    type: 'success' | 'error',
+    text: string,
+    options: { showSignIn?: boolean } = {}
+  ) => {
+    if (cmsToastTimerRef.current) {
+      clearTimeout(cmsToastTimerRef.current);
+      cmsToastTimerRef.current = null;
+    }
+    setCmsToast({ type, text, showSignIn: options.showSignIn });
+    // Success auto-dismisses; error persists until dismissed or superseded.
+    if (type === 'success') {
+      cmsToastTimerRef.current = setTimeout(() => setCmsToast(null), 3000);
+    }
+  };
+
+  // Shared failure handler: on 401 clear the stale token and offer Sign in;
+  // otherwise surface the status-mapped copy.
+  const handleCmsFailure = (status: number, message?: string) => {
+    if (status === 401) {
+      try {
+        localStorage.removeItem('token');
+      } catch {
+        // ignore storage failures (private mode)
+      }
+      showCmsToast('error', errorMessageForResponse(401), { showSignIn: true });
+      return;
+    }
+    showCmsToast('error', errorMessageForResponse(status, message));
+  };
 
   // User Modal State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -1775,6 +1814,87 @@ export default function AdminDashboardPage() {
       })()
     );
 
+    // D-03/D-04: load-failure guard. Re-loading the requested article through the
+    // shared helper (which always attaches Authorization) doubles as the
+    // authoritative fetch and the 404/403/401 detector — a failed load renders
+    // the inline error panel, never a blank form a user could overwrite.
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [isLoadingArticle, setIsLoadingArticle] = useState(false);
+    const didLoadRef = React.useRef(false);
+
+    useEffect(() => {
+      if (didLoadRef.current) return;
+      const articleId = editingArticle?.id;
+      if (!articleId) return;
+      didLoadRef.current = true;
+
+      let cancelled = false;
+      setIsLoadingArticle(true);
+      cmsFetch<Record<string, unknown>>(`/api/v1/cms/articles/${articleId}`, {
+        token: localStorage.getItem('token'),
+      }).then((result) => {
+        if (cancelled) return;
+        setIsLoadingArticle(false);
+        if (!result.ok) {
+          setLoadError(result.message);
+          handleCmsFailure(result.status, result.message);
+          return;
+        }
+        const doc = result.data as {
+          title?: string;
+          slug?: string;
+          excerpt?: string;
+          content?: string;
+          status?: string;
+          isFeatured?: boolean;
+          categoryId?: string;
+          subCategoryId?: string;
+          thumbnailUrl?: string;
+          metaTitle?: string;
+          metaDescription?: string;
+          focusKeyword?: string;
+          keyTakeaways?: string[];
+          entities?: string[];
+          faqSchema?: { question: string; answer: string }[];
+          affiliatePlacements?: { affiliate_link_id?: unknown; position_label: string }[];
+        };
+        if (!doc) return;
+        // Re-hydrate from the authoritative server copy.
+        setTitle(doc.title || '');
+        setSlug(doc.slug || '');
+        setExcerpt(doc.excerpt || '');
+        setContent(doc.content || '');
+        if (doc.status) setStatus(doc.status);
+        setIsFeatured(Boolean(doc.isFeatured));
+        setCategoryId(doc.categoryId || '');
+        setSubCategoryId(doc.subCategoryId || '');
+        setThumbnailUrl(doc.thumbnailUrl || '');
+        setMetaTitle(doc.metaTitle || '');
+        setMetaDescription(doc.metaDescription || '');
+        setFocusKeyword(doc.focusKeyword || '');
+        setKeyTakeawaysText(Array.isArray(doc.keyTakeaways) ? doc.keyTakeaways.join('\n') : '');
+        setEntitiesText(Array.isArray(doc.entities) ? doc.entities.join(', ') : '');
+        setFaqRows(
+          Array.isArray(doc.faqSchema) && doc.faqSchema.length > 0
+            ? doc.faqSchema
+            : [{ question: '', answer: '' }]
+        );
+        setAffiliatePlacements(
+          (Array.isArray(doc.affiliatePlacements) ? doc.affiliatePlacements : []).map((p) => {
+            const link = p.affiliate_link_id;
+            const id =
+              link && typeof link === 'object'
+                ? ((link as { _id?: string })._id ?? '')
+                : ((link as string | undefined) ?? '');
+            return { affiliate_link_id: id, position_label: p.position_label };
+          })
+        );
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+
     const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId) || c.id === categoryId);
 
     const handleTitleChange = (val: string) => {
@@ -1837,7 +1957,7 @@ export default function AdminDashboardPage() {
 
       const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
       if (isContentEmpty) {
-        alert('Vui lòng nhập nội dung bài viết');
+        showCmsToast('error', 'Add a title, slug, and content before saving.');
         return;
       }
 
@@ -1875,38 +1995,30 @@ export default function AdminDashboardPage() {
         affiliatePlacements,
       };
 
-      try {
-        let res;
-        if (editingArticle?.id) {
-          res = await fetch(`/api/v1/cms/articles/${editingArticle.id}`, {
+      // D-03: every editor save goes through the shared auth-fetch helper — it
+      // attaches the bearer token and normalizes the response, so a non-2xx can
+      // never be mistaken for a success.
+      const result = editingArticle?.id
+        ? await cmsFetch(`/api/v1/cms/articles/${editingArticle.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(payload),
-          });
-        } else {
-          res = await fetch('/api/v1/cms/articles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(payload),
-          });
-        }
+            token,
+            body: payload,
+          })
+        : await cmsFetch('/api/v1/cms/articles', { method: 'POST', token, body: payload });
 
-        const data = await res.json();
-        if (res.ok && data.status === 'success') {
-          alert('Article saved successfully with GEO & SEO metadata!');
-          try {
-            localStorage.removeItem(draftKey);
-          } catch {
-            // ignore
-          }
-          navigate({ tab: 'articles', editingArticle: null }, { replace: true });
-          loadAllData();
-        } else {
-          alert(`Error: ${data.message}`);
+      if (result.ok) {
+        showCmsToast('success', 'Article saved successfully with GEO & SEO metadata!');
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {
+          // ignore
         }
-      } catch (err) {
-        alert('Failed to save article');
+        navigate({ tab: 'articles', editingArticle: null }, { replace: true });
+        loadAllData();
+        return;
       }
+
+      handleCmsFailure(result.status, result.message);
     };
 
     const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1919,20 +2031,17 @@ export default function AdminDashboardPage() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const res = await fetch('/api/v1/cms/upload', {
+        const result = await cmsFetch<{ url: string }>('/api/v1/cms/upload', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          token,
           body: formData,
         });
-        const json = await res.json();
 
-        if (res.ok && json.status === 'success') {
-          setThumbnailUrl(json.data.url);
+        if (result.ok) {
+          setThumbnailUrl(result.data.url);
         } else {
-          alert(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
+          handleCmsFailure(result.status, result.message);
         }
-      } catch {
-        alert('Đã có lỗi xảy ra khi tải ảnh lên!');
       } finally {
         setIsUploadingThumbnail(false);
         e.target.value = '';
@@ -1953,6 +2062,49 @@ export default function AdminDashboardPage() {
         setAffiliatePlacements([...affiliatePlacements, { affiliate_link_id: affiliateLinkId, position_label: positionLabel }]);
       }
     };
+
+    // D-03/D-04: a failed article load must never render an empty editor form a
+    // user could mistake for a blank article. Render the documented inline error
+    // panel (or a loading panel while the authoritative copy is in flight) in
+    // place of the form.
+    if (loadError) {
+      return (
+        <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in duration-300">
+          <div className="flex items-center gap-4 text-slate-400">
+            <button
+              onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
+              className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
+            >
+              ← Back to Articles List
+            </button>
+          </div>
+          <div className="bg-rose-500/[0.07] border border-rose-500/30 rounded-2xl p-8 text-center space-y-2">
+            <AlertCircle size={28} className="mx-auto text-rose-400" />
+            <p className="text-white font-bold text-sm">This article couldn&apos;t be loaded.</p>
+            <p className="text-slate-400 text-xs">{loadError}</p>
+            <p className="text-slate-500 text-xs">Reload the page, or go back to the article list.</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isLoadingArticle && editingArticle?.id) {
+      return (
+        <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in duration-300">
+          <div className="flex items-center gap-4 text-slate-400">
+            <button
+              onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
+              className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
+            >
+              ← Back to Articles List
+            </button>
+          </div>
+          <div className="flex items-center justify-center h-64 text-slate-500 text-sm gap-2">
+            <Loader2 size={16} className="animate-spin" /> Loading article…
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
@@ -3954,6 +4106,46 @@ export default function AdminDashboardPage() {
               <div className="max-w-7xl mx-auto">{renderContent()}</div>
             </div>
           </main>
+        </div>
+      )}
+
+      {/* D-03: shared auth-fetch toast. Error toasts persist until dismissed
+          (rose border); success auto-dismisses (~3s). A 401 clears the token
+          and offers a Sign in action. */}
+      {cmsToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-5 right-5 z-[60] max-w-sm break-words rounded-2xl border px-5 py-3 text-xs shadow-2xl flex items-start gap-3 ${
+            cmsToast.type === 'success'
+              ? 'bg-slate-900 text-white border-emerald-500/40'
+              : 'bg-slate-900 text-white border-rose-500/50'
+          }`}
+        >
+          {cmsToast.type === 'success' ? (
+            <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="leading-relaxed">{cmsToast.text}</p>
+            {cmsToast.showSignIn && (
+              <Link
+                href="/admin/login"
+                className="mt-1.5 inline-block font-bold text-amber-400 hover:text-amber-300"
+              >
+                Sign in
+              </Link>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setCmsToast(null)}
+            aria-label="Dismiss notification"
+            className="text-slate-500 hover:text-white shrink-0"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
