@@ -1710,6 +1710,89 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white">Edit team member</h3>
+              <button
+                onClick={() => setShowEditUserModal(false)}
+                className="text-slate-400 hover:text-white"
+                title="Close"
+                aria-label="Close edit member dialog"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  placeholder="e.g. John Miller"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Role</label>
+                <select
+                  value={editUserRole}
+                  onChange={(e) => setEditUserRole(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="editor">Editor (Isolated Content)</option>
+                  <option value="author">Author (Article Creator)</option>
+                  <option value="admin">Administrator (Full Access)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Status</label>
+                <select
+                  value={editUserStatus}
+                  onChange={(e) => setEditUserStatus(e.target.value === 'inactive' ? 'inactive' : 'active')}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                {editUserStatus === 'inactive' && (
+                  <p className="mt-2 text-xs text-amber-400/80">
+                    Inactive users are locked out immediately — their existing sessions stop working on the next request.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Avatar</label>
+                <input
+                  type="text"
+                  value={editUserAvatar}
+                  onChange={(e) => setEditUserAvatar(e.target.value)}
+                  placeholder="Optional — first letter of name or username is used when empty"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Passwords are managed outside the CMS. Use the reset-admin CLI to recover an account.
+              </p>
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <LuxuryButton type="submit" disabled={savingEditUser} className="py-2 px-5 text-xs">
+                  {savingEditUser ? 'Saving…' : 'Save changes'}
+                </LuxuryButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -3248,89 +3331,6 @@ export default function AdminDashboardPage() {
                     Lưu Vào Blacklist & Sweeper Ngầm
                   </LuxuryButton>
                 </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEditUserModal && editingUser && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">Edit team member</h3>
-              <button
-                onClick={() => setShowEditUserModal(false)}
-                className="text-slate-400 hover:text-white"
-                title="Close"
-                aria-label="Close edit member dialog"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleEditUser} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Name</label>
-                <input
-                  type="text"
-                  value={editUserName}
-                  onChange={(e) => setEditUserName(e.target.value)}
-                  placeholder="e.g. John Miller"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Role</label>
-                <select
-                  value={editUserRole}
-                  onChange={(e) => setEditUserRole(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="editor">Editor (Isolated Content)</option>
-                  <option value="author">Author (Article Creator)</option>
-                  <option value="admin">Administrator (Full Access)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Status</label>
-                <select
-                  value={editUserStatus}
-                  onChange={(e) => setEditUserStatus(e.target.value === 'inactive' ? 'inactive' : 'active')}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                {editUserStatus === 'inactive' && (
-                  <p className="mt-2 text-xs text-amber-400/80">
-                    Inactive users are locked out immediately — their existing sessions stop working on the next request.
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Avatar</label>
-                <input
-                  type="text"
-                  value={editUserAvatar}
-                  onChange={(e) => setEditUserAvatar(e.target.value)}
-                  placeholder="Optional — first letter of name or username is used when empty"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <p className="text-xs text-slate-500">
-                Passwords are managed outside the CMS. Use the reset-admin CLI to recover an account.
-              </p>
-              <div className="pt-2 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowEditUserModal(false)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <LuxuryButton type="submit" disabled={savingEditUser} className="py-2 px-5 text-xs">
-                  {savingEditUser ? 'Saving…' : 'Save changes'}
-                </LuxuryButton>
-              </div>
             </form>
           </div>
         </div>
