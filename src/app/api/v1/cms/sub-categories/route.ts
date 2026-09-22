@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -40,6 +41,10 @@ export async function POST(req: Request) {
 
     if (!categoryId || !name || !slug) {
       return NextResponse.json({ status: 'error', message: 'CategoryId, name, and slug are required' }, { status: 400 });
+    }
+
+    if (!Types.ObjectId.isValid(String(categoryId))) {
+      return NextResponse.json({ status: 'error', message: 'CategoryId không hợp lệ' }, { status: 400 });
     }
 
     await connectToDatabase();

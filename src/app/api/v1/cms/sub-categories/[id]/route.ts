@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -22,7 +23,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ status: 'error', message: 'Sub-category not found' }, { status: 404 });
     }
 
-    if (categoryId !== undefined) subCat.category_id = categoryId;
+    if (categoryId !== undefined) {
+      if (!Types.ObjectId.isValid(String(categoryId))) {
+        return NextResponse.json({ status: 'error', message: 'CategoryId không hợp lệ' }, { status: 400 });
+      }
+      subCat.category_id = categoryId;
+    }
     if (name !== undefined) subCat.name = name;
     if (slug !== undefined) subCat.slug = slug.toLowerCase().trim().replace(/\s+/g, '-');
     if (description !== undefined) subCat.description = description;
