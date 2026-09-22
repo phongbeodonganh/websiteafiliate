@@ -520,25 +520,40 @@ export default function AdminDashboardPage() {
       setAffUrlBlacklistError(null);
       return;
     }
-    try {
-      const res = await fetch('/api/v1/cms/blacklist/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlStr }),
+    // CR-01: route through cmsFetch so the bearer token is attached automatically,
+    // and fail closed on any non-ok result — a failed check must never clear the
+    // warning or make a blacklisted URL look safe.
+    const token = localStorage.getItem('token');
+    const result = await cmsFetch<{
+      isBlacklisted: boolean;
+      projectName?: string;
+      matchedDomain?: string;
+      reason?: string;
+      blockedCountries?: string[];
+    }>('/api/v1/cms/blacklist/check', {
+      method: 'POST',
+      body: { url: urlStr },
+      token,
+    });
+    if (!result.ok) {
+      setAffUrlBlacklistError({
+        isError: true,
+        projectName: '—',
+        matchedDomain: urlStr,
+        reason: 'Blacklist check unavailable. Retry before saving.',
+        blockedCountries: [],
       });
-      const data = await res.json();
-      if (data.status === 'success' && data.data?.isBlacklisted) {
-        setAffUrlBlacklistError({
-          isError: true,
-          projectName: data.data.projectName,
-          matchedDomain: data.data.matchedDomain,
-          reason: data.data.reason,
-          blockedCountries: data.data.blockedCountries || [],
-        });
-      } else {
-        setAffUrlBlacklistError(null);
-      }
-    } catch {
+      return;
+    }
+    if (result.data?.isBlacklisted) {
+      setAffUrlBlacklistError({
+        isError: true,
+        projectName: result.data.projectName,
+        matchedDomain: result.data.matchedDomain,
+        reason: result.data.reason,
+        blockedCountries: result.data.blockedCountries || [],
+      });
+    } else {
       setAffUrlBlacklistError(null);
     }
   };
