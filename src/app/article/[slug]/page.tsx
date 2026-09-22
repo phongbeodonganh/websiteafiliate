@@ -20,7 +20,7 @@ import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { buildFaqPageSchema } from '@/lib/faq-jsonld';
-import { sortPlacementsByPosition } from '@/lib/placement-order';
+import { sortPlacementsByPosition, splitPlacementsByVerdict } from '@/lib/placement-order';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
@@ -108,9 +108,9 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       }))
   );
 
-  // Separate first placement for Editor's Verdict (mid-article)
-  const verdictPlacement = placements[0] || null;
-  const remainingPlacements = placements.slice(1);
+  // Select verdict by position (middle_comparison preferred) so top_cta stays
+  // in the top/offers slot rather than being consumed as the mid-article verdict.
+  const { verdict: verdictPlacement, remaining: remainingPlacements } = splitPlacementsByVerdict(placements);
 
   const relationFilters = [
     ...(authorId ? [{ author_id: authorId }] : []),
