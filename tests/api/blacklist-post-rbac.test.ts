@@ -64,11 +64,13 @@ async function seedScenario() {
 }
 
 function jsonRequest(method: string, token: string, body: Record<string, unknown>) {
+  // The route handler signature is NextRequest; the auth guard only reads .headers,
+  // so a plain Request with a cast is sufficient (same technique as cms-auth-401.test.ts).
   return new Request('http://localhost/api/v1/cms/blacklist', {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
-  });
+  }) as unknown as Parameters<typeof blacklistPOST>[0];
 }
 
 describe('CR-03 — non-admin POST /cms/blacklist is rejected and no sweep runs', () => {
