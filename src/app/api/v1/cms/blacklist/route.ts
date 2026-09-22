@@ -36,8 +36,11 @@ export async function GET(req: NextRequest) {
 // POST /api/v1/cms/blacklist
 export async function POST(req: NextRequest) {
   try {
+    // CR-03: same combined admin guard as the sibling DELETE (:91-94) — keeps the
+    // no-token path at 401 (cms-auth-401.test.ts stays green) and rejects
+    // editor/author before body parsing so sweepRetroactiveBlacklist is unreachable.
     const user = await getAuthUser(req);
-    if (!user) {
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
 
