@@ -12,7 +12,7 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Security Remediation** - Close the critical exposure holes: destructive seed route, forgeable CMS auth, secrets in source, XSS/ReDoS/abuse vectors (completed 2026-09-20)
-- [ ] **Phase 2: CMS End-to-End (V5.2)** - One working create→edit→publish flow with SEO/GEO fields, correct RBAC, and the blacklist bulk import + sweeper
+- [x] **Phase 2: CMS End-to-End (V5.2)** - One working create→edit→publish flow with SEO/GEO fields, correct RBAC, and the blacklist bulk import + sweeper (completed 2026-09-22)
 - [ ] **Phase 3: SEO/GEO & Performance Hardening** - Accurate view counts, cached public reads, crawl-clean URLs, verified tracking pipeline
 - [ ] **Phase 4: V5.2 Presentation & Brand Alignment** - Bento 7:5 hero, Breaking News ticker, V5.2 palette, settings-driven aidealsuk.com branding (D-003), branded 404/error pages
 - [ ] **Phase 5: Production Readiness** - Modular admin, single canonical schema layer, regression test net, deploy health check + rollback, error monitoring
@@ -64,7 +64,7 @@ Plans:
   4. An admin manages users (role, status, name, avatar) and the two-level AI-niche taxonomy (categories + sub-categories)
   5. An admin pastes a Google Sheet URL and the blacklist imports with root domains extracted, and matching active affiliate campaigns are deactivated by the retroactive sweeper
 
-**Plans**: 6/6 plans executed
+**Plans**: 9/9 plans executed
 
 Plans:
 **Wave 1**
@@ -84,6 +84,12 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 02-06-PLAN.md — V5.2 §1.2 taxonomy seed (idempotent) + editor category/FAQ/GEO alignment (CMS-04, D-09/D-10/D-11/D-12)
+
+**Gap Closure** *(verification gaps)*
+
+- [x] 02-07-PLAN.md — Admin-only guard on POST /cms/blacklist + affiliate pre-check token fix (CR-03, CR-01, AUTH-03, AFF-04)
+- [x] 02-08-PLAN.md — Edit-user modal relocation + sub-category ObjectId pass-through + route validation (CR-02, CR-04, WR-07, AUTH-04, CMS-04)
+- [x] 02-09-PLAN.md — Pure verdict-by-position selector replacing index-based split (WR-02, CMS-03)
 
 ### Phase 3: SEO/GEO & Performance Hardening
 
@@ -139,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Remediation | 7/7 | Complete    | 2026-09-20 |
-| 2. CMS End-to-End (V5.2) | 6/6 | In Progress|  |
+| 2. CMS End-to-End (V5.2) | 9/9 | Complete    | 2026-09-22 |
 | 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |

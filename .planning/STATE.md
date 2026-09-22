@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: V5.2
-current_phase: 02
-current_phase_name: CMS End-to-End (V5.2)
-status: executing
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-09-22T03:39:21.609Z"
-last_activity: 2026-09-21
-last_activity_desc: Phase 02 execution started
-state_head: 32bef0a1ff053f77256ef15367f0395a15a36804
+current_phase: 03
+current_phase_name: SEO/GEO & Performance Hardening
+status: planning
+stopped_at: Phase 02 complete
+last_updated: "2026-09-22T14:20:00.000Z"
+last_activity: 2026-09-22
+last_activity_desc: Phase 02 gap closure complete — 10/10 truths verified
+state_head: 87b35dc
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 16
-  completed_plans: 13
+  completed_phases: 2
+  total_plans: 18
+  completed_plans: 16
 ---
 
 # Project State
@@ -23,22 +23,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-11)
 
 **Core value:** Admin can create and publish SEO+GEO-ready affiliate articles end-to-end per the governing V5.2 spec, with every click tracked, attributed, and blacklist-protected.
-**Current focus:** Phase 02 — CMS End-to-End (V5.2)
+**Current focus:** Phase 03 — SEO/GEO & Performance Hardening
 
 ## Current Position
 
-Phase: 02 (CMS End-to-End (V5.2)) — READY TO EXECUTE
-Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-09-21 — Phase 02 execution started
+Phase: 03 (SEO/GEO & Performance Hardening) — NOT STARTED
+Plan: 0 of ? 
+Status: Phase 02 complete, ready to plan Phase 03
+Last activity: 2026-09-22 — Phase 02 gap closure complete (10/10 truths verified)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7
+- Total plans completed: 16
 - Average duration: —
 - Total execution time: —
 
@@ -47,6 +47,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7 | - | - |
+| 02 | 9 | - | - |
 
 **Recent Trend:**
 
@@ -70,6 +71,9 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P03 | 49min | 3 tasks | 7 files |
 | Phase 02 P05 | 13min | 3 tasks | 5 files |
 | Phase 02 P04 | 20min | 3 tasks | 8 files |
+| Phase 02 P07 | 33min | 2 tasks | 4 files |
+| Phase 02 P08 | 84min | 2 tasks | 5 files |
+| Phase 02 P09 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -103,6 +107,11 @@ Recent decisions affecting current work:
 - [Phase 02]: 02-04: import returns immediately and the batched sweep runs post-response via a scheduleAfterResponse seam that degrades to fire-and-forget outside a request scope; response reports totalImported only (D-05/D-06)
 - [Phase 02]: 02-04: domain matching is hostname equality/subdomain suffix (never a raw substring regex), so badsite.com matches sub.badsite.com but not notbadsite.com or badsite.com.evil.net; restore only flips blacklisted-no-longer-matching links and never touches inactive (D-06/D-07/D-08)
 - [Phase 02]: 02-06: callable seedTaxonomy() (create-only-when-absent, never deletes); editor required-category guard leaves GEO optional (D-09); FAQ filter drops incomplete rows (D-10) — D-11 idempotency testable in isolation; D-09/D-10 preserved by omission from the save guard and payload filter
+- [Phase 02 Gap]: 02-07: POST /cms/blacklist uses the same combined admin guard as sibling DELETE (no-token→401, non-admin→401 not 403 — sibling contract keeps cms-auth-401 inventory unchanged); guard placed before req.json so a rejected principal never reaches the sweep (CR-03, T-02-01/T-02-02)
+- [Phase 02 Gap]: 02-07: handleCheckAffUrl re-wired through cmsFetch with a token and fails closed on !result.ok — a failed check keeps the warning visible instead of clearing it, so a blacklisted base_url can never be silently saved (CR-01, T-02-04)
+- [Phase 02 Gap]: 02-08: Edit-user modal moved into UsersView (co-located with its trigger, matching the Add-user modal pattern); a source-contract test pins the co-location by indexOf ordering so it cannot drift back into BlacklistView (CR-02)
+- [Phase 02 Gap]: 02-08: handleSaveSubCategory passes the ObjectId string through unchanged (String(subCatParentId) not Number()); sub-category routes validate Types.ObjectId.isValid → 400, never a CastError→500 (CR-04, WR-07, T-02-07/T-02-08)
+- [Phase 02 Gap]: 02-09: verdict selected by position (prefer middle_comparison) via pure selectVerdictPlacement/splitPlacementsByVerdict in placement-order.ts, not placements[0] array index — top_cta stays in remaining/offers area so it renders at the top, middle_comparison becomes the mid-article verdict (WR-02, CMS-03)
 
 ### Pending Todos
 
@@ -126,6 +135,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-21T07:29:37.759Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-09-22T14:20:00.000Z
+Stopped at: Phase 02 complete (9/9 plans, 10/10 truths verified)
 Resume file: None
