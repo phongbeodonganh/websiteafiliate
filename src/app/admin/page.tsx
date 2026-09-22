@@ -1138,7 +1138,7 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const payload = {
-      categoryId: Number(subCatParentId),
+      categoryId: subCatParentId ? String(subCatParentId) : undefined,
       name: subCatName,
       slug: subCatSlug || subCatName.toLowerCase().trim().replace(/\s+/g, '-'),
       description: subCatDesc,
