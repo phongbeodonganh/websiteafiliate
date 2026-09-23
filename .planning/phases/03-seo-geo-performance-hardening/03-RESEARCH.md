@@ -533,7 +533,7 @@ export async function checkUrlAgainstBlacklist(url: string): Promise<BlacklistDo
 | A2 | `revalidateTag('sitemap', 'max')` works with a non-`unstable_cache` route (sitemap uses `export const revalidate = 3600` instead of `unstable_cache` tags) | Sitemap Caching | If `revalidateTag` doesn't trigger ISR revalidation of the sitemap route, then CMS publishes won't bust the sitemap cache until the 3600s window expires. Mitigation: `revalidate = 3600` with `stale-while-revalidate` means hittable content is at most 1 hour stale. Acceptable — CONTEXT.md D-08 notes this is reversible. |
 | A3 | `permanentRedirect()` throws `NEXT_REDIRECT` error and terminates rendering, same as `redirect()` | Crawl Hygiene | Core Next.js behavior — 100% confident it works this way given the API docs confirm it [CITED: permanentRedirect.md:46-50]. Low-risk assumption. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Dedupe window size for view counting**
    - What we know: Phase 1 click dedupe uses 60s. CONTEXT.md suggests 60s as matching.
