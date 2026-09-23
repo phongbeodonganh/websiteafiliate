@@ -104,7 +104,18 @@ Plans:
   4. Legacy `/bai-viet/[slug]` URLs redirect to `/article/[slug]`, and every article page embeds `NewsArticle` JSON-LD with its exact canonical URL
   5. A public affiliate click logs IP, user-agent, time and article context, then 302s to the campaign URL with `sub_id` appended; rendered CTAs carry `rel="nofollow sponsored" target="_blank"`
 
-**Plans**: TBD
+**Plans**: 4/4 plans planned
+
+Plans:
+**Wave 1**
+
+- [ ] 03-01-PLAN.md — Article page view counting (after() + $inc + dedupe) + React.cache/unstable_cache layered caching (PERF-02, PERF-01, D-01–D-07)
+- [ ] 03-02-PLAN.md — Crawl hygiene: 308 legacy redirect, /?q= noindex, sitemap/robots ISR, list API excerpt projection + Cache-Control headers (SEO-01, SEO-03, PERF-01, D-08–D-13)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-03-PLAN.md — CMS cache bust wiring (revalidateArticle/revalidateSitemap) + blacklist domain-indexed query optimization (PERF-01, D-04/D-09/D-16)
+- [ ] 03-04-PLAN.md — Regression verification: NewsArticle JSON-LD canonical test + affiliate click tracking pipeline test (SEO-02, AFF-02, D-14/D-15)
 
 ### Phase 4: V5.2 Presentation & Brand Alignment
 
@@ -146,7 +157,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Security Remediation | 7/7 | Complete    | 2026-09-20 |
 | 2. CMS End-to-End (V5.2) | 9/9 | Complete    | 2026-09-22 |
-| 3. SEO/GEO & Performance Hardening | 0/? | Not started | - |
+| 3. SEO/GEO & Performance Hardening | 0/4 | Not started | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
 
