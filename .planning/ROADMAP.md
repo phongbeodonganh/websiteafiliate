@@ -110,7 +110,7 @@ Plans:
 **Wave 1**
 
 - [ ] 03-01-PLAN.md — Article page view counting (after() + $inc + dedupe) + React.cache/unstable_cache layered caching (PERF-02, PERF-01, D-01–D-07)
-- [ ] 03-02-PLAN.md — Crawl hygiene: 308 legacy redirect, /?q= noindex, sitemap/robots ISR, list API excerpt projection + Cache-Control headers (SEO-01, SEO-03, PERF-01, D-08–D-13)
+- [ ] 03-02-PLAN.md — Crawl hygiene: 308 legacy redirect, /?q= noindex, sitemap/robots ISR, list API + homepage excerpt projection with fallback + Cache-Control headers (SEO-01, SEO-03, PERF-01, D-08–D-13)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
