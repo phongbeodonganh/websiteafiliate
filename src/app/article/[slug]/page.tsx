@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, CalendarDays, Clock3, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
+import { headers } from 'next/headers';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
 import AffiliateRecommendationSheet from '@/components/AffiliateRecommendationSheet';
@@ -19,6 +21,7 @@ import ArticleTableOfContents from '@/components/ArticleTableOfContents';
 import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
+import { recordView } from '@/lib/view-count';
 import { buildFaqPageSchema } from '@/lib/faq-jsonld';
 import { sortPlacementsByPosition, splitPlacementsByVerdict } from '@/lib/placement-order';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -82,8 +85,18 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   ]);
   if (!article) notFound();
 
-  article.view_count += 1;
-  await article.save();
+  // D-01/D-02: Fire-and-forget view counting via after() + atomic $inc with
+  // IP+article dedupe. headers() must be called OUTSIDE the after() callback
+  // (after.md §"In Server Components"). The IP extraction follows the same
+  // last-hop XFF logic as getClientIp in src/lib/utils.ts (D-14, SEC-04).
+  const headersList = await headers();
+  const forwarded = headersList.get('x-forwarded-for');
+  const ip = forwarded
+    ? forwarded.split(',').pop()!.trim()
+    : headersList.get('x-real-ip') || '127.0.0.1';
+  const articleIdForView = article._id.toString();
+  after(() => recordView(articleIdForView, ip));
+
   const doc = article.toObject();
   const articleId = doc._id.toString();
   const populatedAuthor = doc.author_id as unknown as PopulatedAuthor | undefined;
