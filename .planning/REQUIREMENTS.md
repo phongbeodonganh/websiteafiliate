@@ -44,7 +44,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 ## Performance (V3 NFR STANDING; TECH-02; BUG-02)
 
 - **PERF-01 — Cached public reads:** backend caching for public feeds per the V3 TTFB/caching NFR — homepage already uses `unstable_cache` + tag revalidation; extend to article-page reads and sitemap/robots (revalidate window instead of per-crawler-request DB hits); list APIs return excerpts, not full article HTML. [V3 NFR; TECH-02; CONCERNS perf #1–3] — status: **partial**
-- **PERF-02 — Accurate view counting:** atomic `$inc` updates (no read-modify-write lost updates) + dedupe window so F5 refreshes don't inflate `view_count`; the RSC render stays read-only. [BUG-02; V5.2 §1.3 view_count; CONCERNS perf #1, bugs #3] — status: **gap**
+- **PERF-02 — Accurate view counting:** atomic `$inc` updates (no read-modify-write lost updates) + dedupe window so F5 refreshes don't inflate `view_count`; the RSC render stays read-only. [BUG-02; V5.2 §1.3 view_count; CONCERNS perf #1, bugs #3] — status: **verify** (implemented 03-01: after() + $inc + consumeDedupe 60s, 4 tests passing)
 
 ## Security (V3 NFR STANDING; CONCERNS audit)
 
@@ -90,7 +90,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 | SEO-02 | Phase 3 | Pending |
 | SEO-03 | Phase 3 | Pending |
 | PERF-01 | Phase 3 | Pending |
-| PERF-02 | Phase 3 | Pending |
+| PERF-02 | Phase 3 | Complete (03-01) |
 | AFF-02 | Phase 3 | Pending |
 | PUB-01 | Phase 4 | Pending |
 | PUB-02 | Phase 4 | Pending |
