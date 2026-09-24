@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 03
 current_phase_name: SEO/GEO & Performance Hardening
 status: executing
-stopped_at: Phase 03 context gathered
-last_updated: "2026-09-23T09:45:06.636Z"
-last_activity: 2026-09-22
-last_activity_desc: Phase 02 gap closure complete — 10/10 truths verified
-state_head: 4b48b2d04a7220e6960a5b34f4fab023f35c1c08
+stopped_at: Plan 03-01 complete, proceeding to 03-02
+last_updated: "2026-09-24T07:45:00.000Z"
+last_activity: 2026-09-24
+last_activity_desc: Plan 03-01 complete (view counting + article caching)
+state_head: b412b85
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -27,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 03 (SEO/GEO & Performance Hardening) — READY TO EXECUTE
-Plan: 0 of ? 
-Status: Ready to execute
-Last activity: 2026-09-22 — Phase 02 gap closure complete (10/10 truths verified)
+Phase: 03 (SEO/GEO & Performance Hardening) — EXECUTING
+Plan: 1 of 4 (03-01 complete)
+Status: Executing Phase 03
+Last activity: 2026-09-24 — Plan 03-01 complete (view counting + article caching)
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: —
 - Total execution time: —
 
@@ -73,7 +73,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02 P04 | 20min | 3 tasks | 8 files |
 | Phase 02 P07 | 33min | 2 tasks | 4 files |
 | Phase 02 P08 | 84min | 2 tasks | 5 files |
-| Phase 02 P09 | 5min | 2 tasks | 3 files |
+| Phase 03 P01 | 30min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -112,6 +112,8 @@ Recent decisions affecting current work:
 - [Phase 02 Gap]: 02-08: Edit-user modal moved into UsersView (co-located with its trigger, matching the Add-user modal pattern); a source-contract test pins the co-location by indexOf ordering so it cannot drift back into BlacklistView (CR-02)
 - [Phase 02 Gap]: 02-08: handleSaveSubCategory passes the ObjectId string through unchanged (String(subCatParentId) not Number()); sub-category routes validate Types.ObjectId.isValid → 400, never a CastError→500 (CR-04, WR-07, T-02-07/T-02-08)
 - [Phase 02 Gap]: 02-09: verdict selected by position (prefer middle_comparison) via pure selectVerdictPlacement/splitPlacementsByVerdict in placement-order.ts, not placements[0] array index — top_cta stays in remaining/offers area so it renders at the top, middle_comparison becomes the mid-article verdict (WR-02, CMS-03)
+- [Phase 03]: 03-01: view counting replaced read-modify-write article.save() with after() fire-and-forget + ArticleModel.updateOne $inc atomic increment + consumeDedupe 60s rolling window — five rapid views from same IP within window increment exactly 1; ObjectId guard prevents CastError into after handler (PERF-02, D-01/D-02/D-03)
+- [Phase 03]: 03-01: article page data wrapped in React.cache() (per-request dedup between generateMetadata and page body = one DB hit) + unstable_cache() (cross-request cache with per-slug tag article-slug, 60s revalidate); fallback try/catch for vitest without Next runtime (PERF-01, D-04/D-05/D-06/D-07)
 
 ### Pending Todos
 
