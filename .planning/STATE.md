@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 03
 current_phase_name: SEO/GEO & Performance Hardening
 status: executing
-stopped_at: Plan 03-01 complete, proceeding to 03-02
-last_updated: "2026-09-24T07:45:00.000Z"
+stopped_at: Plan 03-02 complete, Wave 1 done, proceeding to Wave 2
+last_updated: "2026-09-24T08:35:00.000Z"
 last_activity: 2026-09-24
-last_activity_desc: Plan 03-01 complete (view counting + article caching)
-state_head: b412b85
+last_activity_desc: Plan 03-02 complete (crawl hygiene + list API perf)
+state_head: deb7f1f
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -28,17 +28,17 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 03 (SEO/GEO & Performance Hardening) — EXECUTING
-Plan: 1 of 4 (03-01 complete)
-Status: Executing Phase 03
-Last activity: 2026-09-24 — Plan 03-01 complete (view counting + article caching)
+Plan: 2 of 4 (03-01, 03-02 complete)
+Status: Executing Phase 03 — Wave 1 complete
+Last activity: 2026-09-24 — Plan 03-02 complete (crawl hygiene + list API perf)
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: —
 - Total execution time: —
 
@@ -73,7 +73,7 @@ Progress: [█████░░░░░] 50%
 | Phase 02 P04 | 20min | 3 tasks | 8 files |
 | Phase 02 P07 | 33min | 2 tasks | 4 files |
 | Phase 02 P08 | 84min | 2 tasks | 5 files |
-| Phase 03 P01 | 30min | 2 tasks | 5 files |
+| Phase 03 P02 | 20min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -114,6 +114,7 @@ Recent decisions affecting current work:
 - [Phase 02 Gap]: 02-09: verdict selected by position (prefer middle_comparison) via pure selectVerdictPlacement/splitPlacementsByVerdict in placement-order.ts, not placements[0] array index — top_cta stays in remaining/offers area so it renders at the top, middle_comparison becomes the mid-article verdict (WR-02, CMS-03)
 - [Phase 03]: 03-01: view counting replaced read-modify-write article.save() with after() fire-and-forget + ArticleModel.updateOne $inc atomic increment + consumeDedupe 60s rolling window — five rapid views from same IP within window increment exactly 1; ObjectId guard prevents CastError into after handler (PERF-02, D-01/D-02/D-03)
 - [Phase 03]: 03-01: article page data wrapped in React.cache() (per-request dedup between generateMetadata and page body = one DB hit) + unstable_cache() (cross-request cache with per-slug tag article-slug, 60s revalidate); fallback try/catch for vitest without Next runtime (PERF-01, D-04/D-05/D-06/D-07)
+- [Phase 03]: 03-02: legacy /bai-viet/ switched to permanentRedirect (308); /?q= search URLs produce noindex metadata via conditional generateMetadata; sitemap/robots switched from force-dynamic to ISR revalidate=3600; list API responses strip content field with excerpt fallback from stripped HTML; Cache-Control: public s-maxage=60 on 3 public GET endpoints (SEO-01/SEO-03/PERF-01, D-08/D-10/D-11/D-12/D-13)
 
 ### Pending Todos
 

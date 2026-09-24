@@ -30,9 +30,9 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 
 ## SEO & GEO (V5.2 §2; GO_LIVE SEO-01/02/05)
 
-- **SEO-01 — URL structure & legacy redirects:** article path `/article/[slug]`; every legacy `/bai-viet/[slug]` issues an immediate 301/307 redirect preserving Google rankings. [V5.2 §2.1] — status: **verify** (307 in place — spec-compliant)
+- **SEO-01 — URL structure & legacy redirects:** article path `/article/[slug]`; every legacy `/bai-viet/[slug]` issues an immediate 301/307 redirect preserving Google rankings. [V5.2 §2.1] — status: **verify** (308 permanentRedirect in place — upgraded from 307, implemented 03-02)
 - **SEO-02 — Structured data:** every article page auto-embeds `NewsArticle` JSON-LD (headline, image, datePublished, author, publisher from settings — production publisher per aidealsuk.com brand, D-003) with canonical exactly `https://aidealsuk.com/article/[slug]` (D-003 supersedes V5.2 §2.2's `aiaffiliatehub.com`). [V5.2 §2.2; D-003] — status: **verify** (canonical already resolves to aidealsuk.com)
-- **SEO-03 — Crawl hygiene:** DB-driven sitemap.xml (published articles only) + robots.txt (disallow `/admin`, `/api`); search/filter URLs (`/?q=`) are noindex with a clean canonical. [GO_LIVE SEO-01/02/05; CONCERNS bug #2] — status: **partial** (sitemap/robots done; the `?q=` noindex fix was lost when the search moved to the homepage — currently indexable with canonical `/`)
+- **SEO-03 — Crawl hygiene:** DB-driven sitemap.xml (published articles only) + robots.txt (disallow `/admin`, `/api`); search/filter URLs (`/?q=`) are noindex with a clean canonical. [GO_LIVE SEO-01/02/05; CONCERNS bug #2] — status: **verify** (sitemap/robots ISR 3600s; ?q= noindex via generateMetadata; implemented 03-02)
 - **SEO-04 — Settings-driven site metadata:** the settings singleton drives site title, meta description, focus keywords, canonical, hreflang/geo target, NAP, OG image, JSON-LD, head scripts (V4 field list). Production values follow D-003 (canonical aidealsuk.com, aidealsuk.com brand identity); palette/geoTarget per V5.2 §1.7 (primary #0056B3, accent #FF6B6B, geoTarget "US, VN, GLOBAL"). [V5.2 §1.7; V4 standing; D-003] — status: **partial** (mechanism exists; current defaults already say aidealsuk.com — confirm settings coverage of all V4 fields)
 
 ## Public Frontend (V5.2 §3; V4 §2.2; FE-02)
@@ -43,7 +43,7 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 
 ## Performance (V3 NFR STANDING; TECH-02; BUG-02)
 
-- **PERF-01 — Cached public reads:** backend caching for public feeds per the V3 TTFB/caching NFR — homepage already uses `unstable_cache` + tag revalidation; extend to article-page reads and sitemap/robots (revalidate window instead of per-crawler-request DB hits); list APIs return excerpts, not full article HTML. [V3 NFR; TECH-02; CONCERNS perf #1–3] — status: **partial**
+- **PERF-01 — Cached public reads:** backend caching for public feeds per the V3 TTFB/caching NFR — homepage already uses `unstable_cache` + tag revalidation; extend to article-page reads and sitemap/robots (revalidate window instead of per-crawler-request DB hits); list APIs return excerpts, not full article HTML. [V3 NFR; TECH-02; CONCERNS perf #1–3] — status: **verify** (article page unstable_cache D-04; sitemap/robots ISR D-08; list API content-stripped + Cache-Control D-10/D-11; CMS bust wiring pending in 03-03)
 - **PERF-02 — Accurate view counting:** atomic `$inc` updates (no read-modify-write lost updates) + dedupe window so F5 refreshes don't inflate `view_count`; the RSC render stays read-only. [BUG-02; V5.2 §1.3 view_count; CONCERNS perf #1, bugs #3] — status: **verify** (implemented 03-01: after() + $inc + consumeDedupe 60s, 4 tests passing)
 
 ## Security (V3 NFR STANDING; CONCERNS audit)
@@ -86,10 +86,10 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 | AUTH-03 | Phase 2 | Gaps Found |
 | AUTH-04 | Phase 2 | Gaps Found |
 | AFF-04 | Phase 2 | Gaps Found |
-| SEO-01 | Phase 3 | Pending |
+| SEO-01 | Phase 3 | Complete (03-02) |
 | SEO-02 | Phase 3 | Pending |
-| SEO-03 | Phase 3 | Pending |
-| PERF-01 | Phase 3 | Pending |
+| SEO-03 | Phase 3 | Complete (03-02) |
+| PERF-01 | Phase 3 | In progress (03-01, 03-02 done; 03-03 pending) |
 | PERF-02 | Phase 3 | Complete (03-01) |
 | AFF-02 | Phase 3 | Pending |
 | PUB-01 | Phase 4 | Pending |
