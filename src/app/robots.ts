@@ -3,10 +3,8 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { SettingModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
 
-// Buộc render động mỗi request thay vì cố static-generate lúc `next build` — route
-// này cần MONGODB_URI để đọc canonicalUrl, mà môi trường build (CI) không có (và
-// không nên có) kết nối DB. Runtime thật (VPS) luôn có DB nên vẫn trả đúng dữ liệu.
-export const dynamic = 'force-dynamic';
+// D-08: ISR with 3600s revalidation — one Atlas query per hour max.
+export const revalidate = 3600;
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   await connectToDatabase();

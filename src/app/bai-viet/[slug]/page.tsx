@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>;
@@ -6,6 +6,6 @@ interface ArticlePageProps {
 
 export default async function LegacyArticleRedirect({ params }: ArticlePageProps) {
   const { slug } = await params;
-  redirect(`/article/${slug}`);
+  permanentRedirect(`/article/${slug}`);
 }
 

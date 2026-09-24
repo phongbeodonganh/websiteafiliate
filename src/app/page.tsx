@@ -3,14 +3,23 @@ import TechFinanceNewsClient from "./news-client";
 import { getHomepageArticles } from "@/lib/homepage-articles";
 import { createPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Technology News",
-  description: "Latest technology and finance articles from AIDEALSUK.",
-  path: "/",
-});
-
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+// D-13: Search URLs (/?q=...) produce noindex metadata to keep search-result
+// pages out of Google's index. Normal homepage URL (no q) is fully indexable.
+export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const { q } = await searchParams;
+  const baseMeta = createPageMetadata({
+    title: "Technology News",
+    description: "Latest technology and finance articles from AIDEALSUK.",
+    path: "/",
+  });
+  if (typeof q === "string" && q.trim()) {
+    return { ...baseMeta, robots: { index: false, follow: true } };
+  }
+  return baseMeta;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {

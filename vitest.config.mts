@@ -1,8 +1,17 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
+
+// Stub module for the server-only Next.js guard package (not installed standalone).
+const serverOnlyStub = resolve(import.meta.dirname, 'tests/__server-only-stub.ts');
 
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      // `server-only` is a Next.js build-time guard; not installed as a standalone
+      // package and unnecessary in vitest. Stub it to an empty module.
+      'server-only': serverOnlyStub,
+    },
   },
   test: {
     environment: 'node',

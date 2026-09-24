@@ -3,11 +3,10 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, CategoryModel, SettingModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
 
-// Buộc render động mỗi request thay vì cố static-generate lúc `next build` — route
-// này cần MONGODB_URI để đọc danh sách bài viết, mà môi trường build (CI) không có
-// (và không nên có) kết nối DB. Runtime thật (VPS) luôn có DB, nên bài mới publish
-// hiện ngay trong sitemap mà không cần đợi revalidate hay redeploy.
-export const dynamic = 'force-dynamic';
+// D-08: ISR with 3600s revalidation — one Atlas query per hour max; crawlers
+// get cached sitemap between revalidations. CMS writes bust the cache via
+// revalidateSitemap() (wired in 03-03).
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   await connectToDatabase();

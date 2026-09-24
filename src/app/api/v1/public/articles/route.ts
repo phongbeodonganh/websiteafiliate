@@ -68,12 +68,13 @@ export async function GET(req: Request) {
 
     const result = rawArticles.map((art) => {
       const doc = art.toObject();
+      const strippedContent = doc.content.replace(/<[^>]*>/g, '').trim();
+      const excerptFallback = strippedContent.substring(0, 150).trim() + (strippedContent.length > 150 ? '...' : '');
       return {
         id: doc._id.toString(),
         title: doc.title,
         slug: doc.slug,
-        excerpt: doc.excerpt,
-        content: doc.content,
+        excerpt: doc.excerpt || excerptFallback,
         status: doc.status,
         isFeatured: doc.is_featured,
         viewCount: doc.view_count,
@@ -104,7 +105,7 @@ export async function GET(req: Request) {
           hasMore: page < totalPages,
         },
       },
-      { headers: { 'Cache-Control': 'no-store' } }
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } }
     );
   } catch (error) {
     console.error('Public articles API error:', error);
