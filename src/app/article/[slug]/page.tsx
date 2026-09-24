@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowRight, BookOpen, CalendarDays, Clock3, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { after } from 'next/server';
+import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { headers } from 'next/headers';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
@@ -22,13 +24,11 @@ import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { recordView } from '@/lib/view-count';
-import { buildFaqPageSchema } from '@/lib/faq-jsonld';
+import { buildFaqPageSchema, type FaqPair } from '@/lib/faq-jsonld';
 import { sortPlacementsByPosition, splitPlacementsByVerdict } from '@/lib/placement-order';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
-
-export const revalidate = 0;
 
 interface ArticlePageProps { params: Promise<{ slug: string }>; }
 
@@ -39,107 +39,67 @@ interface PopulatedPlacement {
   affiliate_link_id?: { _id: Types.ObjectId; name: string; commission?: string; cookie?: string };
 }
 
-export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
-  const { slug } = await params;
-  await connectToDatabase();
-  const [article, settings] = await Promise.all([
-    ArticleModel.findOne({ slug, status: 'published' }),
-    SettingModel.findOne(),
-  ]);
-  const siteTitle = settings?.site_title || 'AIDEALSUK';
-  if (!article) return { title: 'Article Not Found', robots: { index: false, follow: false } };
-  const title = article.meta_title || article.title;
-  const description = article.meta_description || article.excerpt || article.content.replace(/<[^>]*>?/gm, '').substring(0, 150);
-  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
-  const canonicalUrl = `${baseUrl}/article/${article.slug}`;
-  const socialImage = normalizeHttpUrl(article.thumbnail_url, normalizeHttpUrl(settings?.ogImageUrl, DEFAULT_OG_IMAGE));
-  return {
-    title,
-    description,
-    alternates: { canonical: canonicalUrl },
-    openGraph: {
-      title, description, url: canonicalUrl, siteName: siteTitle,
-      locale: normalizeLocale(settings?.hreflang), type: 'article',
-      publishedTime: article.created_at ? new Date(article.created_at).toISOString() : undefined,
-      modifiedTime: article.updated_at ? new Date(article.updated_at).toISOString() : undefined,
-      images: [{ url: socialImage, width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [socialImage],
-    },
-  };
+// ---------------------------------------------------------------------------
+// D-04/D-05/D-06/D-07: Article page data fetch with React.cache() (per-request
+// dedup) + unstable_cache() (cross-request caching, 60s TTL, per-slug tag).
+// ---------------------------------------------------------------------------
+
+export interface RelatedArticle {
+  id: string;
+  title: string;
+  slug: string;
+  viewCount: number;
+  thumbnailUrl?: string;
+  categoryName?: string;
+  createdAt: Date;
+  sameAuthor: boolean;
+  sameCategory: boolean;
+  score: number;
 }
 
-export default async function ArticleDetailPage({ params }: ArticlePageProps) {
-  const { slug } = await params;
+export interface ArticlePageData {
+  doc: Record<string, unknown>;
+  settings: Record<string, unknown> | null;
+  relatedArticles: RelatedArticle[];
+  latestArticles: { _id: Types.ObjectId; title: string; slug: string; created_at: Date; view_count: number }[];
+}
+
+async function loadArticlePageData(slug: string): Promise<ArticlePageData | null> {
   await connectToDatabase();
-  const [article, settings] = await Promise.all([
-    ArticleModel.findOne({ slug, status: 'published' })
-      .populate('author_id', 'name username avatar')
-      .populate('category_id', 'name slug')
-      .populate('affiliate_placements.affiliate_link_id', 'name commission cookie'),
-    SettingModel.findOne(),
-  ]);
-  if (!article) notFound();
 
-  // D-01/D-02: Fire-and-forget view counting via after() + atomic $inc with
-  // IP+article dedupe. headers() must be called OUTSIDE the after() callback
-  // (after.md §"In Server Components"). The IP extraction follows the same
-  // last-hop XFF logic as getClientIp in src/lib/utils.ts (D-14, SEC-04).
-  const headersList = await headers();
-  const forwarded = headersList.get('x-forwarded-for');
-  const ip = forwarded
-    ? forwarded.split(',').pop()!.trim()
-    : headersList.get('x-real-ip') || '127.0.0.1';
-  const articleIdForView = article._id.toString();
-  after(() => recordView(articleIdForView, ip));
+  const article = await ArticleModel.findOne({ slug, status: 'published' })
+    .populate('author_id', 'name username avatar')
+    .populate('category_id', 'name slug')
+    .populate('affiliate_placements.affiliate_link_id', 'name commission cookie');
 
-  const doc = article.toObject();
-  const articleId = doc._id.toString();
+  if (!article) return null;
+
+  const doc = article.toObject() as unknown as Record<string, unknown>;
+  const settingsDoc = await SettingModel.findOne().lean();
+  const settings = settingsDoc ? (settingsDoc as unknown as Record<string, unknown>) : null;
+
   const populatedAuthor = doc.author_id as unknown as PopulatedAuthor | undefined;
   const populatedCategory = doc.category_id as unknown as PopulatedCategory | undefined;
   const authorId = populatedAuthor?._id;
   const categoryId = populatedCategory?._id;
-  const categoryName = populatedCategory?.name;
-  const categorySlug = populatedCategory?.slug;
-  const authorName = populatedAuthor?.name || populatedAuthor?.username;
-  const authorAvatar = populatedAuthor?.avatar;
-  const keyTakeaways = Array.isArray(doc.key_takeaways) ? doc.key_takeaways.map((item) => item.trim()).filter(Boolean) : [];
-  const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
-  const placements = sortPlacementsByPosition(
-    populatedPlacements
-      .filter((placement) => placement.affiliate_link_id?._id)
-      .map((placement) => ({
-        positionLabel: placement.position_label as string,
-        link: {
-          id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
-          commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
-        },
-      }))
-  );
-
-  // Select verdict by position (middle_comparison preferred) so top_cta stays
-  // in the top/offers slot rather than being consumed as the mid-article verdict.
-  const { verdict: verdictPlacement, remaining: remainingPlacements } = splitPlacementsByVerdict(placements);
+  const docId = doc._id as Types.ObjectId;
 
   const relationFilters = [
     ...(authorId ? [{ author_id: authorId }] : []),
     ...(categoryId ? [{ category_id: categoryId }] : []),
   ];
+
   const [rawRelated, latestArticles] = await Promise.all([
     relationFilters.length
-      ? ArticleModel.find({ status: 'published', _id: { $ne: doc._id }, $or: relationFilters })
+      ? ArticleModel.find({ status: 'published', _id: { $ne: docId }, $or: relationFilters })
           .populate('author_id', 'name username').populate('category_id', 'name slug')
           .sort({ created_at: -1 }).limit(8)
       : Promise.resolve([]),
-    ArticleModel.find({ status: 'published', _id: { $ne: doc._id } })
-      .select('title slug created_at view_count').sort({ created_at: -1 }).limit(5),
+    ArticleModel.find({ status: 'published', _id: { $ne: docId } })
+      .select('title slug created_at view_count').sort({ created_at: -1 }).limit(5).lean(),
   ]);
 
-  const relatedArticles = rawRelated.map((related) => {
+  const relatedArticles: RelatedArticle[] = rawRelated.map((related) => {
     const relatedAuthor = related.author_id as unknown as PopulatedAuthor | undefined;
     const relatedCategory = related.category_id as unknown as PopulatedCategory | undefined;
     const sameAuthor = Boolean(authorId && relatedAuthor?._id?.toString() === authorId.toString());
@@ -158,28 +118,135 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     };
   }).sort((a, b) => b.score - a.score).slice(0, 4);
 
-  const sanitizedContent = sanitizeArticleContent(doc.content);
-  const articleWords = doc.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length;
+  return {
+    doc,
+    settings,
+    relatedArticles,
+    latestArticles: latestArticles as ArticlePageData['latestArticles'],
+  };
+}
+
+// React.cache() deduplicates within a single request so generateMetadata and
+// the page body share exactly ONE DB round-trip (D-07). unstable_cache() wraps
+// the fetch with a per-slug tag and 60s revalidate for cross-request caching
+// (D-04). In vitest (no Next runtime), unstable_cache throws an invariant
+// error — we catch it and fall back to the inner function directly.
+export const fetchArticlePageData = cache(async (slug: string) => {
+  try {
+    return await unstable_cache(
+      () => loadArticlePageData(slug),
+      [`article-${slug}`],
+      { tags: [`article-${slug}`], revalidate: 60 },
+    )();
+  } catch {
+    // No Next.js runtime (vitest) — call the inner function directly.
+    return loadArticlePageData(slug);
+  }
+});
+
+export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const data = await fetchArticlePageData(slug);
+  if (!data) return { title: 'Article Not Found', robots: { index: false, follow: false } };
+  const doc = data.doc;
+  const settings = data.settings;
+  const title = (doc.meta_title as string) || (doc.title as string);
+  const description = (doc.meta_description as string) || (doc.excerpt as string) || (doc.content as string).replace(/<[^>]*>?/gm, '').substring(0, 150);
+  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl as string | undefined);
+  const canonicalUrl = `${baseUrl}/article/${doc.slug as string}`;
+  const socialImage = normalizeHttpUrl(doc.thumbnail_url as string | undefined, normalizeHttpUrl(settings?.ogImageUrl as string | undefined, DEFAULT_OG_IMAGE));
+  const siteTitle = (settings?.site_title as string) || 'AIDEALSUK';
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title, description, url: canonicalUrl, siteName: siteTitle,
+      locale: normalizeLocale(settings?.hreflang as string | undefined), type: 'article',
+      publishedTime: doc.created_at ? new Date(doc.created_at as Date).toISOString() : undefined,
+      modifiedTime: doc.updated_at ? new Date(doc.updated_at as Date).toISOString() : undefined,
+      images: [{ url: socialImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [socialImage],
+    },
+  };
+}
+
+export default async function ArticleDetailPage({ params }: ArticlePageProps) {
+  const { slug } = await params;
+  const data = await fetchArticlePageData(slug);
+  if (!data) notFound();
+
+  // D-01/D-02: Fire-and-forget view counting via after() + atomic $inc with
+  // IP+article dedupe. headers() must be called OUTSIDE the after() callback
+  // (after.md §"In Server Components"). The IP extraction follows the same
+  // last-hop XFF logic as getClientIp in src/lib/utils.ts (D-14, SEC-04).
+  const headersList = await headers();
+  const forwarded = headersList.get('x-forwarded-for');
+  const ip = forwarded
+    ? forwarded.split(',').pop()!.trim()
+    : headersList.get('x-real-ip') || '127.0.0.1';
+  const articleIdForView = (data.doc._id as Types.ObjectId).toString();
+  after(() => recordView(articleIdForView, ip));
+
+  const doc = data.doc;
+  const articleId = (doc._id as Types.ObjectId).toString();
+  const populatedAuthor = doc.author_id as unknown as PopulatedAuthor | undefined;
+  const populatedCategory = doc.category_id as unknown as PopulatedCategory | undefined;
+  const authorId = populatedAuthor?._id;
+  const categoryId = populatedCategory?._id;
+  const categoryName = populatedCategory?.name;
+  const categorySlug = populatedCategory?.slug;
+  const authorName = populatedAuthor?.name || populatedAuthor?.username;
+  const authorAvatar = populatedAuthor?.avatar;
+  const keyTakeaways = Array.isArray(doc.key_takeaways) ? (doc.key_takeaways as string[]).map((item) => item.trim()).filter(Boolean) : [];
+  const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
+  const placements = sortPlacementsByPosition(
+    populatedPlacements
+      .filter((placement) => placement.affiliate_link_id?._id)
+      .map((placement) => ({
+        positionLabel: placement.position_label as string,
+        link: {
+          id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
+          commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
+        },
+      }))
+  );
+
+  // Select verdict by position (middle_comparison preferred) so top_cta stays
+  // in the top/offers slot rather than being consumed as the mid-article verdict.
+  const { verdict: verdictPlacement, remaining: remainingPlacements } = splitPlacementsByVerdict(placements);
+
+  const relatedArticles = data.relatedArticles;
+  const latestArticles = data.latestArticles;
+  const settings = data.settings;
+
+  const sanitizedContent = sanitizeArticleContent(doc.content as string);
+  const articleWords = (doc.content as string).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length;
   const readingMinutes = Math.max(1, Math.ceil(articleWords / 220));
-  const publishedDate = new Date(doc.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const publishedDate = new Date(doc.created_at as Date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   const articleSchema = {
-    '@context': 'https://schema.org', '@type': 'NewsArticle', headline: doc.title,
-    description: doc.meta_description || doc.excerpt || doc.content.replace(/<[^>]*>?/gm, '').substring(0, 150),
-    ...(doc.thumbnail_url ? { image: [doc.thumbnail_url] } : {}), datePublished: doc.created_at,
-    dateModified: doc.updated_at || doc.created_at,
+    '@context': 'https://schema.org', '@type': 'NewsArticle', headline: doc.title as string,
+    description: (doc.meta_description as string) || (doc.excerpt as string) || (doc.content as string).replace(/<[^>]*>?/gm, '').substring(0, 150),
+    ...(doc.thumbnail_url ? { image: [doc.thumbnail_url as string] } : {}), datePublished: doc.created_at as Date,
+    dateModified: (doc.updated_at as Date) || (doc.created_at as Date),
     ...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
-    mainEntityOfPage: `${normalizeSiteUrl(settings?.canonicalUrl)}/article/${doc.slug}`,
-    publisher: { '@type': 'Organization', name: settings?.site_title || 'AIDEALSUK' },
+    mainEntityOfPage: `${normalizeSiteUrl(settings?.canonicalUrl as string | undefined)}/article/${doc.slug as string}`,
+    publisher: { '@type': 'Organization', name: (settings?.site_title as string) || 'AIDEALSUK' },
   };
 
-  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl as string | undefined);
   const breadcrumbItems = [
     { name: 'Home', url: baseUrl },
     ...(categoryName && categorySlug
       ? [{ name: categoryName, url: `${baseUrl}/category/${categorySlug}` }]
       : []),
-    { name: doc.title, url: `${baseUrl}/article/${doc.slug}` },
+    { name: doc.title as string, url: `${baseUrl}/article/${doc.slug as string}` },
   ];
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -193,7 +260,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   };
 
   // C-1: FAQPage JSON-LD dựng từ faq_schema; null khi không có cặp hoàn chỉnh.
-  const faqPageSchema = buildFaqPageSchema(doc.faq_schema);
+  const faqPageSchema = buildFaqPageSchema(doc.faq_schema as FaqPair[] | undefined);
 
   return (
     <div className={styles.page}>
@@ -217,7 +284,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             </>
           )}
           <span className={styles.breadcrumbSep} aria-hidden="true">&rsaquo;</span>
-          <span className={styles.breadcrumbCurrent}>{doc.title}</span>
+          <span className={styles.breadcrumbCurrent}>{doc.title as string}</span>
         </nav>
       </div>
 
@@ -227,8 +294,8 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             {categoryName && (categorySlug
               ? <Link className={styles.category} href={`/category/${categorySlug}`}>{categoryName}</Link>
               : <p className={styles.category}>{categoryName}</p>)}
-            <h1>{doc.title}</h1>
-            {doc.excerpt && <p className={styles.articleDek}>{doc.excerpt}</p>}
+            <h1>{doc.title as string}</h1>
+            {(doc.excerpt as string) && <p className={styles.articleDek}>{doc.excerpt as string}</p>}
 
             <div className={styles.mastheadFooter}>
               <div className={styles.authorMeta}>
@@ -238,16 +305,16 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
                   <div className={styles.metadata}>
                     <span><CalendarDays aria-hidden="true" /> {publishedDate}</span>
                     <span><Clock3 aria-hidden="true" /> {readingMinutes} min read</span>
-                    <span><Eye aria-hidden="true" /> {doc.view_count || 0} views</span>
+                    <span><Eye aria-hidden="true" /> {doc.view_count as number || 0} views</span>
                   </div>
                 </div>
               </div>
-              <SocialShare title={doc.title} variant="compact" />
+              <SocialShare title={doc.title as string} variant="compact" />
             </div>
           </header>
 
           <figure className={`${styles.heroImage} public-article-image-frame`} data-motion="fade">
-            <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
+            <PublicArticleImage src={doc.thumbnail_url as string} alt={doc.title as string} loading="eager" fetchPriority="high" />
           </figure>
 
           <div className={styles.layout}>
@@ -259,7 +326,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
             </aside>
 
             <div className={styles.readingColumn}>
-              <ArticleReadingTools key={articleId} contentId="article-content" slug={doc.slug} />
+              <ArticleReadingTools key={articleId} contentId="article-content" slug={doc.slug as string} />
               <details className={styles.mobileContents}>
                 <summary>In this article <BookOpen size={16} aria-hidden="true" /></summary>
                 <ArticleTableOfContents key={`mobile-${articleId}`} contentId="article-content" />
@@ -276,7 +343,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               <div className={styles.articleEnd}>
                 <span aria-hidden="true">◆</span>
                 <p>A fresh perspective is worth sharing.</p>
-                <SocialShare title={doc.title} variant="compact" />
+                <SocialShare title={doc.title as string} variant="compact" />
               </div>
 
               {verdictPlacement && (
