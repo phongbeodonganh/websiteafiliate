@@ -116,6 +116,10 @@ const BlacklistSchema = new Schema<IBlacklist>({
   created_at: { type: Date, default: Date.now }
 });
 
+// D-16: Compound index for the domain-indexed blacklist query pattern
+// { extracted_domain: 1, status: 1 } used by checkUrlAgainstBlacklist.
+BlacklistSchema.index({ extracted_domain: 1, status: 1 });
+
 // 5. Article
 export interface IArticle extends Document {
   author_id: mongoose.Types.ObjectId;

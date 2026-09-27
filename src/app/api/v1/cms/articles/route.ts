@@ -4,7 +4,7 @@ import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { slugify, isValidObjectId } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
-import { revalidatePublicArticles } from '@/lib/cache-revalidation';
+import { revalidatePublicArticles, revalidateArticle, revalidateSitemap } from '@/lib/cache-revalidation';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
@@ -135,6 +135,8 @@ export async function POST(req: Request) {
     });
 
     revalidatePublicArticles();
+    revalidateArticle(finalSlug);
+    if (status === 'published') revalidateSitemap();
 
     return NextResponse.json(
       {
