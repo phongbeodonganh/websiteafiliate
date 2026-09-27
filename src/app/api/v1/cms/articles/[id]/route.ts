@@ -4,7 +4,7 @@ import { ArticleModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
-import { revalidatePublicArticles } from '@/lib/cache-revalidation';
+import { revalidatePublicArticles, revalidateArticle, revalidateSitemap } from '@/lib/cache-revalidation';
 import { isArticleContentType } from '@/lib/article-content-types';
 
 // GET /api/v1/cms/articles/:id (Fetch single article for edit form)
@@ -151,6 +151,8 @@ export async function PUT(
 
     await existingArticle.save();
     revalidatePublicArticles();
+    revalidateArticle(existingArticle.slug);
+    revalidateSitemap();
 
     return NextResponse.json({
       status: 'success',
@@ -194,6 +196,7 @@ export async function DELETE(
 
     await ArticleModel.findByIdAndDelete(id);
     revalidatePublicArticles();
+    revalidateSitemap();
 
     return NextResponse.json({
       status: 'success',

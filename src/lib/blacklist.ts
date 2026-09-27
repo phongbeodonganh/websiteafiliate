@@ -66,6 +66,11 @@ export interface BlacklistCheckResult {
 
 /**
  * Perform a real-time cross-check against active MongoDB Blacklist entries.
+ *
+ * D-16: Queries BlacklistModel by `extracted_domain` using `$in: [hostname, rootDomain]`
+ * instead of loading ALL active entries — typically 0-2 docs instead of 300+.
+ * The suffix wildcard match (subdomain → root domain) stays in JS on the filtered
+ * result set.
  */
 export async function checkUrlAgainstBlacklist(urlStr: string): Promise<BlacklistCheckResult> {
   if (!urlStr || typeof urlStr !== 'string') {
@@ -79,10 +84,14 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
     return { isBlacklisted: false };
   }
 
-  // Retrieve active blacklists
-  const activeBlacklists = await BlacklistModel.find({ status: 'active' });
+  // D-16: Domain-indexed query — retrieve only entries whose extracted_domain
+  // matches the URL's hostname or root domain.
+  const candidates = await BlacklistModel.find({
+    extracted_domain: { $in: [hostname, rootDomain] },
+    status: 'active',
+  }).lean();
 
-  for (const item of activeBlacklists) {
+  for (const item of candidates) {
     const targetDomain = (item.extracted_domain || item.website_url || '').toLowerCase().trim();
     const itemFullUrl = (item.website_url || '').toLowerCase().trim();
 
