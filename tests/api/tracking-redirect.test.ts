@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel, ArticleModel, ClickLogModel, UserModel } from '@/lib/db/models';
 import { GET as redirectHandler } from '@/app/api/v1/public/tracking/redirect/route';
+import { _resetForTests } from '@/lib/rateLimit';
 
 async function seedLinkAndArticle(overrides: Partial<{ status: 'active' | 'inactive' | 'blacklisted' }> = {}) {
   await connectToDatabase();
@@ -40,6 +41,12 @@ function redirectRequest(articleId?: string, affiliateLinkId?: string) {
 }
 
 describe('GET /api/v1/public/tracking/redirect', () => {
+  // 01-05 Pitfall 3: clear the limiter Map state so tests in this file that hit
+  // redirect multiple times from the default IP (127.0.0.1) cannot trip the
+  // 60/60s flood cap or the 60s dedupe window.
+  beforeEach(() => {
+    _resetForTests();
+  });
   it('creates a ClickLog and redirects to the affiliate base_url on a valid click', async () => {
     const { affiliateLink, article } = await seedLinkAndArticle();
 
@@ -59,7 +66,7 @@ describe('GET /api/v1/public/tracking/redirect', () => {
 
     const res = await redirectHandler(redirectRequest(undefined, undefined));
 
-    expect(res.status).toBe(307); // NextResponse.redirect default status
+    expect(res.status).toBe(302); // explicit 302 — consistent with all other branches
     const location = res.headers.get('location');
     expect(location).toMatch(/\/$/);
 
@@ -80,18 +87,50 @@ describe('GET /api/v1/public/tracking/redirect', () => {
     expect(after).toBe(before);
   });
 
-  it('does not redirect to the real offer for a blacklisted affiliate link (shows warning page instead)', async () => {
+  it('redirects a blacklisted affiliate link to /blocked?ref=<24-hex> with no-store, never to the offer', async () => {
     const { affiliateLink, article } = await seedLinkAndArticle({ status: 'blacklisted' });
 
     const res = await redirectHandler(redirectRequest(article._id.toString(), affiliateLink._id.toString()));
 
-    // Blacklisted links render an inline HTML warning page (200), not a redirect to the real offer.
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    expect(body).toContain('Đã Chặn Liên Kết Rủi Ro');
+    // Blacklisted links 302 to the /blocked intermediate page (D-11), never to the real offer.
+    expect(res.status).toBe(302);
+    const location = res.headers.get('location');
+    expect(location).toBeTruthy();
+    const locationUrl = new URL(location!);
+    expect(locationUrl.pathname).toBe('/blocked');
+    // Only a server-generated 24-hex ObjectId travels through the URL (D-10).
+    expect(locationUrl.searchParams.get('ref')).toMatch(/^[0-9a-fA-F]{24}$/);
+    expect(res.headers.get('cache-control')).toBe('no-store');
 
     // A blacklisted link still logs the click attempt (created before the blacklist check runs).
     const logs = await ClickLogModel.find({ affiliate_link_id: affiliateLink._id });
     expect(logs).toHaveLength(1);
+  });
+
+  // 01-05 Task 2 (plan must_haves truth #5): a blacklisted click WITH dedupe
+  // active still 302s to /blocked?ref=<24-hex> (the ref anchor guarantee) and
+  // click_count was not incremented on the duplicate.
+  it('blacklisted click with dedupe active still 302s to /blocked?ref=<24-hex> (ref anchor always created)', async () => {
+    const { affiliateLink, article } = await seedLinkAndArticle({ status: 'blacklisted' });
+
+    // First touch: counts (ClickLog created + $inc).
+    const first = await redirectHandler(redirectRequest(article._id.toString(), affiliateLink._id.toString()));
+    expect(first.status).toBe(302);
+    const firstLocation = new URL(first.headers.get('location')!);
+    expect(firstLocation.pathname).toBe('/blocked');
+    expect(firstLocation.searchParams.get('ref')).toMatch(/^[0-9a-fA-F]{24}$/);
+    expect(first.headers.get('cache-control')).toBe('no-store');
+
+    // Second touch inside the 60s dedupe window (same default IP + link): still 302s to /blocked?ref=<24-hex>.
+    const second = await redirectHandler(redirectRequest(article._id.toString(), affiliateLink._id.toString()));
+    expect(second.status).toBe(302);
+    const secondLocation = new URL(second.headers.get('location')!);
+    expect(secondLocation.pathname).toBe('/blocked');
+    expect(secondLocation.searchParams.get('ref')).toMatch(/^[0-9a-fA-F]{24}$/);
+    expect(second.headers.get('cache-control')).toBe('no-store');
+
+    // click_count was NOT incremented on the duplicate (dedupe → $inc skipped).
+    const after = await AffiliateLinkModel.findById(affiliateLink._id).lean();
+    expect(after?.click_count).toBe(1);
   });
 });

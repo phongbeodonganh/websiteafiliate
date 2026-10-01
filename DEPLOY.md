@@ -185,6 +185,17 @@ server {
     # trước khi tới được Next.js (app không kịp trả lỗi JSON rõ ràng của riêng nó).
     client_max_body_size 10m;
 
+    # IMPORTANT (SEC-04 / D-14): X-Forwarded-For phải được OVERWRITE bằng
+    # $remote_addr, KHÔNG append bằng $proxy_add_x_forwarded_for. Lý do: app
+    # (`src/lib/utils.ts` getClientIp) parse LAST hop của header này làm limiter
+    # key + ClickLog.ip_address; nếu append (giữ nguyên entry client gửi kèm
+    # rồi nối $remote_addr vào cuối), kẻ tấn công có thể prepend một IP giả —
+    # lần cuối vẫn đúng nhưng mọi entry ở giữa là dữ liệu không tin cậy và mọi
+    # proxy trung gian khác trong tương lai sẽ làm logic last-hop lệch. Overwrite
+    # bằng $remote_addr đảm bảo header chỉ chứa đúng 1 giá trị attacker-
+    # unforgeable: IP của socket mà Nginx thấy. Đừng đổi lại thành
+    # $proxy_add_x_forwarded_for trừ khi bạn đã có CDN/proxy tin cậy phía trước
+    # Nginx VPS này và đã cập nhật parsing logic trong getClientIp tương ứng.
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -192,14 +203,21 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
     }
 }
 ```
 
-> `X-Real-IP`/`X-Forwarded-For` ở đây quan trọng — [rateLimit.ts](src/lib/rateLimit.ts) (SEC-04) và click tracking dùng đúng 2 header này để nhận diện IP thật của khách truy cập, không có thì mọi request đều bị coi là cùng 1 IP.
+> ⚠️ **Đổi directive này là thao tác deploy thủ công trên VPS** (Nginx config nằm ngoài git — xem §0 mục 9 cho cảnh báo hai khối 80/443). Sau khi áp dụng, verify thấy effect ở code+VPS đầu cuối:
+>
+> 1. SSH vào VPS, mở `/etc/nginx/sites-available/websiteafiliate`.
+> 2. Thay `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;` bằng `proxy_set_header X-Forwarded-For $remote_addr;` (directive ghi đè — không append) **TRONG CẢ HAI block** — block `listen 80` và block `listen 443 ssl` do Certbot sinh (§9 cảnh báo: mỗi block Nginx độc lập; directive đặt ở khối 80 không tự áp cho khối 443). Xác nhận nhanh bằng `sudo nginx -T | grep -B3 'X-Forwarded-For'` — phải thấy directive xuất hiện ở cả hai block.
+> 3. `sudo nginx -t` rồi `sudo systemctl reload nginx`.
+> 4. Verify end-to-end: `curl -H "X-Forwarded-For: 1.2.3.4" https://aidealsuk.com/api/v1/public/tracking/click ...` rồi check `ClickLog.ip_address` trong DB — phải hiện IP thật của bạn, KHÔNG phải `1.2.3.4`. (X-Real-IP sẽ vẫn là `$remote_addr` — redundant của cùng giá trị — nên verify đó cũng xác nhận X-Real-IP branch.) Nếu `1.2.3.4` xuất hiện trong ClickLog, header chưa được overwrite đúng — xem `sudo nginx -T | grep -B3 'X-Forwarded-For'` và đảm bảo cả hai block đã đổi.
+>
+> `X-Real-IP`/`X-Forwarded-For` ở đây quan trọng — [rateLimit.ts](src/lib/rateLimit.ts) (SEC-04) và click tracking dùng đúng 2 header này để nhận diện IP thật của khách truy cập, không có thì mọi request đều bị coi là cùng 1 IP. Plan 05 chuỗi limiter (subscribe 5/60s + click/redirect flood cap + 60s dedupe) key trên `getClientIp(req)` — nếu header này bị spoof, attacker xoay IP giả để vượt cap; overwrite `$remote_addr` chặn lỗ hổng đó.
 
 ```bash
 sudo ln -s /etc/nginx/sites-available/websiteafiliate /etc/nginx/sites-enabled/
@@ -275,6 +293,32 @@ Cần cấu hình 1 lần trên GitHub repo, mục **Settings → Secrets and va
 Nếu `git reset`/`npm install`/`npm run build` lỗi, workflow dừng ngay (nhờ `set -e`) và **không** chạy `pm2 reload` — production vẫn giữ bản build cũ, không bị deploy dở dang.
 
 > Lưu ý: `git reset --hard` sẽ xoá sạch mọi thay đổi cục bộ chưa commit trong `~/websiteafiliate` trên VPS (kể cả `.env.local`? — **không**, `.env.local` nằm ngoài git nên an toàn, chỉ các file *có trong git* mới bị reset). Vì vậy đừng sửa tay code hoặc chạy `npm install` thủ công trực tiếp trong thư mục này trên VPS — mọi thay đổi cục bộ sẽ mất ở lần deploy tiếp theo. Cần thử gì thì làm ở nhánh riêng rồi push, đừng sửa trực tiếp trên server.
+
+---
+
+## 13. Reset admin password (CLI)
+
+**Không có bất kỳ đường dẫn web nào để lấy lại/khôi phục mật khẩu admin — đây là quyết định bảo mật cố ý** (SEC-01/D-04: route seed từng cho phép xoá sạch DB + reset mật khẩu admin từ internet đã bị xoá hẳn và có regression gate chặn việc tái xuất hiện). Khôi phục duy nhất qua CLI, chạy ngay trên VPS, trong thư mục app:
+
+```bash
+cd ~/websiteafiliate
+npx tsx scripts/reset-admin.ts <username> <password>
+```
+
+Ví dụ:
+
+```bash
+npx tsx scripts/reset-admin.ts admin "MatKhauMoi-BaoMat-2026!"
+```
+
+Hành vi của [scripts/reset-admin.ts](scripts/reset-admin.ts):
+
+- **Upsert** (creates-or-resets): username chưa tồn tại → tạo mới user với role `admin`, status `active`; đã tồn tại → đặt lại mật khẩu (bcrypt hash) và kích hoạt lại tài khoản.
+- Chỉ in ra `username` và `id` của user — **không bao giờ in/log giá trị mật khẩu**.
+- Thiếu tham số → in dòng usage và thoát mã 1 mà không chạm vào DB.
+- Yêu cầu `MONGODB_URI` trong `.env.local` (lazy-load, như app) — chạy được ngay sau bước 5 của hướng dẫn này.
+
+Sau khi reset, đăng nhập lại CMS bằng mật khẩu mới. Script này cũng là cách tạo admin đầu tiên (cùng cấu trúc với `scripts/create-admin.ts`).
 
 ---
 

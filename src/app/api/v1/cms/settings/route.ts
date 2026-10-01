@@ -2,8 +2,14 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SettingModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { isValidCssColor } from '@/lib/sanitize';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+
   try {
     await connectToDatabase();
     let currentSettings = await SettingModel.findOne();
@@ -21,6 +27,16 @@ export async function GET() {
 
 
     const doc = currentSettings.toObject();
+
+    // D-07 / plan 06: never return the raw gemini_api_key. Return a masked
+    // hint (last 4 chars prefixed with a masking bullet run) when a key is
+    // set; omit the field entirely when it is empty. This GET is admin-gated
+    // (plan 04 guard), but masking still applies — defense in depth so a key
+    // typo or log-capture bug can never leak the raw value.
+    const geminiApiKeyHint: string | undefined =
+      typeof doc.gemini_api_key === 'string' && doc.gemini_api_key.length > 0
+        ? `••••••••${doc.gemini_api_key.slice(-4)}`
+        : undefined;
 
     return NextResponse.json({
       status: 'success',
@@ -49,6 +65,7 @@ export async function GET() {
         bannerText: doc.banner_text,
         footerText: doc.footer_text,
         customCss: doc.custom_css,
+        ...(geminiApiKeyHint !== undefined ? { geminiApiKeyMasked: geminiApiKeyHint } : {}),
         geoLatitude: doc.geo_latitude,
         geoLongitude: doc.geo_longitude,
         geoRegionName: doc.geo_region_name,
@@ -62,8 +79,11 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  const currentUser = getAuthUser(req);
-  if (!currentUser || currentUser.role !== 'admin') {
+  const currentUser = await getAuthUser(req);
+  if (!currentUser) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+  if (currentUser.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
 
@@ -93,6 +113,7 @@ export async function PUT(req: Request) {
       bannerText,
       footerText,
       customCss,
+      geminiApiKey,
       geoLatitude,
       geoLongitude,
       geoRegionName,
@@ -129,6 +150,28 @@ export async function PUT(req: Request) {
       currentSettings.googleAnalyticsId = trimmed;
     }
     if (googleSiteVerification !== undefined) currentSettings.googleSiteVerification = String(googleSiteVerification).trim();
+    // SEC-03 / CONCERNS #11 (plan 06 Task 4): validate primary_color /
+    // accent_color against the same strict hex color-format regex used at
+    // the render boundary (src/app/layout.tsx via sanitizeCssColor). Drop
+    // the request with a 400 naming the offending field BEFORE any in-place
+    // mutation of currentSettings or .save() — the DB document MUST be
+    // untouched on rejection (verified by tests/api/settings-color-
+    // validation.test.ts). custom_css keeps its current handling below: it
+    // remains admin-only trusted content behind this admin-only PUT
+    // (CONCERNS #11 trusted-admin condition, satisfied by plan 04's guard)
+    // — no new rendering mechanism is added for it.
+    if (primaryColor !== undefined && !isValidCssColor(primaryColor)) {
+      return NextResponse.json(
+        { status: 'error', message: 'primaryColor không hợp lệ — phải là mã hex (#RRGGBB, #RGB, #RRGGBBAA hoặc #RGBA)' },
+        { status: 400 }
+      );
+    }
+    if (accentColor !== undefined && !isValidCssColor(accentColor)) {
+      return NextResponse.json(
+        { status: 'error', message: 'accentColor không hợp lệ — phải là mã hex (#RRGGBB, #RGB, #RRGGBBAA hoặc #RGBA)' },
+        { status: 400 }
+      );
+    }
     if (primaryColor !== undefined) currentSettings.primary_color = primaryColor;
     if (accentColor !== undefined) currentSettings.accent_color = accentColor;
     if (themeMode !== undefined) currentSettings.theme_mode = themeMode;
@@ -138,6 +181,15 @@ export async function PUT(req: Request) {
     if (bannerText !== undefined) currentSettings.banner_text = bannerText;
     if (footerText !== undefined) currentSettings.footer_text = footerText;
     if (customCss !== undefined) currentSettings.custom_css = customCss;
+    // D-07 / plan 06: accept an optional gemini_api_key and persist it. An
+    // empty string explicitly CLEARS the stored key (admin reset); a
+    // non-empty string replaces it. The raw value is never logged or echoed
+    // — the GET response returns only a masked hint, and the PUT response
+    // shape below shares that masking helper.
+    if (geminiApiKey !== undefined) {
+      const trimmedKey = String(geminiApiKey).trim();
+      currentSettings.gemini_api_key = trimmedKey.length > 0 ? trimmedKey : '';
+    }
     if (geoLatitude !== undefined) currentSettings.geo_latitude = Number(geoLatitude);
     if (geoLongitude !== undefined) currentSettings.geo_longitude = Number(geoLongitude);
     if (geoRegionName !== undefined) currentSettings.geo_region_name = geoRegionName;
@@ -146,6 +198,12 @@ export async function PUT(req: Request) {
 
     await currentSettings.save();
     const doc = currentSettings.toObject();
+
+    // Same masked-hint contract as GET (never echo the raw stored key).
+    const geminiApiKeyHint: string | undefined =
+      typeof doc.gemini_api_key === 'string' && doc.gemini_api_key.length > 0
+        ? `••••••••${doc.gemini_api_key.slice(-4)}`
+        : undefined;
 
     return NextResponse.json({
       status: 'success',
@@ -174,6 +232,7 @@ export async function PUT(req: Request) {
         bannerText: doc.banner_text,
         footerText: doc.footer_text,
         customCss: doc.custom_css,
+        ...(geminiApiKeyHint !== undefined ? { geminiApiKeyMasked: geminiApiKeyHint } : {}),
         geoLatitude: doc.geo_latitude,
         geoLongitude: doc.geo_longitude,
         geoRegionName: doc.geo_region_name,

@@ -5,27 +5,12 @@ import { checkUrlAgainstBlacklist } from '@/lib/blacklist';
 import { scrapeLandingPageWithJina } from '@/lib/scraper';
 import { generateSeoGeoArticleWithGemini } from '@/lib/gemini';
 import { sanitizeGeneratedHtmlContent } from '@/lib/sanitizer';
-import { headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'affiliate_secret_key_v3_super_secure';
-
-async function verifyAdminAuth() {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
-  try {
-    return jwt.verify(token, JWT_SECRET) as any;
-  } catch {
-    return null;
-  }
-}
+import { getAuthUser } from '@/lib/auth';
 
 // POST /api/v1/cms/ai/generate-article
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = await getAuthUser(req);
     if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
       return NextResponse.json({ status: 'error', message: 'Unauthorized. Yêu cầu quyền Admin/Editor.' }, { status: 401 });
     }
@@ -87,12 +72,18 @@ export async function POST(req: NextRequest) {
     console.log(`[AI Workflow] Scrape landing page via Jina AI for: ${targetScrapeUrl}`);
     const landingPageContext = await scrapeLandingPageWithJina(targetScrapeUrl);
 
-    // Step 3: Fetch Gemini API Key (from request, env, or settings)
-    let geminiApiKey = userApiKey || process.env.GEMINI_API_KEY || 'AQ.Ab8RN6LfIjKqSrL5Ax8dYKyuMyapxXiVpsfSI2OoFDJuBB-kZQ';
+    // Step 3: Resolve the Gemini API Key per the D-07 precedence chain:
+    //   1. request-supplied userApiKey, then
+    //   2. process.env.GEMINI_API_KEY (primary default), then
+    //   3. settings.gemini_api_key (typed schema field added in plan 06 Task 1).
+    // No fallback literal lives here — missing key surfaces the lib's lazy
+    // fail-fast. The canonical getAuthUser guard plan 04 installed (line 13)
+    // is preserved untouched.
+    let geminiApiKey = userApiKey || process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {
       const dbSetting = await SettingModel.findOne({});
-      if (dbSetting && (dbSetting as any).geminiApiKey) {
-        geminiApiKey = (dbSetting as any).geminiApiKey;
+      if (dbSetting && typeof dbSetting.gemini_api_key === 'string' && dbSetting.gemini_api_key.length > 0) {
+        geminiApiKey = dbSetting.gemini_api_key;
       }
     }
 
@@ -100,7 +91,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           status: 'error',
-          message: 'Vui lòng cung cấp Gemini API Key trong Cài Đặt Hệ Thống hoặc ô nhập API Key.',
+          message:
+            'Vui lòng thiết lập biến môi trường GEMINI_API_KEY hoặc nhập API Key vào trường "Gemini API Key" trong Cài Đặt Hệ Thống.',
         },
         { status: 400 }
       );
@@ -135,11 +127,15 @@ export async function POST(req: NextRequest) {
     const defaultCat = await CategoryModel.findOne({});
     const categoryId = defaultCat ? defaultCat._id : undefined;
 
-    // Resolve author_id safely from JWT or DB fallback
-    let authorId = user?.userId || user?.id || user?._id;
+    // Resolve author_id safely from JWT or DB fallback. Mongoose casts a string into
+    // an ObjectId field; coerce types string|number (canonical AuthPayload.userId) and
+    // raw ObjectId paths down to string so ArticleModel.create stays tsc-clean and
+    // behaves identically to the existing `String(user.userId) -> author_id` convention
+    // used by the canonical-blacklist routes.
+    let authorId: string | undefined = user?.userId !== undefined ? String(user.userId) : undefined;
     if (!authorId) {
       const adminUser = await UserModel.findOne({ role: 'admin' });
-      if (adminUser) authorId = adminUser._id;
+      if (adminUser) authorId = String(adminUser._id);
     }
 
     if (!authorId) {

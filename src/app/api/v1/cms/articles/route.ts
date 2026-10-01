@@ -8,7 +8,7 @@ import { revalidatePublicArticles } from '@/lib/cache-revalidation';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized - Please log in' }, { status: 401 });
   }
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
 
 // POST /api/v1/cms/articles - Create article with GEO and Affiliate placements
 export async function POST(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }

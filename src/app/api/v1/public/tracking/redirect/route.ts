@@ -4,8 +4,18 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { ClickLogModel, AffiliateLinkModel, ArticleModel } from '@/lib/db/models';
 import { getClientIp, appendSubId } from '@/lib/utils';
 import { checkUrlAgainstBlacklist } from '@/lib/blacklist';
+import { consumeDedupe, consumeRequest } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
+
+// SEC-04 abuse controls (D-12, D-13). Redirect route policy: over-cap or
+// duplicate clicks NEVER return 429 to real users. Critical asymmetry vs the
+// click route: the ClickLog row is ALWAYS created here because it is the
+// /blocked ref anchor (plan 01's contract); only the click_count $inc is
+// skipped on dedupe/over-cap (SEC-04/dedupe-vs-ref assumption).
+const REDIRECT_FLOOD_LIMIT = 60; // per IP per window
+const FLOOD_WINDOW_MS = 60 * 1000;
+const DEDUPE_WINDOW_MS = 60 * 1000;
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -14,7 +24,7 @@ export async function GET(req: Request) {
   const fallbackUrl = new URL('/', req.url);
 
   if (!affiliateLinkId || !mongoose.isValidObjectId(affiliateLinkId)) {
-    return NextResponse.redirect(fallbackUrl);
+    return NextResponse.redirect(fallbackUrl, 302);
   }
 
   try {
@@ -28,71 +38,50 @@ export async function GET(req: Request) {
     ]);
 
     if (!affiliateLink) {
-      return NextResponse.redirect(fallbackUrl);
+      return NextResponse.redirect(fallbackUrl, 302);
     }
 
-    await Promise.all([
+    // SEC-04: flood cap + dedupe BEFORE the write pair, but with the redirect-
+    // route ref-anchor contract: the ClickLog is ALWAYS created (it is the
+    // /blocked ref anchor from plan 01); only the $inc is skipped on dedupe
+    // or over-cap (the redirect route has no behavior change visible to the
+    // caller — it always 302s).
+    const ip = getClientIp(req);
+    const floodCap = consumeRequest(`redirect:${ip}`, REDIRECT_FLOOD_LIMIT, FLOOD_WINDOW_MS);
+    const isDuplicate = consumeDedupe(`${ip}:${affiliateLink._id.toString()}`, DEDUPE_WINDOW_MS);
+    const skipIncrement = !floodCap.allowed || isDuplicate;
+
+    // The ClickLog create result is bound (not discarded): its _id becomes the
+    // `ref` the /blocked page uses to re-resolve blacklist state from the DB (D-10).
+    const [clickLog] = await Promise.all([
       ClickLogModel.create({
         ...(article ? { article_id: article._id } : {}),
         affiliate_link_id: affiliateLink._id,
-        ip_address: getClientIp(req),
+        ip_address: ip,
       }),
-      AffiliateLinkModel.findByIdAndUpdate(
-        affiliateLink._id,
-        { $inc: { click_count: 1 } },
-        { new: true, strict: false }
-      ),
+      ...(skipIncrement
+        ? []
+        : [
+            AffiliateLinkModel.findByIdAndUpdate(
+              affiliateLink._id,
+              { $inc: { click_count: 1 } },
+              { new: true, strict: false }
+            ),
+          ]),
     ]);
 
     const blacklistCheck = await checkUrlAgainstBlacklist(affiliateLink.base_url);
     if (affiliateLink.status === 'blacklisted' || blacklistCheck.isBlacklisted) {
-      const reason =
-        blacklistCheck.reason ||
-        'Nền tảng vi phạm chính sách an toàn / bùng hoa hồng';
-      const projectName = blacklistCheck.projectName || affiliateLink.name;
-
-      const warningHtml = `
-        <!DOCTYPE html>
-        <html lang="vi">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Cảnh Báo An Toàn | AI AFFILIATE HUB</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-        </head>
-        <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex items-center justify-center p-6">
-          <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl space-y-6">
-            <div class="w-16 h-16 bg-rose-500/20 text-rose-500 rounded-2xl flex items-center justify-center mx-auto text-3xl font-bold border border-rose-500/30">
-              🛑
-            </div>
-            <div>
-              <span class="text-xs font-bold uppercase tracking-widest text-rose-400 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">
-                Blacklist Interceptor Guard
-              </span>
-              <h1 class="text-2xl font-black text-white mt-3 mb-2">Đã Chặn Liên Kết Rủi Ro</h1>
-              <p class="text-xs text-slate-400 leading-relaxed">
-                Đường dẫn tới dự án <strong class="text-rose-400">${projectName}</strong> đã bị hệ thống <strong class="text-amber-400">AI AFFILIATE HUB</strong> vô hiệu hóa nhằm bảo vệ độc giả.
-              </p>
-            </div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left text-xs space-y-2">
-              <p class="text-slate-400"><strong class="text-slate-200">Lý do chặn:</strong> ${reason}</p>
-              ${blacklistCheck.blockedCountries &&
-          blacklistCheck.blockedCountries.length > 0
-          ? `<p class="text-slate-400"><strong class="text-slate-200">Quốc gia cấm:</strong> ${blacklistCheck.blockedCountries.join(', ')}</p>`
-          : ''
-        }
-            </div>
-            <a href="/" class="inline-block w-full py-3.5 bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 text-slate-950 font-bold rounded-xl text-sm hover:scale-[1.02] transition-transform">
-              ← Quay Về Trang Chủ An Toàn
-            </a>
-          </div>
-        </body>
-        </html>
-      `;
-
-      return new Response(warningHtml, {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
+      // 302 through the intermediate warning page (D-11). The only URL-borne
+      // value is the server-generated 24-hex ClickLog id — never attacker-
+      // controlled text. NextResponse.redirect requires an absolute URL and
+      // defaults to 307, so both are explicit.
+      // The ref anchor is ALWAYS created even when dedupe/flood-cap is active —
+      // see must_haves truth #5 (must_haves.dedupe-vs-ref assumption).
+      const blockedUrl = new URL(`/blocked?ref=${clickLog._id.toString()}`, req.url);
+      const response = NextResponse.redirect(blockedUrl, 302);
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
     }
 
     const destinationUrl = appendSubId(
@@ -104,6 +93,6 @@ export async function GET(req: Request) {
     return response;
   } catch (error) {
     console.error('Redirect tracking error:', error);
-    return NextResponse.redirect(fallbackUrl);
+    return NextResponse.redirect(fallbackUrl, 302);
   }
 }

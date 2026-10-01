@@ -1,23 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { BlacklistModel } from '@/lib/db/models';
-import { extractDomainFromUrl, sweepRetroactiveBlacklist } from '@/lib/blacklist';
-import { headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'nexus_super_secret_jwt_key_2026';
-
-async function verifyAdminAuth() {
-  const headersList = await headers();
-  const authHeader = headersList.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
-  const token = authHeader.split(' ')[1];
-  try {
-    return jwt.verify(token, JWT_SECRET) as any;
-  } catch {
-    return null;
-  }
-}
+import { extractDomainFromUrl, sweepDomains } from '@/lib/blacklist';
+import { scheduleAfterResponse } from '@/lib/schedule-after-response';
+import { getAuthUser } from '@/lib/auth';
 
 // Simple CSV Line Parser handling quotes & commas
 function parseCsvLine(line: string): string[] {
@@ -48,7 +34,7 @@ function parseCsvLine(line: string): string[] {
 // POST /api/v1/cms/blacklist/import-sheet-url
 export async function POST(req: NextRequest) {
   try {
-    const user = await verifyAdminAuth();
+    const user = await getAuthUser(req);
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
     }
@@ -86,8 +72,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    let importedCount = 0;
-    let sweptCampaignsCount = 0;
+    const importedDomains: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -128,23 +113,27 @@ export async function POST(req: NextRequest) {
           reason: reason || 'Bắt Ads - Không trả tiền',
           blocked_countries: blockedCountries,
           status: 'active',
-          created_by: user.id,
+          created_by: user.userId,
         },
         { upsert: true, new: true }
       );
 
-      importedCount++;
+      importedDomains.push(domainToSave);
+    }
 
-      // Trigger retroactive sweep for each imported domain
-      const sweepRes = await sweepRetroactiveBlacklist(domainToSave);
-      sweptCampaignsCount += sweepRes.totalUpdatedLinks;
+    // D-05: the retroactive sweep runs AFTER the response is sent, so a 300-row
+    // paste does not serialize 300+ DB writes behind this HTTP response. The sweep
+    // is scheduled only on the success path, after the rows are persisted
+    // (Pitfall 2). The response deliberately reports no synchronous swept count —
+    // the UI copy is eventual.
+    if (importedDomains.length > 0) {
+      scheduleAfterResponse(() => sweepDomains(importedDomains));
     }
 
     return NextResponse.json({
       status: 'success',
       data: {
-        totalImported: importedCount,
-        totalSweptCampaigns: sweptCampaignsCount,
+        totalImported: importedDomains.length,
         csvExportUrl,
       },
     });

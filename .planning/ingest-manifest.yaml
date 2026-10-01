@@ -1,0 +1,15 @@
+# Ingest manifest for /gsd-ingest-docs
+# Excludes the 4 cyclic operational runbooks (DEPLOY.md, GO_LIVE_TASKLIST.md,
+# INSIDER_EMAIL_SETUP.md, R2_IMAGE_STORAGE_TASKLIST.md) from synthesis — their
+# operational content is already captured in .planning/codebase/.
+docs:
+  - path: spec.md
+    type: SPEC
+  - path: specv2.md
+    type: SPEC
+  - path: Spec_Website_Affiliate_V3.md
+    type: SPEC
+  - path: requimentgg.md
+    type: DOC
+  - path: seo_geo_article_creator_dashboard.md
+    type: DOC

@@ -1,0 +1,13 @@
+{
+  "source_path": "D:\\affiliate\\websiteafiliate\\specv2.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": true,
+  "title": "BẢN ĐẶC TẢ KỸ THUẬT VÀ KIẾN TRÚC HỆ THỐNG (V5.2 BLACKLIST INTERCEPTOR EDITION)",
+  "summary": "Technical specification for AI AFFILIATE HUB v5.2 covering MongoDB data schemas, blacklist interceptor, SEO/GEO URL standards, Bento-grid UI design, and role-based access control.",
+  "scope": ["MongoDB collections (users, categories, articles, affiliate_links, click_logs, settings, blacklists)", "blacklist interceptor and Google Sheet importer", "affiliate link placements and click tracking", "SEO/GEO on-page standards (JSON-LD, 301 redirects)", "Bento grid UI theme (TailwindCSS)", "role-based access control (admin/editor/author)", "Next.js App Router / TypeScript stack"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

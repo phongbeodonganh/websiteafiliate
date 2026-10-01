@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
@@ -22,7 +23,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ status: 'error', message: 'Sub-category not found' }, { status: 404 });
     }
 
-    if (categoryId !== undefined) subCat.category_id = categoryId;
+    if (categoryId !== undefined) {
+      if (!Types.ObjectId.isValid(String(categoryId))) {
+        return NextResponse.json({ status: 'error', message: 'CategoryId không hợp lệ' }, { status: 400 });
+      }
+      subCat.category_id = categoryId;
+    }
     if (name !== undefined) subCat.name = name;
     if (slug !== undefined) subCat.slug = slug.toLowerCase().trim().replace(/\s+/g, '-');
     if (description !== undefined) subCat.description = description;
@@ -50,7 +56,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }

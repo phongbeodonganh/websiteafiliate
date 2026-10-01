@@ -19,6 +19,8 @@ import ArticleTableOfContents from '@/components/ArticleTableOfContents';
 import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
+import { buildFaqPageSchema } from '@/lib/faq-jsonld';
+import { sortPlacementsByPosition, splitPlacementsByVerdict } from '@/lib/placement-order';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { DEFAULT_OG_IMAGE, normalizeHttpUrl, normalizeLocale, normalizeSiteUrl, serializeJsonLd } from '@/lib/seo';
 import styles from './article.module.css';
@@ -95,19 +97,21 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const keyTakeaways = Array.isArray(doc.key_takeaways) ? doc.key_takeaways.map((item) => item.trim()).filter(Boolean) : [];
   const faqItems = Array.isArray(doc.faq_schema) ? doc.faq_schema.filter((item: { question?: string; answer?: string }) => item.question?.trim() && item.answer?.trim()) : [];
   const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
-  const placements = populatedPlacements
-    .filter((placement) => placement.affiliate_link_id?._id)
-    .map((placement) => ({
-      positionLabel: placement.position_label as string,
-      link: {
-        id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
-        commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
-      },
-    }));
+  const placements = sortPlacementsByPosition(
+    populatedPlacements
+      .filter((placement) => placement.affiliate_link_id?._id)
+      .map((placement) => ({
+        positionLabel: placement.position_label as string,
+        link: {
+          id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
+          commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
+        },
+      }))
+  );
 
-  // Separate first placement for Editor's Verdict (mid-article)
-  const verdictPlacement = placements[0] || null;
-  const remainingPlacements = placements.slice(1);
+  // Select verdict by position (middle_comparison preferred) so top_cta stays
+  // in the top/offers slot rather than being consumed as the mid-article verdict.
+  const { verdict: verdictPlacement, remaining: remainingPlacements } = splitPlacementsByVerdict(placements);
 
   const relationFilters = [
     ...(authorId ? [{ author_id: authorId }] : []),
@@ -176,25 +180,17 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     })),
   };
 
-  const faqSchema = faqItems.length > 0 ? {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqItems.map((item: { question: string; answer: string }) => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.answer,
-      },
-    })),
-  } : null;
+  // C-1: FAQPage JSON-LD dựng từ faq_schema; null khi không có cặp hoàn chỉnh.
+  const faqPageSchema = buildFaqPageSchema(doc.faq_schema);
 
   return (
     <div className={styles.page}>
       <EditorialBackdrop section={categoryName || 'ARTICLE'} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }} />
-      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }} />}
+      {faqPageSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqPageSchema) }} />
+      )}
       <EditorialHeader />
       <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 

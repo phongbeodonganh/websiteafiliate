@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { ArticleModel } from "@/lib/db/models";
+import { escapeRegExp } from "@/lib/utils";
 
 export type HomepageArticle = {
   id: string;
@@ -24,10 +25,6 @@ export type HomepageArticleData = {
   popular: HomepageArticle[];
   editorial: HomepageArticle[];
 };
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 function populatedValue(value: unknown, key: string) {
   if (!value || typeof value !== "object") return undefined;

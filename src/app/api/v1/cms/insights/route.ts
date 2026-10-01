@@ -9,7 +9,7 @@ const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — tránh vượt quota GSC/GA4 
 const ALLOWED_DAYS = [7, 28, 90];
 
 export async function GET(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }

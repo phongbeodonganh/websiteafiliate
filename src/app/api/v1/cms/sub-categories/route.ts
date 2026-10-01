@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await getAuthUser(req);
+  if (!user) {
+    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+  }
+
   try {
     await connectToDatabase();
     const list = await SubCategoryModel.find().sort({ created_at: -1 });
@@ -24,7 +30,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
@@ -35,6 +41,10 @@ export async function POST(req: Request) {
 
     if (!categoryId || !name || !slug) {
       return NextResponse.json({ status: 'error', message: 'CategoryId, name, and slug are required' }, { status: 400 });
+    }
+
+    if (!Types.ObjectId.isValid(String(categoryId))) {
+      return NextResponse.json({ status: 'error', message: 'CategoryId không hợp lệ' }, { status: 400 });
     }
 
     await connectToDatabase();

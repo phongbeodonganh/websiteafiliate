@@ -31,6 +31,8 @@ jobs:
         run: |
           cp -r public .next/standalone/public
           cp -r .next/static .next/standalone/.next/static
+          mkdir -p .next/standalone/scripts
+          cp scripts/run-insider-digest.mjs .next/standalone/scripts/
           tar -czf standalone.tar.gz -C .next/standalone .
 
       - uses: actions/upload-artifact@v4
@@ -82,3 +84,4 @@ jobs:
             rm -rf app_old
             pm2 delete ecosystem.config.js > /dev/null 2>&1 || true
             pm2 start ecosystem.config.js
+            pm2 save

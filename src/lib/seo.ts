@@ -36,6 +36,19 @@ export function normalizeHttpUrl(value: string | null | undefined, fallback: str
   }
 }
 
+// Strict (rejecting) variant of normalizeHttpUrl for security boundaries (AFF-01):
+// parse with WHATWG URL (encoding tricks that bypass regex scheme checks throw here)
+// and accept only http:/https: protocols. Deliberately NOT reusing normalizeHttpUrl —
+// its silent fallback contract is correct for SEO display, wrong for an API write gate.
+export function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function createPageMetadata({
   title,
   description,

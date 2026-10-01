@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { generateObjectId } from '@/lib/utils';
+import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import {
   LayoutDashboard,
@@ -52,6 +53,7 @@ import {
   Upload,
   FileSpreadsheet,
   AlertTriangle,
+  AlertCircle,
   Send,
   Loader2,
   Radio,
@@ -59,6 +61,12 @@ import {
   TrendingDown,
   Info,
 } from 'lucide-react';
+
+// D-13: the admin-only CMS tab ids. Used both by `renderContent` (permission-denied
+// fallback for a non-admin that reaches one via URL) and as the single source of
+// truth for which tabs only an admin may see. Every backing route keeps its 403 —
+// this set is a UI contract, not the access control.
+const ADMIN_ONLY_TABS = new Set(['insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
 
 // Reusable Luxury Button Component
 const LuxuryButton = ({ children, variant = 'primary', className = '', ...props }: any) => {
@@ -269,12 +277,59 @@ export default function AdminDashboardPage() {
   const [sendingInsiderDigest, setSendingInsiderDigest] = useState(false);
   const [insiderDispatchNotice, setInsiderDispatchNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // D-03: shell-level error/success toast for every CMS call routed through the
+  // shared auth-fetch helper. Error toasts persist until dismissed; success
+  // toasts auto-dismiss (~3s). Mirrors the insiderDispatchNotice shape.
+  const [cmsToast, setCmsToast] = useState<{ type: 'success' | 'error'; text: string; showSignIn?: boolean } | null>(null);
+  const cmsToastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showCmsToast = (
+    type: 'success' | 'error',
+    text: string,
+    options: { showSignIn?: boolean } = {}
+  ) => {
+    if (cmsToastTimerRef.current) {
+      clearTimeout(cmsToastTimerRef.current);
+      cmsToastTimerRef.current = null;
+    }
+    setCmsToast({ type, text, showSignIn: options.showSignIn });
+    // Success auto-dismisses; error persists until dismissed or superseded.
+    if (type === 'success') {
+      cmsToastTimerRef.current = setTimeout(() => setCmsToast(null), 3000);
+    }
+  };
+
+  // Shared failure handler: on 401 clear the stale token and offer Sign in;
+  // otherwise surface the status-mapped copy.
+  const handleCmsFailure = (status: number, message?: string) => {
+    if (status === 401) {
+      try {
+        localStorage.removeItem('token');
+      } catch {
+        // ignore storage failures (private mode)
+      }
+      showCmsToast('error', errorMessageForResponse(401), { showSignIn: true });
+      return;
+    }
+    showCmsToast('error', errorMessageForResponse(status, message));
+  };
+
   // User Modal State
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('editor');
+
+  // D-14: edit-user modal state. Covers role/status/name/avatar ONLY — there is
+  // deliberately no password control (password recovery is CLI-only, Phase 1 D-04).
+  const [showEditUserModal, setShowEditUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editUserName, setEditUserName] = useState('');
+  const [editUserRole, setEditUserRole] = useState('editor');
+  const [editUserStatus, setEditUserStatus] = useState<'active' | 'inactive'>('active');
+  const [editUserAvatar, setEditUserAvatar] = useState('');
+  const [savingEditUser, setSavingEditUser] = useState(false);
 
   // Category & Sub-Category Modal States
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -318,6 +373,7 @@ export default function AdminDashboardPage() {
   const [showImportSheetModal, setShowImportSheetModal] = useState(false);
   const [importSheetUrl, setImportSheetUrl] = useState('https://docs.google.com/spreadsheets/d/1HNAJ6F_EBzVs0bqBfC2mt2pFQHCtCNlIRGXDRnNvEuQ/edit?gid=802654639#gid=802654639');
   const [isImportingSheet, setIsImportingSheet] = useState(false);
+  const [isReSweeping, setIsReSweeping] = useState(false);
   const [activeBlacklistTab, setActiveBlacklistTab] = useState<'repository' | 'rules'>('repository');
   const [blProjectName, setBlProjectName] = useState('');
   const [blWebsiteUrl, setBlWebsiteUrl] = useState('');
@@ -464,25 +520,40 @@ export default function AdminDashboardPage() {
       setAffUrlBlacklistError(null);
       return;
     }
-    try {
-      const res = await fetch('/api/v1/cms/blacklist/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlStr }),
+    // CR-01: route through cmsFetch so the bearer token is attached automatically,
+    // and fail closed on any non-ok result — a failed check must never clear the
+    // warning or make a blacklisted URL look safe.
+    const token = localStorage.getItem('token');
+    const result = await cmsFetch<{
+      isBlacklisted: boolean;
+      projectName?: string;
+      matchedDomain?: string;
+      reason?: string;
+      blockedCountries?: string[];
+    }>('/api/v1/cms/blacklist/check', {
+      method: 'POST',
+      body: { url: urlStr },
+      token,
+    });
+    if (!result.ok) {
+      setAffUrlBlacklistError({
+        isError: true,
+        projectName: '—',
+        matchedDomain: urlStr,
+        reason: 'Blacklist check unavailable. Retry before saving.',
+        blockedCountries: [],
       });
-      const data = await res.json();
-      if (data.status === 'success' && data.data?.isBlacklisted) {
-        setAffUrlBlacklistError({
-          isError: true,
-          projectName: data.data.projectName,
-          matchedDomain: data.data.matchedDomain,
-          reason: data.data.reason,
-          blockedCountries: data.data.blockedCountries || [],
-        });
-      } else {
-        setAffUrlBlacklistError(null);
-      }
-    } catch {
+      return;
+    }
+    if (result.data?.isBlacklisted) {
+      setAffUrlBlacklistError({
+        isError: true,
+        projectName: result.data.projectName,
+        matchedDomain: result.data.matchedDomain,
+        reason: result.data.reason,
+        blockedCountries: result.data.blockedCountries || [],
+      });
+    } else {
       setAffUrlBlacklistError(null);
     }
   };
@@ -558,29 +629,65 @@ export default function AdminDashboardPage() {
 
   const handleImportGoogleSheetUrl = async () => {
     if (!importSheetUrl) {
-      alert('Vui lòng nhập URL Google Sheet.');
+      showCmsToast('error', 'Paste a public Google Sheet URL to import.');
       return;
     }
     setIsImportingSheet(true);
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('/api/v1/cms/blacklist/import-sheet-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ sheetUrl: importSheetUrl }),
-      });
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        alert(`📥 NẠP THÀNH CÔNG NGUYÊN SHEET GOOGLE!\n\n📊 Thống kê:\n- Đã nạp thành công: ${data.data.totalImported} domain/dự án cấm từ Google Sheet.\n- Tự động làm sạch: ${data.data.totalSweptCampaigns} chiến dịch affiliate bị ảnh hưởng.`);
-        setShowImportSheetModal(false);
-        loadAllData();
-      } else {
-        alert(`Lỗi nạp Google Sheet: ${data.message}`);
+      const result = await cmsFetch<{ totalImported: number; csvExportUrl: string }>(
+        '/api/v1/cms/blacklist/import-sheet-url',
+        { method: 'POST', body: { sheetUrl: importSheetUrl }, token }
+      );
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
       }
+      const n = result.data.totalImported;
+      // D-05: the sweep runs after the response, so the copy is eventual — it must
+      // not promise a final swept count.
+      showCmsToast(
+        'success',
+        `Imported ${n} domain${n === 1 ? '' : 's'} from the Google Sheet. The retroactive sweep is running in the background — affected campaigns will appear as blacklisted shortly.`
+      );
+      setShowImportSheetModal(false);
+      loadAllData();
     } catch {
-      alert('Không thể kết nối hoặc nạp Google Sheet');
+      handleCmsFailure(0);
     } finally {
       setIsImportingSheet(false);
+    }
+  };
+
+  // D-08: manual re-sweep — re-run the sweep over current blacklist entries AND
+  // restore campaigns no longer matching any active entry back to `active`. Never
+  // touches a manually-inactive campaign.
+  const handleReSweepBlacklist = async () => {
+    setIsReSweeping(true);
+    const token = localStorage.getItem('token');
+    try {
+      const result = await cmsFetch<{ swept: number; restored: number }>(
+        '/api/v1/cms/blacklist/re-sweep',
+        { method: 'POST', token }
+      );
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
+      }
+      const { swept, restored } = result.data;
+      if (swept === 0 && restored === 0) {
+        showCmsToast('success', 'Re-sweep complete. No campaigns needed changing.');
+      } else {
+        showCmsToast(
+          'success',
+          `Re-sweep complete. Swept ${swept} campaign${swept === 1 ? '' : 's'} to blacklisted; restored ${restored} campaign${restored === 1 ? '' : 's'} to active.`
+        );
+      }
+      loadAllData();
+    } catch {
+      handleCmsFailure(0);
+    } finally {
+      setIsReSweeping(false);
     }
   };
 
@@ -772,6 +879,50 @@ export default function AdminDashboardPage() {
       }
     } catch (err) {
       alert('Failed to add user');
+    }
+  };
+
+  // D-14: open the edit modal seeded with the row's current values. No password.
+  const openEditUserModal = (u: any) => {
+    setEditingUser(u);
+    setEditUserName(u.name || '');
+    setEditUserRole(u.role || 'editor');
+    setEditUserStatus(u.status === 'inactive' ? 'inactive' : 'active');
+    setEditUserAvatar(u.avatar || '');
+    setShowEditUserModal(true);
+  };
+
+  // D-14: persist role/status/name/avatar via PUT /api/v1/cms/users/:id through the
+  // shared auth-fetch helper (D-03) so a non-2xx surfaces the status-mapped error
+  // toast instead of failing silently. No password is ever sent.
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    const token = localStorage.getItem('token');
+    setSavingEditUser(true);
+    try {
+      const result = await cmsFetch(`/api/v1/cms/users/${editingUser.id}`, {
+        method: 'PUT',
+        token,
+        body: {
+          name: editUserName,
+          role: editUserRole,
+          status: editUserStatus,
+          avatar: editUserAvatar,
+        },
+      });
+
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
+      }
+
+      showCmsToast('success', 'Team member updated.');
+      setShowEditUserModal(false);
+      setEditingUser(null);
+      loadUsersData();
+    } finally {
+      setSavingEditUser(false);
     }
   };
 
@@ -987,7 +1138,7 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const payload = {
-      categoryId: Number(subCatParentId),
+      categoryId: subCatParentId ? String(subCatParentId) : undefined,
       name: subCatName,
       slug: subCatSlug || subCatName.toLowerCase().trim().replace(/\s+/g, '-'),
       description: subCatDesc,
@@ -1474,7 +1625,12 @@ export default function AdminDashboardPage() {
                   </div>
                 </td>
                 <td className="p-4 text-right">
-                  <button className="p-2 text-slate-400 hover:text-white" title="Edit User">
+                  <button
+                    onClick={() => openEditUserModal(u)}
+                    className="p-2 text-slate-400 hover:text-white"
+                    title="Edit User"
+                    aria-label={`Edit ${u.name || u.username}`}
+                  >
                     <Edit size={16} />
                   </button>
                 </td>
@@ -1548,6 +1704,89 @@ export default function AdminDashboardPage() {
                 </button>
                 <LuxuryButton type="submit" className="py-2 px-5 text-xs">
                   Create User
+                </LuxuryButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditUserModal && editingUser && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white">Edit team member</h3>
+              <button
+                onClick={() => setShowEditUserModal(false)}
+                className="text-slate-400 hover:text-white"
+                title="Close"
+                aria-label="Close edit member dialog"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editUserName}
+                  onChange={(e) => setEditUserName(e.target.value)}
+                  placeholder="e.g. John Miller"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Role</label>
+                <select
+                  value={editUserRole}
+                  onChange={(e) => setEditUserRole(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="editor">Editor (Isolated Content)</option>
+                  <option value="author">Author (Article Creator)</option>
+                  <option value="admin">Administrator (Full Access)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Status</label>
+                <select
+                  value={editUserStatus}
+                  onChange={(e) => setEditUserStatus(e.target.value === 'inactive' ? 'inactive' : 'active')}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                {editUserStatus === 'inactive' && (
+                  <p className="mt-2 text-xs text-amber-400/80">
+                    Inactive users are locked out immediately — their existing sessions stop working on the next request.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Avatar</label>
+                <input
+                  type="text"
+                  value={editUserAvatar}
+                  onChange={(e) => setEditUserAvatar(e.target.value)}
+                  placeholder="Optional — first letter of name or username is used when empty"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Passwords are managed outside the CMS. Use the reset-admin CLI to recover an account.
+              </p>
+              <div className="pt-2 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditUserModal(false)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <LuxuryButton type="submit" disabled={savingEditUser} className="py-2 px-5 text-xs">
+                  {savingEditUser ? 'Saving…' : 'Save changes'}
                 </LuxuryButton>
               </div>
             </form>
@@ -1758,6 +1997,10 @@ export default function AdminDashboardPage() {
           ? editingArticle.faq_list
           : [{ question: '', answer: '' }]
     );
+    // D-12: inline validation for the required Level-1 category. Set on a blocked
+    // save, cleared the moment a category is chosen. GEO fields are never part of
+    // this guard (D-09).
+    const [categoryError, setCategoryError] = useState<string | null>(null);
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
     // này, KHÔNG dùng chung previewArticle/navigate() của trang ngoài, vì
@@ -1774,6 +2017,87 @@ export default function AdminDashboardPage() {
         }));
       })()
     );
+
+    // D-03/D-04: load-failure guard. Re-loading the requested article through the
+    // shared helper (which always attaches Authorization) doubles as the
+    // authoritative fetch and the 404/403/401 detector — a failed load renders
+    // the inline error panel, never a blank form a user could overwrite.
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [isLoadingArticle, setIsLoadingArticle] = useState(false);
+    const didLoadRef = React.useRef(false);
+
+    useEffect(() => {
+      if (didLoadRef.current) return;
+      const articleId = editingArticle?.id;
+      if (!articleId) return;
+      didLoadRef.current = true;
+
+      let cancelled = false;
+      setIsLoadingArticle(true);
+      cmsFetch<Record<string, unknown>>(`/api/v1/cms/articles/${articleId}`, {
+        token: localStorage.getItem('token'),
+      }).then((result) => {
+        if (cancelled) return;
+        setIsLoadingArticle(false);
+        if (!result.ok) {
+          setLoadError(result.message);
+          handleCmsFailure(result.status, result.message);
+          return;
+        }
+        const doc = result.data as {
+          title?: string;
+          slug?: string;
+          excerpt?: string;
+          content?: string;
+          status?: string;
+          isFeatured?: boolean;
+          categoryId?: string;
+          subCategoryId?: string;
+          thumbnailUrl?: string;
+          metaTitle?: string;
+          metaDescription?: string;
+          focusKeyword?: string;
+          keyTakeaways?: string[];
+          entities?: string[];
+          faqSchema?: { question: string; answer: string }[];
+          affiliatePlacements?: { affiliate_link_id?: unknown; position_label: string }[];
+        };
+        if (!doc) return;
+        // Re-hydrate from the authoritative server copy.
+        setTitle(doc.title || '');
+        setSlug(doc.slug || '');
+        setExcerpt(doc.excerpt || '');
+        setContent(doc.content || '');
+        if (doc.status) setStatus(doc.status);
+        setIsFeatured(Boolean(doc.isFeatured));
+        setCategoryId(doc.categoryId || '');
+        setSubCategoryId(doc.subCategoryId || '');
+        setThumbnailUrl(doc.thumbnailUrl || '');
+        setMetaTitle(doc.metaTitle || '');
+        setMetaDescription(doc.metaDescription || '');
+        setFocusKeyword(doc.focusKeyword || '');
+        setKeyTakeawaysText(Array.isArray(doc.keyTakeaways) ? doc.keyTakeaways.join('\n') : '');
+        setEntitiesText(Array.isArray(doc.entities) ? doc.entities.join(', ') : '');
+        setFaqRows(
+          Array.isArray(doc.faqSchema) && doc.faqSchema.length > 0
+            ? doc.faqSchema
+            : [{ question: '', answer: '' }]
+        );
+        setAffiliatePlacements(
+          (Array.isArray(doc.affiliatePlacements) ? doc.affiliatePlacements : []).map((p) => {
+            const link = p.affiliate_link_id;
+            const id =
+              link && typeof link === 'object'
+                ? ((link as { _id?: string })._id ?? '')
+                : ((link as string | undefined) ?? '');
+            return { affiliate_link_id: id, position_label: p.position_label };
+          })
+        );
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []);
 
     const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId) || c.id === categoryId);
 
@@ -1827,19 +2151,30 @@ export default function AdminDashboardPage() {
     };
 
     const updateFaqRow = (index: number, field: 'question' | 'answer', val: string) => {
-      const updated = [...faqRows];
-      updated[index][field] = val;
-      setFaqRows(updated);
+      // Clone-then-set (immutable) so React sees a new array AND new row object —
+      // a shallow copy would still alias the row, mutating state in place.
+      setFaqRows(
+        faqRows.map((row, i) => (i === index ? { ...row, [field]: val } : row))
+      );
     };
 
     const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
 
+      // D-12: a top-level category is required. Only title/slug/content/category
+      // are required and `status` must be set; no GEO field participates (D-09).
       const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
       if (isContentEmpty) {
-        alert('Vui lòng nhập nội dung bài viết');
+        showCmsToast('error', 'Add a title, slug, and content before saving.');
         return;
       }
+
+      if (!categoryId) {
+        setCategoryError('Choose a primary category.');
+        showCmsToast('error', 'Choose a primary category.');
+        return;
+      }
+      setCategoryError(null);
 
       const token = localStorage.getItem('token');
 
@@ -1875,38 +2210,30 @@ export default function AdminDashboardPage() {
         affiliatePlacements,
       };
 
-      try {
-        let res;
-        if (editingArticle?.id) {
-          res = await fetch(`/api/v1/cms/articles/${editingArticle.id}`, {
+      // D-03: every editor save goes through the shared auth-fetch helper — it
+      // attaches the bearer token and normalizes the response, so a non-2xx can
+      // never be mistaken for a success.
+      const result = editingArticle?.id
+        ? await cmsFetch(`/api/v1/cms/articles/${editingArticle.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(payload),
-          });
-        } else {
-          res = await fetch('/api/v1/cms/articles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(payload),
-          });
-        }
+            token,
+            body: payload,
+          })
+        : await cmsFetch('/api/v1/cms/articles', { method: 'POST', token, body: payload });
 
-        const data = await res.json();
-        if (res.ok && data.status === 'success') {
-          alert('Article saved successfully with GEO & SEO metadata!');
-          try {
-            localStorage.removeItem(draftKey);
-          } catch {
-            // ignore
-          }
-          navigate({ tab: 'articles', editingArticle: null }, { replace: true });
-          loadAllData();
-        } else {
-          alert(`Error: ${data.message}`);
+      if (result.ok) {
+        showCmsToast('success', 'Article saved successfully with GEO & SEO metadata!');
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {
+          // ignore
         }
-      } catch (err) {
-        alert('Failed to save article');
+        navigate({ tab: 'articles', editingArticle: null }, { replace: true });
+        loadAllData();
+        return;
       }
+
+      handleCmsFailure(result.status, result.message);
     };
 
     const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1919,20 +2246,17 @@ export default function AdminDashboardPage() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const res = await fetch('/api/v1/cms/upload', {
+        const result = await cmsFetch<{ url: string }>('/api/v1/cms/upload', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          token,
           body: formData,
         });
-        const json = await res.json();
 
-        if (res.ok && json.status === 'success') {
-          setThumbnailUrl(json.data.url);
+        if (result.ok) {
+          setThumbnailUrl(result.data.url);
         } else {
-          alert(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
+          handleCmsFailure(result.status, result.message);
         }
-      } catch {
-        alert('Đã có lỗi xảy ra khi tải ảnh lên!');
       } finally {
         setIsUploadingThumbnail(false);
         e.target.value = '';
@@ -1953,6 +2277,49 @@ export default function AdminDashboardPage() {
         setAffiliatePlacements([...affiliatePlacements, { affiliate_link_id: affiliateLinkId, position_label: positionLabel }]);
       }
     };
+
+    // D-03/D-04: a failed article load must never render an empty editor form a
+    // user could mistake for a blank article. Render the documented inline error
+    // panel (or a loading panel while the authoritative copy is in flight) in
+    // place of the form.
+    if (loadError) {
+      return (
+        <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in duration-300">
+          <div className="flex items-center gap-4 text-slate-400">
+            <button
+              onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
+              className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
+            >
+              ← Back to Articles List
+            </button>
+          </div>
+          <div className="bg-rose-500/[0.07] border border-rose-500/30 rounded-2xl p-8 text-center space-y-2">
+            <AlertCircle size={28} className="mx-auto text-rose-400" />
+            <p className="text-white font-bold text-sm">This article couldn&apos;t be loaded.</p>
+            <p className="text-slate-400 text-xs">{loadError}</p>
+            <p className="text-slate-500 text-xs">Reload the page, or go back to the article list.</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isLoadingArticle && editingArticle?.id) {
+      return (
+        <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in duration-300">
+          <div className="flex items-center gap-4 text-slate-400">
+            <button
+              onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
+              className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
+            >
+              ← Back to Articles List
+            </button>
+          </div>
+          <div className="flex items-center justify-center h-64 text-slate-500 text-sm gap-2">
+            <Loader2 size={16} className="animate-spin" /> Loading article…
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
@@ -2131,36 +2498,49 @@ export default function AdminDashboardPage() {
                     onClick={addFaqRow}
                     className="text-[10px] bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 px-2.5 py-1 rounded font-bold border border-purple-500/30"
                   >
-                    + Thêm Câu Hỏi
+                    + Add question
                   </button>
                 </div>
-                <div className="space-y-2">
-                  {faqRows.map((row, idx) => (
-                    <div key={idx} className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={row.question}
-                        onChange={(e) => updateFaqRow(idx, 'question', e.target.value)}
-                        placeholder="Câu hỏi (Question)..."
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                      />
-                      <input
-                        type="text"
-                        value={row.answer}
-                        onChange={(e) => updateFaqRow(idx, 'answer', e.target.value)}
-                        placeholder="Câu trả lời (Answer)..."
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFaqRow(idx)}
-                        className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                {faqRows.length === 0 ? (
+                  <p className="text-xs text-slate-500">
+                    No FAQ pairs yet. Add a question to embed FAQPage structured data on the public article.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {faqRows.map((row, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={row.question}
+                          onChange={(e) => updateFaqRow(idx, 'question', e.target.value)}
+                          placeholder="Question…"
+                          aria-label={`FAQ question ${idx + 1}`}
+                          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
+                        />
+                        <input
+                          type="text"
+                          value={row.answer}
+                          onChange={(e) => updateFaqRow(idx, 'answer', e.target.value)}
+                          placeholder="Answer…"
+                          aria-label={`FAQ answer ${idx + 1}`}
+                          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFaqRow(idx)}
+                          title="Remove this question"
+                          aria-label={`Remove FAQ row ${idx + 1}`}
+                          className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-slate-500">
+                  Rows with an empty question or answer are ignored when saving.
+                </p>
               </div>
             </div>
 
@@ -2233,6 +2613,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => {
                     setCategoryId(e.target.value);
                     setSubCategoryId('');
+                    if (e.target.value) setCategoryError(null);
                   }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
                 >
@@ -2243,11 +2624,14 @@ export default function AdminDashboardPage() {
                     </option>
                   ))}
                 </select>
+                {categoryError && (
+                  <p className="mt-1 text-xs text-rose-400">{categoryError}</p>
+                )}
               </div>
 
               {selectedCategoryObj && selectedCategoryObj.subCategories?.length > 0 && (
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Sub-Category (Level 2)</label>
+                  <label className="block text-xs text-slate-400 mb-1">Sub-category (optional)</label>
                   <select
                     value={subCategoryId}
                     onChange={(e) => setSubCategoryId(e.target.value)}
@@ -2560,6 +2944,11 @@ export default function AdminDashboardPage() {
                         BLACKLISTED
                       </span>
                     )}
+                    {link.status === 'inactive' && (
+                      <span className="bg-slate-500/10 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-600/40">
+                        INACTIVE
+                      </span>
+                    )}
                   </div>
                   {link.productUrl && (
                     <span className="text-[11px] text-cyan-400 font-mono truncate max-w-[180px] block opacity-80 mt-0.5">
@@ -2642,6 +3031,17 @@ export default function AdminDashboardPage() {
               className="px-4 py-2.5 rounded-xl font-bold text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer"
             >
               <FileSpreadsheet size={16} /> 📥 Nạp Cả Sheet Google (Tự Động 100%)
+            </button>
+            <button
+              type="button"
+              disabled={isReSweeping}
+              onClick={handleReSweepBlacklist}
+              title="Re-run the blacklist sweep and restore campaigns no longer blocked"
+              aria-label="Re-run the blacklist sweep and restore campaigns no longer blocked"
+              className="px-4 py-2.5 rounded-xl font-bold text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={16} className={isReSweeping ? 'animate-spin' : ''} />
+              {isReSweeping ? 'Re-sweeping…' : 'Re-sweep blacklist'}
             </button>
             <LuxuryButton onClick={() => setShowAddBlacklistModal(true)} className="py-2.5 px-4 text-xs">
               <Plus size={16} /> Thêm Domain Cấm
@@ -2931,12 +3331,13 @@ export default function AdminDashboardPage() {
                     Lưu Vào Blacklist & Sweeper Ngầm
                   </LuxuryButton>
                 </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
-      </div>
-    );
+        </div>
+      )}
+    </div>
+  );
+
   };
 
   // Categories & Sub-Categories View
@@ -3854,6 +4255,28 @@ export default function AdminDashboardPage() {
     if (activeTab === 'blacklist' && currentUser.role === 'admin') return <BlacklistView />;
     if (activeTab === 'settings' && currentUser.role === 'admin') return <SettingsView />;
 
+    // D-13: a known admin-only tab reached by a non-admin (e.g. via URL) renders the
+    // permission contract — never the generic "Under Construction..." placeholder and
+    // never another user's data. UI hiding is cosmetic; the backing routes keep their
+    // 403 (proven by tests/api/cms-rbac-affiliate-403.test.ts).
+    if (currentUser.role !== 'admin' && ADMIN_ONLY_TABS.has(activeTab)) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
+          <div className="flex items-center gap-2 text-rose-400">
+            <ShieldAlert size={20} />
+            <span className="text-sm font-bold">Access denied</span>
+          </div>
+          <p className="text-slate-400 text-sm">You don&apos;t have access to this section.</p>
+          <button
+            onClick={() => navigate({ tab: 'articles' })}
+            className="text-xs font-bold text-rose-400 hover:text-rose-300 underline underline-offset-4"
+          >
+            Back to Articles
+          </button>
+        </div>
+      );
+    }
+
     return <div className="text-slate-500 flex items-center justify-center h-64 text-sm">Under Construction...</div>;
   };
 
@@ -3954,6 +4377,46 @@ export default function AdminDashboardPage() {
               <div className="max-w-7xl mx-auto">{renderContent()}</div>
             </div>
           </main>
+        </div>
+      )}
+
+      {/* D-03: shared auth-fetch toast. Error toasts persist until dismissed
+          (rose border); success auto-dismisses (~3s). A 401 clears the token
+          and offers a Sign in action. */}
+      {cmsToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-5 right-5 z-[60] max-w-sm break-words rounded-2xl border px-5 py-3 text-xs shadow-2xl flex items-start gap-3 ${
+            cmsToast.type === 'success'
+              ? 'bg-slate-900 text-white border-emerald-500/40'
+              : 'bg-slate-900 text-white border-rose-500/50'
+          }`}
+        >
+          {cmsToast.type === 'success' ? (
+            <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="leading-relaxed">{cmsToast.text}</p>
+            {cmsToast.showSignIn && (
+              <Link
+                href="/admin/login"
+                className="mt-1.5 inline-block font-bold text-amber-400 hover:text-amber-300"
+              >
+                Sign in
+              </Link>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setCmsToast(null)}
+            aria-label="Dismiss notification"
+            className="text-slate-500 hover:text-white shrink-0"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
