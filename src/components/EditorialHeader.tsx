@@ -161,6 +161,12 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
         <div className="flex min-w-0 shrink-0 items-center gap-3 lg:gap-5">
           <Link
             href="/"
+            onClick={(e) => {
+              if (isHome) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
             className="flex items-center gap-2.5 group text-decoration-none"
           >
             <span className="whitespace-nowrap text-xl sm:text-2xl lg:text-[28px] font-extrabold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-neutral-200 transition-colors duration-200">
