@@ -93,6 +93,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const authorName = populatedAuthor?.name || populatedAuthor?.username;
   const authorAvatar = populatedAuthor?.avatar;
   const keyTakeaways = Array.isArray(doc.key_takeaways) ? doc.key_takeaways.map((item) => item.trim()).filter(Boolean) : [];
+  const faqItems = Array.isArray(doc.faq_schema) ? doc.faq_schema.filter((item: { question?: string; answer?: string }) => item.question?.trim() && item.answer?.trim()) : [];
   const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
   const placements = populatedPlacements
     .filter((placement) => placement.affiliate_link_id?._id)
@@ -175,11 +176,25 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     })),
   };
 
+  const faqSchema = faqItems.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqItems.map((item: { question: string; answer: string }) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  } : null;
+
   return (
     <div className={styles.page}>
       <EditorialBackdrop section={categoryName || 'ARTICLE'} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }} />
+      {faqSchema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqSchema) }} />}
       <EditorialHeader />
       <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 
@@ -255,6 +270,21 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
                 <p>A fresh perspective is worth sharing.</p>
                 <SocialShare title={doc.title} variant="compact" />
               </div>
+
+              {faqItems.length > 0 && (
+                <section className={styles.faqSection} aria-labelledby="faq-title" data-motion="rise">
+                  <p className={styles.sectionEyebrow}>Frequently Asked Questions</p>
+                  <h2 id="faq-title">FAQ</h2>
+                  <div className={styles.faqList}>
+                    {faqItems.map((item: { question: string; answer: string }, index: number) => (
+                      <details key={`faq-${index}-${item.question.slice(0, 20)}`} className={styles.faqItem}>
+                        <summary className={styles.faqQuestion}>{item.question}</summary>
+                        <div className={styles.faqAnswer}>{item.answer}</div>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {verdictPlacement && (
                 <EditorVerdict
