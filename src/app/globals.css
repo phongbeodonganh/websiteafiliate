@@ -138,8 +138,9 @@ input[type="submit"]:active {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
+  background: #f0f0ee;
 }
 
 /* Makes a card's primary link cover the full card without nesting anchors. */

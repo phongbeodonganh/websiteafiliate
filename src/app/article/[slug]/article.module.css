@@ -189,7 +189,7 @@
   position: relative;
 }
 .heroImage::after { background: linear-gradient(0deg, rgba(17, 17, 17, 0.18), transparent 38%); content: ''; inset: 0; pointer-events: none; position: absolute; }
-.heroImage img { object-fit: cover; }
+.heroImage img { object-fit: contain; background: #f0f0ee; }
 
 .readingColumn {
   box-sizing: border-box;
@@ -320,7 +320,7 @@
 .articleContent li { margin-bottom: 0.55em; padding-left: 0.25em; }
 .articleContent li::marker { color: var(--article-mint); font-weight: 800; }
 .articleContent hr { border: 0; border-top: 1px solid var(--article-line); margin: 3.2em 0; }
-.articleContent img { border: 1px solid var(--article-line); display: block; height: auto; margin: 2.2em 0; max-width: 100%; }
+.articleContent img { border: 1px solid var(--article-line); border-radius: 6px; display: block; height: auto; margin: 2.2em auto; max-width: 100%; object-fit: contain; background: #f0f0ee; }
 .articleContent :is(table, pre, iframe, video) { max-width: 100%; }
 
 .articleContent table {
@@ -440,8 +440,8 @@
 .relatedCard:focus-visible { border-color: rgba(133, 221, 213, 0.58); box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22); transform: translateY(-4px); }
 .relatedCard:hover::before,
 .relatedCard:focus-visible::before { right: 0; }
-.relatedMedia { aspect-ratio: 16 / 9; overflow: hidden; }
-.relatedMedia img { transition: filter 320ms ease, transform 420ms cubic-bezier(0.16, 1, 0.3, 1) !important; }
+.relatedMedia { aspect-ratio: 16 / 9; overflow: hidden; background: #f0f0ee; }
+.relatedMedia img { transition: filter 320ms ease, transform 420ms cubic-bezier(0.16, 1, 0.3, 1) !important; object-fit: contain !important; background: #f0f0ee; }
 .relatedCard:hover .relatedMedia img,
 .relatedCard:focus-visible .relatedMedia img { filter: saturate(1.08); transform: scale(1.04) !important; }
 .relatedCardBody { display: flex; flex: 1; flex-direction: column; padding: 19px; }
@@ -522,6 +522,94 @@
   .relatedHeading h2 { font-size: 34px; text-transform: none; }
   .relatedHeading > a { font-size: 8px; gap: 4px; }
   .relatedHeading > a svg { width: 14px; }
+}
+
+/* ── FAQ Section ── */
+.faqSection {
+  border-top: 1px solid var(--article-line);
+  margin-top: 52px;
+  padding-top: 36px;
+}
+
+.faqSection > h2 {
+  color: var(--editorial-ink);
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  margin: 0 0 28px;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.faqItem {
+  background: var(--editorial-surface);
+  border: 1px solid var(--article-line);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.faqItem[open] {
+  border-color: rgba(13, 118, 110, 0.38);
+  box-shadow: 0 4px 16px rgba(13, 118, 110, 0.06);
+}
+
+.faqQuestion {
+  align-items: center;
+  color: var(--editorial-ink);
+  cursor: pointer;
+  display: flex;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  gap: 14px;
+  justify-content: space-between;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  list-style: none;
+  padding: 18px 22px;
+  transition: background-color 160ms ease, color 160ms ease;
+  user-select: none;
+}
+
+.faqQuestion::-webkit-details-marker { display: none; }
+
+.faqQuestion::after {
+  color: var(--article-mint);
+  content: '+';
+  flex-shrink: 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 200ms ease;
+}
+
+.faqItem[open] .faqQuestion::after {
+  content: '−';
+  transform: rotate(180deg);
+}
+
+.faqQuestion:hover {
+  background: rgba(13, 118, 110, 0.04);
+  color: var(--article-teal);
+}
+
+.faqAnswer {
+  border-top: 1px solid var(--article-line);
+  color: var(--editorial-copy);
+  font-size: 14.5px;
+  line-height: 1.72;
+  padding: 18px 22px 22px;
+}
+
+@media (max-width: 520px) {
+  .faqQuestion { font-size: 14px; padding: 15px 16px; }
+  .faqAnswer { font-size: 13.5px; padding: 14px 16px 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -23,7 +23,7 @@ export default function PublicMotion() {
         (entry.target as HTMLElement).dataset.motionVisible = 'true';
         intersectionObserver.unobserve(entry.target);
       }),
-      { rootMargin: '0px 0px 75% 0px', threshold: 0.01 },
+      { rootMargin: '100% 0px 75% 0px', threshold: 0 },
     );
 
     const observe = (scope: ParentNode) => {
