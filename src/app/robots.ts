@@ -7,9 +7,14 @@ import { normalizeSiteUrl } from '@/lib/seo';
 export const revalidate = 3600;
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  await connectToDatabase();
-  const settings = await SettingModel.findOne();
-  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  let baseUrl = normalizeSiteUrl();
+  try {
+    await connectToDatabase();
+    const settings = await SettingModel.findOne();
+    baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  } catch {
+    // Build-time prerender (e.g. CI) has no MongoDB — fall back to the default site URL.
+  }
 
   return {
     rules: {

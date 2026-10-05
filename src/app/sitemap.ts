@@ -9,48 +9,59 @@ import { normalizeSiteUrl } from '@/lib/seo';
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await connectToDatabase();
+  let baseUrl = normalizeSiteUrl();
+  let articleEntries: MetadataRoute.Sitemap = [];
+  let categoryEntries: MetadataRoute.Sitemap = [];
+  let newestContentDate: Date | undefined;
 
-  const settings = await SettingModel.findOne();
-  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  try {
+    await connectToDatabase();
 
-  const [articles, categories] = await Promise.all([
-    ArticleModel.find({ status: 'published' })
-      .select('slug updated_at created_at')
-      .sort({ created_at: -1 })
-      .lean(),
-    CategoryModel.aggregate([
-      {
-        $lookup: {
-          from: ArticleModel.collection.name,
-          let: { categoryId: '$_id' },
-          pipeline: [
-            { $match: { $expr: { $and: [{ $eq: ['$category_id', '$$categoryId'] }, { $eq: ['$status', 'published'] }] } } },
-            { $limit: 1 },
-          ],
-          as: 'publishedArticles',
+    const settings = await SettingModel.findOne();
+    baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+
+    const [articles, categories] = await Promise.all([
+      ArticleModel.find({ status: 'published' })
+        .select('slug updated_at created_at')
+        .sort({ created_at: -1 })
+        .lean(),
+      CategoryModel.aggregate([
+        {
+          $lookup: {
+            from: ArticleModel.collection.name,
+            let: { categoryId: '$_id' },
+            pipeline: [
+              { $match: { $expr: { $and: [{ $eq: ['$category_id', '$$categoryId'] }, { $eq: ['$status', 'published'] }] } } },
+              { $limit: 1 },
+            ],
+            as: 'publishedArticles',
+          },
         },
-      },
-      { $match: { 'publishedArticles.0': { $exists: true } } },
-      { $project: { slug: 1, created_at: 1 } },
-    ]),
-  ]);
+        { $match: { 'publishedArticles.0': { $exists: true } } },
+        { $project: { slug: 1, created_at: 1 } },
+      ]),
+    ]);
 
-  const articleEntries: MetadataRoute.Sitemap = articles.map((article) => ({
-    url: `${baseUrl}/article/${article.slug}`,
-    lastModified: article.updated_at || article.created_at,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
+    articleEntries = articles.map((article) => ({
+      url: `${baseUrl}/article/${article.slug}`,
+      lastModified: article.updated_at || article.created_at,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
 
-  const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
-    url: `${baseUrl}/category/${category.slug}`,
-    lastModified: category.created_at,
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }));
+    categoryEntries = categories.map((category) => ({
+      url: `${baseUrl}/category/${category.slug}`,
+      lastModified: category.created_at,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    }));
 
-  const newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
+    newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
+  } catch {
+    // Build-time prerender (e.g. CI) has no MongoDB — emit static entries only;
+    // ISR revalidation (or revalidateSitemap() on CMS writes) refreshes at runtime.
+  }
+
   const trustPagesUpdated = new Date('2026-09-04T00:00:00.000Z');
   const staticEntrySeeds: Array<{
     path: string;
