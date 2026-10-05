@@ -1,9 +1,13 @@
-name: Deploy to VPS
+name: Deploy to VPS - Physical Ads (feature/physical-ads)
 
 on:
   push:
-    branches: ['feature/namdt25-develop']
+    branches: ['feature/physical-ads']
   workflow_dispatch:
+
+env:
+  DEPLOY_DIR: physical_ads
+  PM2_CONFIG: ecosystem/ecosystem_ads.config.js
 
 jobs:
   build:
@@ -34,8 +38,9 @@ jobs:
           mkdir -p .next/standalone/scripts
           cp scripts/run-insider-digest.mjs .next/standalone/scripts/
           tar -czf standalone.tar.gz -C .next/standalone .
-          # Config moved to ecosystem/; flatten to the artifact root
-          cp ecosystem/ecosystem.config.js ecosystem.config.js
+          # Flatten the chosen pm2 config to the artifact root so the deploy
+          # job copies it to ~/$DEPLOY_DIR/ecosystem.config.js
+          cp "$PM2_CONFIG" ecosystem.config.js
 
       - uses: actions/upload-artifact@v4
         with:
@@ -60,7 +65,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: standalone.tar.gz,ecosystem.config.js
-          target: ~/websiteafiliate
+          target: ~/${{ env.DEPLOY_DIR }}
 
       # No `npm install` / `next build` here — the VPS only unpacks the
       # bundle built in CI and reloads pm2. env files are kept outside the
@@ -73,7 +78,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd ~/websiteafiliate
+            cd ~/${{ env.DEPLOY_DIR }}
             rm -rf app_new
             mkdir app_new
             tar -xzf standalone.tar.gz -C app_new
@@ -84,6 +89,7 @@ jobs:
             [ -d app ] && mv app app_old
             mv app_new app
             rm -rf app_old
-            pm2 delete ecosystem.config.js > /dev/null 2>&1 || true
+            # Delete by explicit name so the other instance is never touched
+            pm2 delete physical-ads physical-ads-insider-cron > /dev/null 2>&1 || true
             pm2 start ecosystem.config.js
             pm2 save
