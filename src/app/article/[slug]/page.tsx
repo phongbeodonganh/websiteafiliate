@@ -204,6 +204,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const authorName = populatedAuthor?.name || populatedAuthor?.username;
   const authorAvatar = populatedAuthor?.avatar;
   const keyTakeaways = Array.isArray(doc.key_takeaways) ? (doc.key_takeaways as string[]).map((item) => item.trim()).filter(Boolean) : [];
+  const faqItems = Array.isArray(doc.faq_schema) ? (doc.faq_schema as { question?: string; answer?: string }[]).filter((item): item is { question: string; answer: string } => Boolean(item.question?.trim() && item.answer?.trim())) : [];
   const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
   const placements = sortPlacementsByPosition(
     populatedPlacements
@@ -345,6 +346,21 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
                 <p>A fresh perspective is worth sharing.</p>
                 <SocialShare title={doc.title as string} variant="compact" />
               </div>
+
+              {faqItems.length > 0 && (
+                <section className={styles.faqSection} aria-labelledby="faq-title" data-motion="rise">
+                  <p className={styles.sectionEyebrow}>Frequently Asked Questions</p>
+                  <h2 id="faq-title">FAQ</h2>
+                  <div className={styles.faqList}>
+                    {faqItems.map((item: { question: string; answer: string }, index: number) => (
+                      <details key={`faq-${index}-${item.question.slice(0, 20)}`} className={styles.faqItem}>
+                        <summary className={styles.faqQuestion}>{item.question}</summary>
+                        <div className={styles.faqAnswer}>{item.answer}</div>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {verdictPlacement && (
                 <EditorVerdict
