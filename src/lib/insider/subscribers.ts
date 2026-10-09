@@ -11,7 +11,7 @@ export const ACTIVE_SUBSCRIBER_FILTER: QueryFilter<ISubscriber> = {
 };
 
 export function getInsiderSiteUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://aidealsuk.com').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn').replace(/\/$/, '');
 }
 
 export async function confirmInsider(token: string) {

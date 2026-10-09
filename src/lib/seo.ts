@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 
-export const DEFAULT_SITE_URL = 'https://aidealsuk.com';
-export const DEFAULT_SITE_NAME = 'AIDEALSUK';
+export const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn';
+export const DEFAULT_SITE_NAME = 'GoodPick';
 export const DEFAULT_DESCRIPTION =
-  'Discover high-paying AI affiliate programs, comprehensive AI tool reviews, and expert monetization strategies.';
+  'Đánh giá độc lập, so sánh giá và hướng dẫn chọn mua đồ công nghệ, gia dụng, làm vườn và sản phẩm thiết thực.';
 export const DEFAULT_OG_IMAGE =
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop';
+  'https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1200&auto=format&fit=crop';
 
 export function normalizeSiteUrl(value?: string | null) {
   const candidate = value?.trim() || DEFAULT_SITE_URL;
@@ -22,7 +22,7 @@ export function normalizeSiteUrl(value?: string | null) {
 }
 
 export function normalizeLocale(value?: string | null) {
-  return (value?.trim() || 'en-US').replace('-', '_');
+  return (value?.trim() || 'vi-VN').replace('-', '_');
 }
 
 export function normalizeHttpUrl(value: string | null | undefined, fallback: string) {

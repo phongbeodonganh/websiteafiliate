@@ -3,105 +3,56 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel, SubCategoryModel } from '@/lib/db/models';
 import { SEED_TAXONOMY, seedTaxonomy } from '@/lib/seed-taxonomy';
 
-// The exact V5.2 §1.2 tree, pinned here independently of the implementation so a
-// drift in either side fails loudly (T-02-25).
-const EXPECTED_CATEGORY_SLUGS = [
-  'ai-use-cases',
-  'ai-content-copywriting',
-  'ai-video-image-generation',
-  'ai-automation-agents',
-  'ai-marketing-sales',
-  'ai-audio-code',
+const EXPECTED_CATEGORY_SLUGS = ['tech', 'home-kitchen', 'garden', 'tools', 'outdoor', 'beauty'];
+const EXPECTED_SUB_SLUGS = [
+  'computers-accessories', 'mobile-charging', 'audio-smart-home',
+  'kitchen-appliances', 'cleaning-storage', 'garden-tools', 'planters-growing',
+  'power-tools', 'hand-tools', 'camping-travel', 'patio-grilling',
+  'personal-care', 'skin-hair',
 ];
 
-const EXPECTED_USE_CASE_SUB_SLUGS = [
-  'ai-for-creators-media',
-  'ai-for-real-estate-sales',
-  'ai-for-e-commerce-online-business',
-  'ai-for-marketers-agencies',
-  'ai-for-finance-legal-consulting',
-];
-
-describe('seedTaxonomy — V5.2 §1.2 two-level taxonomy (CMS-04, D-11)', () => {
-  it('creates the six categories and five AI Use Cases sub-categories with the exact spec slugs', async () => {
+describe('seedTaxonomy — physical-product two-level taxonomy', () => {
+  it('creates the storefront categories and sub-categories', async () => {
     const result = await seedTaxonomy();
-
-    expect(result.createdCategories).toBe(6);
-    expect(result.createdSubCategories).toBe(5);
-
+    expect(result).toEqual({ createdCategories: 6, createdSubCategories: 13 });
     const categories = await CategoryModel.find();
     expect(categories).toHaveLength(6);
     expect(categories.map((c) => c.slug).sort()).toEqual([...EXPECTED_CATEGORY_SLUGS].sort());
-
     const subCategories = await SubCategoryModel.find();
-    expect(subCategories).toHaveLength(5);
-    expect(subCategories.map((s) => s.slug).sort()).toEqual([...EXPECTED_USE_CASE_SUB_SLUGS].sort());
+    expect(subCategories).toHaveLength(13);
+    expect(subCategories.map((s) => s.slug).sort()).toEqual([...EXPECTED_SUB_SLUGS].sort());
   });
 
-  it('links every sub-category to the AI Use Cases parent', async () => {
+  it('links the tech sub-categories to their parent', async () => {
     await seedTaxonomy();
-
-    const parent = await CategoryModel.findOne({ slug: 'ai-use-cases' });
+    const parent = await CategoryModel.findOne({ slug: 'tech' });
     expect(parent).not.toBeNull();
-
     const children = await SubCategoryModel.find({ category_id: parent!._id });
-    expect(children).toHaveLength(5);
-    for (const child of children) {
-      expect(child.category_id.toString()).toBe(parent!._id.toString());
-    }
+    expect(children).toHaveLength(3);
+    for (const child of children) expect(child.category_id.toString()).toBe(parent!._id.toString());
   });
 
-  it('is idempotent — a second run creates nothing and the total counts are unchanged', async () => {
-    const first = await seedTaxonomy();
-    expect(first).toEqual({ createdCategories: 6, createdSubCategories: 5 });
-
-    const second = await seedTaxonomy();
-    expect(second).toEqual({ createdCategories: 0, createdSubCategories: 0 });
-
+  it('is idempotent', async () => {
+    expect(await seedTaxonomy()).toEqual({ createdCategories: 6, createdSubCategories: 13 });
+    expect(await seedTaxonomy()).toEqual({ createdCategories: 0, createdSubCategories: 0 });
     expect(await CategoryModel.countDocuments()).toBe(6);
-    expect(await SubCategoryModel.countDocuments()).toBe(5);
+    expect(await SubCategoryModel.countDocuments()).toBe(13);
   });
 
-  it('coexists with ad-hoc categories and sub-categories — it never deletes or renames them', async () => {
+  it('keeps administrator-created categories and sub-categories', async () => {
     await connectToDatabase();
-
-    const adHocCategory = await CategoryModel.create({
-      name: 'Admin Ad-Hoc Category',
-      slug: 'admin-ad-hoc-category',
-      description: 'Created by an admin, not by the seed.',
-    });
-    const adHocSub = await SubCategoryModel.create({
-      category_id: adHocCategory._id,
-      name: 'Admin Ad-Hoc Sub',
-      slug: 'admin-ad-hoc-sub',
-      description: 'Created by an admin, not by the seed.',
-    });
-
-    const result = await seedTaxonomy();
-    expect(result.createdCategories).toBe(6);
-    expect(result.createdSubCategories).toBe(5);
-
-    const survivor = await CategoryModel.findById(adHocCategory._id);
-    expect(survivor).not.toBeNull();
-    expect(survivor?.name).toBe('Admin Ad-Hoc Category');
-    expect(survivor?.slug).toBe('admin-ad-hoc-category');
-    expect(survivor?.description).toBe('Created by an admin, not by the seed.');
-
-    const subSurvivor = await SubCategoryModel.findById(adHocSub._id);
-    expect(subSurvivor).not.toBeNull();
-    expect(subSurvivor?.name).toBe('Admin Ad-Hoc Sub');
-    expect(subSurvivor?.slug).toBe('admin-ad-hoc-sub');
-    expect(subSurvivor?.category_id.toString()).toBe(adHocCategory._id.toString());
-
-    // The seed adds its six on top of the pre-existing one.
+    const parent = await CategoryModel.create({ name: 'Admin Category', slug: 'admin-category' });
+    const child = await SubCategoryModel.create({ category_id: parent._id, name: 'Admin Sub', slug: 'admin-sub' });
+    expect(await seedTaxonomy()).toEqual({ createdCategories: 6, createdSubCategories: 13 });
+    expect((await CategoryModel.findById(parent._id))?.name).toBe('Admin Category');
+    expect((await SubCategoryModel.findById(child._id))?.name).toBe('Admin Sub');
     expect(await CategoryModel.countDocuments()).toBe(7);
-    expect(await SubCategoryModel.countDocuments()).toBe(6);
+    expect(await SubCategoryModel.countDocuments()).toBe(14);
   });
 
-  it('exports the seed tree with the AI Use Cases children declared (structural contract)', () => {
-    const useCases = SEED_TAXONOMY.find((c) => c.slug === 'ai-use-cases');
-    expect(useCases).toBeDefined();
-    expect(useCases?.subCategories?.map((s) => s.slug)).toEqual(EXPECTED_USE_CASE_SUB_SLUGS);
-    expect(SEED_TAXONOMY.map((c) => c.slug)).toEqual(EXPECTED_CATEGORY_SLUGS);
+  it('exports the physical-product tree', () => {
+    const tech = SEED_TAXONOMY.find((category) => category.slug === 'tech');
+    expect(tech?.subCategories?.map((sub) => sub.slug)).toEqual(EXPECTED_SUB_SLUGS.slice(0, 3));
+    expect(SEED_TAXONOMY.map((category) => category.slug)).toEqual(EXPECTED_CATEGORY_SLUGS);
   });
 });

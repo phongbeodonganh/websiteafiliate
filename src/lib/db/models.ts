@@ -1,5 +1,9 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
+import { MARKETPLACE_KEYS } from '@/lib/marketplaces';
+
+// Physical-product models (Product / Brand / Review) live in their own file.
+export * from './product-models';
 
 // 1. User
 export interface IUser extends Document {
@@ -63,6 +67,12 @@ const SubCategorySchema = new Schema<ISubCategory>({
 });
 
 // 4. AffiliateLink
+/**
+ * @deprecated SaaS-era affiliate programme record (commission / cookie window).
+ * Physical products carry their links in `Product.offers`. This model is kept
+ * only until the legacy article CTA / collection UI is replaced (Step 3), after
+ * which it — and `syncAffiliateNumericFields` below — will be removed.
+ */
 export interface IAffiliateLink extends Document {
   name: string;
   base_url: string;
@@ -141,6 +151,8 @@ export interface IArticle extends Document {
   entities?: string[];
   faq_schema?: { question: string; answer: string }[];
   affiliate_placements?: { affiliate_link_id: mongoose.Types.ObjectId; position_label: string }[];
+  /** Physical products embedded / reviewed in this article (product boxes). */
+  product_ids?: mongoose.Types.ObjectId[];
   published_at?: Date;
   created_at: Date;
   updated_at: Date;
@@ -176,10 +188,13 @@ const ArticleSchema = new Schema<IArticle>({
       position_label: { type: String, default: 'top_cta' },
     },
   ],
+  product_ids: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
   published_at: { type: Date },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },
 });
+
+ArticleSchema.index({ product_ids: 1 });
 
 // 6. ArticleAffiliateRelation
 export interface IArticleAffiliateRelation extends Document {
@@ -195,9 +210,20 @@ const ArticleAffiliateRelationSchema = new Schema<IArticleAffiliateRelation>({
 });
 
 // 7. ClickLog
+export const CLICK_PLACEMENTS = ['main_cta', 'sticky_cta', 'offer_list', 'card', 'article_box', 'other'] as const;
+export type ClickPlacement = (typeof CLICK_PLACEMENTS)[number];
+
 export interface IClickLog extends Document {
   article_id?: mongoose.Types.ObjectId;
+  /** @deprecated legacy SaaS link click — new clicks use product_id + offer_id. */
   affiliate_link_id?: mongoose.Types.ObjectId;
+  product_id?: mongoose.Types.ObjectId;
+  offer_id?: mongoose.Types.ObjectId;
+  marketplace?: string;
+  variant_sku?: string;
+  placement?: ClickPlacement;
+  device?: 'mobile' | 'desktop';
+  referrer?: string;
   ip_address?: string;
   clicked_at: Date;
 }
@@ -205,9 +231,19 @@ export interface IClickLog extends Document {
 const ClickLogSchema = new Schema<IClickLog>({
   article_id: { type: Schema.Types.ObjectId, ref: 'Article' },
   affiliate_link_id: { type: Schema.Types.ObjectId, ref: 'AffiliateLink' },
+  product_id: { type: Schema.Types.ObjectId, ref: 'Product' },
+  offer_id: { type: Schema.Types.ObjectId },
+  marketplace: { type: String, enum: MARKETPLACE_KEYS },
+  variant_sku: { type: String },
+  placement: { type: String, enum: CLICK_PLACEMENTS },
+  device: { type: String, enum: ['mobile', 'desktop'] },
+  referrer: { type: String },
   ip_address: { type: String },
   clicked_at: { type: Date, default: Date.now }
 });
+
+ClickLogSchema.index({ product_id: 1, clicked_at: -1 });
+ClickLogSchema.index({ marketplace: 1, clicked_at: -1 });
 
 // 8. Subscriber
 export interface ISubscriber extends Document {
@@ -273,11 +309,15 @@ export interface ISetting extends Document {
   geo_longitude?: number;
   geo_region_name?: string;
   geo_placename?: string;
+  // Physical-product storefront settings.
+  currency?: 'USD';
+  enabled_marketplaces?: string[];
+  default_trust?: { authentic: boolean; free_shipping: boolean; return_days?: number; warranty_text?: string };
   updated_at: Date;
 }
 
 const SettingSchema = new Schema<ISetting>({
-  site_title: { type: String, default: 'AIDEALSUK' },
+  site_title: { type: String, default: 'GoodPick' },
   metaDescription: { type: String },
   focusKeywords: { type: String },
   canonicalUrl: { type: String },
@@ -309,6 +349,14 @@ const SettingSchema = new Schema<ISetting>({
   geo_longitude: { type: Number, default: -74.0060 },
   geo_region_name: { type: String, default: 'US-NY' },
   geo_placename: { type: String, default: 'New York' },
+  currency: { type: String, enum: ['USD'], default: 'USD' },
+  enabled_marketplaces: { type: [{ type: String, enum: MARKETPLACE_KEYS }], default: ['amazon', 'walmart', 'bestbuy', 'target', 'ebay'] },
+  default_trust: {
+    authentic: { type: Boolean, default: true },
+    free_shipping: { type: Boolean, default: false },
+    return_days: { type: Number, default: 30 },
+    warranty_text: { type: String },
+  },
   updated_at: { type: Date, default: Date.now }
 });
 

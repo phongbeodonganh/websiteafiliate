@@ -23,7 +23,7 @@ export function sanitizeGeneratedHtmlContent(htmlContent: string, allowedBaseUrl
 
   // Gemini occasionally leaks raw Markdown link syntax `[text](url)` into an
   // href attribute instead of emitting a clean HTML anchor (seen in production
-  // as e.g. href="/article/[https://aidealsuk.com](https://aidealsuk.com)/article/...",
+  // as e.g. href="/article/[https://example.com](https://example.com)/article/...",
   // which Google then crawls as a real broken URL). These characters never
   // belong in a legitimate href, so any href containing them is malformed
   // regardless of whether it looks relative.

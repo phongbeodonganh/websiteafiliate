@@ -9,10 +9,10 @@ export async function GET() {
 
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
-        site_title: 'AIDEALSUK',
+        site_title: 'GoodPick',
         metaDescription: 'Discover top AI tool categories, real-world AI use-case case studies, high-paying affiliate programs, and revenue automation strategies.',
         focusKeywords: 'ai use-cases, ai case studies, ai affiliate programs, ai content copywriting, ai coding tools',
-        canonicalUrl: 'https://aidealsuk.com',
+        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn',
         hreflang: 'en-US',
         geoTarget: 'GLOBAL',
         primary_color: '#0f172a',
@@ -20,7 +20,7 @@ export async function GET() {
         theme_mode: 'dark',
         font_family: 'Inter',
         banner_text: '🔥 HOT: Explore Top High-Paying AI Affiliate Programs & Up To 30% Recurring Commissions!',
-        footer_text: `© ${new Date().getFullYear()} AIDEALSUK. All rights reserved. Your Trusted Source for AI Tool Reviews & Exclusive Affiliate Deals.`,
+        footer_text: `© ${new Date().getFullYear()} GoodPick. Independent product picks, checked deals, and practical buying guides.`,
       });
     }
 

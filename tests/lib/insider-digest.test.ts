@@ -25,7 +25,7 @@ describe('Insider daily digest', () => {
   it('renders latest, hottest, website and unsubscribe links as safe HTML', () => {
     const email = buildInsiderDigestEmail({
       siteName: 'AIDEALSUK',
-      siteUrl: 'https://aidealsuk.com',
+      siteUrl: 'https://cecana.com.vn',
       dayKey: '2026-08-31',
       latest: [{
         title: 'Latest <AI> story',
@@ -39,7 +39,7 @@ describe('Insider daily digest', () => {
         summary: 'The hottest story today.',
         viewCount: 100,
       }],
-      unsubscribeUrl: 'https://aidealsuk.com/api/v1/public/insider/unsubscribe?token=test',
+      unsubscribeUrl: 'https://cecana.com.vn/api/v1/public/insider/unsubscribe?token=test',
     });
 
     expect(email.subject).toContain('2026-08-31');
@@ -48,13 +48,13 @@ describe('Insider daily digest', () => {
     expect(email.html).toContain('/article/latest-ai-story');
     expect(email.html).toContain('/article/most-read-story');
     expect(email.html).toContain('Unsubscribe');
-    expect(email.text).toContain('https://aidealsuk.com');
+    expect(email.text).toContain('https://cecana.com.vn');
   });
 
   it('renders a hottest-only digest when there are no latest stories', () => {
     const email = buildInsiderDigestEmail({
       siteName: 'AIDEALSUK',
-      siteUrl: 'https://aidealsuk.com',
+      siteUrl: 'https://cecana.com.vn',
       dayKey: '2026-08-31',
       latest: [],
       hottest: [{
@@ -63,7 +63,7 @@ describe('Insider daily digest', () => {
         summary: 'The most-read published story.',
         viewCount: 200,
       }],
-      unsubscribeUrl: 'https://aidealsuk.com/unsubscribe',
+      unsubscribeUrl: 'https://cecana.com.vn/unsubscribe',
     });
 
     expect(email.html).not.toContain('>Latest</p>');

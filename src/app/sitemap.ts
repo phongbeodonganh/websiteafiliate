@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { connectToDatabase } from '@/lib/db/mongodb';
-import { ArticleModel, CategoryModel, SettingModel } from '@/lib/db/models';
+import { ArticleModel, CategoryModel, ProductModel, SettingModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
 
 // D-08: ISR with 3600s revalidation — one Atlas query per hour max; crawlers
@@ -12,6 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let baseUrl = normalizeSiteUrl();
   let articleEntries: MetadataRoute.Sitemap = [];
   let categoryEntries: MetadataRoute.Sitemap = [];
+  let productEntries: MetadataRoute.Sitemap = [];
   let newestContentDate: Date | undefined;
 
   try {
@@ -20,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const settings = await SettingModel.findOne();
     baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
 
-    const [articles, categories] = await Promise.all([
+    const [articles, categories, products] = await Promise.all([
       ArticleModel.find({ status: 'published' })
         .select('slug updated_at created_at')
         .sort({ created_at: -1 })
@@ -40,6 +41,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { $match: { 'publishedArticles.0': { $exists: true } } },
         { $project: { slug: 1, created_at: 1 } },
       ]),
+      ProductModel.find({ status: 'published' })
+        .select('slug updated_at created_at')
+        .sort({ updated_at: -1 })
+        .lean(),
     ]);
 
     articleEntries = articles.map((article) => ({
@@ -56,7 +61,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
+    productEntries = products.map((product) => ({
+      url: `${baseUrl}/products/${product.slug}`,
+      lastModified: product.updated_at || product.created_at,
+      changeFrequency: 'daily',
+      priority: 0.9,
+    }));
+
+    newestContentDate = products[0]?.updated_at || products[0]?.created_at || articles[0]?.updated_at || articles[0]?.created_at;
   } catch {
     // Build-time prerender (e.g. CI) has no MongoDB — emit static entries only;
     // ISR revalidation (or revalidateSitemap() on CMS writes) refreshes at runtime.
@@ -92,6 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticEntries,
     ...categoryEntries,
+    ...productEntries,
     ...articleEntries,
   ];
 }

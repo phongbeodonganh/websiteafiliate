@@ -1,140 +1,93 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  CheckItem,
-  CheckList,
-  InfoCallout,
-  InfoSection,
-  InstitutionalPage,
-} from '@/components/InstitutionalPage';
+import { CheckItem, CheckList, InfoCallout, InfoSection, InstitutionalPage } from '@/components/InstitutionalPage';
 import { BRAND_EMAIL } from '@/lib/brand';
 import { createPageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = createPageMetadata({
-  title: 'Privacy Policy',
-  description: 'How AIDEALSUK collects, uses, protects, and shares information when you use our website and newsletter.',
+  title: 'Chính sách bảo mật',
+  description: 'Cách GoodPick thu thập, sử dụng, bảo vệ và chia sẻ thông tin khi bạn dùng website và bản tin.',
   path: '/privacy-policy',
 });
 
-const UPDATED = '4 September 2026';
+const UPDATED = '10 tháng 10, 2026';
 const navItems = [
-  { id: 'scope', label: 'Scope & controller' },
-  { id: 'collection', label: 'Information we collect' },
-  { id: 'use', label: 'How we use information' },
-  { id: 'legal-bases', label: 'Legal bases' },
-  { id: 'sharing', label: 'How information is shared' },
-  { id: 'cookies', label: 'Cookies & external links' },
-  { id: 'retention', label: 'Retention & security' },
-  { id: 'rights', label: 'Your privacy rights' },
-  { id: 'international', label: 'International processing' },
-  { id: 'children', label: 'Children' },
-  { id: 'changes', label: 'Changes & contact' },
+  { id: 'scope', label: 'Phạm vi' },
+  { id: 'collection', label: 'Dữ liệu được thu thập' },
+  { id: 'use', label: 'Mục đích sử dụng' },
+  { id: 'sharing', label: 'Chia sẻ dữ liệu' },
+  { id: 'cookies', label: 'Cookie & liên kết ngoài' },
+  { id: 'retention', label: 'Lưu trữ & bảo mật' },
+  { id: 'rights', label: 'Quyền của bạn' },
+  { id: 'children', label: 'Trẻ em' },
+  { id: 'changes', label: 'Thay đổi & liên hệ' },
 ];
 
 export default function PrivacyPolicyPage() {
   return (
     <InstitutionalPage
-      eyebrow="Privacy Policy"
-      title="Your data, explained plainly."
-      description="This policy describes what AIDEALSUK collects, why we use it, when it may be shared, and the choices available to you."
-      documentCode="PRIVACY / 001"
-      statusLabel="Current policy"
+      eyebrow="Chính sách bảo mật"
+      title="Dữ liệu của bạn, được giải thích rõ ràng."
+      description="Chính sách này mô tả dữ liệu GoodPick thu thập, mục đích sử dụng, trường hợp chia sẻ và lựa chọn của bạn."
+      documentCode="BẢO MẬT / 001"
+      statusLabel="Đang áp dụng"
       updated={UPDATED}
       navItems={navItems}
-      readingTime="9 minute read"
-      asideTitle="Privacy request?"
-      asideCopy={`Email ${BRAND_EMAIL} with “Privacy request” in the subject line.`}
+      readingTime="7 phút đọc"
+      asideTitle="Yêu cầu về dữ liệu?"
+      asideCopy={`Email ${BRAND_EMAIL} với tiêu đề “Yêu cầu quyền riêng tư”.`}
     >
-      <InfoSection id="scope" eyebrow="01 / Scope" title="Scope & controller">
-        <p>This Privacy Policy applies when you browse aidealsuk.com, subscribe to the AIDEALSUK Insider newsletter, contact us, or follow an affiliate link served through our website.</p>
-        <p>AIDEALSUK is responsible for deciding how information collected through these services is used. References to “AIDEALSUK”, “we”, “us”, or “our” in this policy refer to the operator of this website.</p>
-        <InfoCallout title="Questions about this policy" tone="accent">
-          <p>Contact <a href={`mailto:${BRAND_EMAIL}?subject=Privacy%20request`}>{BRAND_EMAIL}</a>. Please do not send identity documents unless we specifically request them for verification.</p>
-        </InfoCallout>
+      <InfoSection id="scope" eyebrow="01 / Phạm vi" title="Phạm vi áp dụng">
+        <p>Chính sách áp dụng khi bạn truy cập website GoodPick, đăng ký bản tin, liên hệ hoặc nhấp liên kết affiliate trên website. “GoodPick”, “chúng tôi” trong chính sách này chỉ đơn vị vận hành website.</p>
+        <InfoCallout title="Liên hệ về quyền riêng tư" tone="accent"><p>Gửi email đến <a href={`mailto:${BRAND_EMAIL}?subject=${encodeURIComponent('Yêu cầu quyền riêng tư')}`}>{BRAND_EMAIL}</a>. Không gửi giấy tờ tùy thân trừ khi chúng tôi yêu cầu để xác minh.</p></InfoCallout>
       </InfoSection>
 
-      <InfoSection id="collection" eyebrow="02 / Collection" title="Information we collect">
-        <h3>Information you provide</h3>
+      <InfoSection id="collection" eyebrow="02 / Thu thập" title="Thông tin chúng tôi có thể thu thập">
         <ul>
-          <li><strong>Newsletter details:</strong> your email address, subscription date, and delivery status when you join AIDEALSUK Insider.</li>
-          <li><strong>Communications:</strong> your email address, name if supplied, message, and any information you choose to include when contacting us.</li>
+          <li><strong>Thông tin bạn cung cấp:</strong> email đăng ký bản tin, tên, nội dung liên hệ và thông tin bạn chủ động gửi.</li>
+          <li><strong>Dữ liệu tương tác affiliate:</strong> sản phẩm hoặc vị trí CTA, ưu đãi được chọn, thời gian nhấp và địa chỉ IP.</li>
+          <li><strong>Nhật ký kỹ thuật:</strong> địa chỉ IP, thời gian yêu cầu, trình duyệt hoặc thiết bị, URL và dữ liệu chẩn đoán.</li>
         </ul>
-        <h3>Information collected through use</h3>
-        <ul>
-          <li><strong>Affiliate interaction data:</strong> the article or placement associated with a partner-link click, the partner offer selected, time of interaction, and IP address.</li>
-          <li><strong>Technical records:</strong> standard server and security logs may include IP address, request time, browser or device information, requested URL, and diagnostic information.</li>
-        </ul>
-        <p>We do not ask public-site visitors to create an account, and we do not collect payment card information through the public website.</p>
+        <p>Website công khai không yêu cầu tạo tài khoản mua hàng và không trực tiếp thu thập thông tin thẻ thanh toán.</p>
       </InfoSection>
 
-      <InfoSection id="use" eyebrow="03 / Purpose" title="How we use information">
+      <InfoSection id="use" eyebrow="03 / Mục đích" title="Cách chúng tôi sử dụng thông tin">
         <CheckList>
-          <CheckItem>Deliver the newsletter or confirmation you requested and manage the subscriber list.</CheckItem>
-          <CheckItem>Answer enquiries, review corrections, and administer partnerships.</CheckItem>
-          <CheckItem>Measure aggregate interest in articles and partner offers.</CheckItem>
-          <CheckItem>Detect misuse, block unsafe destinations, secure the website, and diagnose errors.</CheckItem>
-          <CheckItem>Maintain business, compliance, and dispute-resolution records where necessary.</CheckItem>
+          <CheckItem>Gửi bản tin hoặc xác nhận mà bạn yêu cầu và quản lý danh sách đăng ký.</CheckItem>
+          <CheckItem>Phản hồi liên hệ, xử lý đính chính và quản lý hợp tác.</CheckItem>
+          <CheckItem>Đo lường tổng hợp mức quan tâm tới nội dung và ưu đãi.</CheckItem>
+          <CheckItem>Phát hiện lạm dụng, bảo vệ website và chẩn đoán lỗi.</CheckItem>
+          <CheckItem>Tuân thủ nghĩa vụ pháp lý và bảo vệ quyền hợp pháp.</CheckItem>
         </CheckList>
-        <p>We do not sell personal information. We do not use newsletter addresses to make automated decisions that produce legal or similarly significant effects.</p>
+        <p>Chúng tôi không bán thông tin cá nhân của bạn.</p>
       </InfoSection>
 
-      <InfoSection id="legal-bases" eyebrow="04 / Basis" title="Legal bases">
-        <p>Where data-protection law requires a legal basis, we generally rely on:</p>
-        <ul>
-          <li><strong>Consent</strong> to send newsletter communications that you requested. You may withdraw consent at any time.</li>
-          <li><strong>Legitimate interests</strong> in operating and securing the website, responding to messages, understanding content and offer performance, preventing fraud, and improving our publishing service—balanced against your rights.</li>
-          <li><strong>Performance of a contract or pre-contract steps</strong> when dealing with a partnership or another agreement you request.</li>
-          <li><strong>Legal obligations and legal claims</strong> where records must be kept or used to comply with law or protect legal rights.</li>
-        </ul>
+      <InfoSection id="sharing" eyebrow="04 / Bên nhận" title="Khi nào thông tin được chia sẻ">
+        <p>Dữ liệu chỉ được chia sẻ ở mức cần thiết với nhà cung cấp hạ tầng, cơ sở dữ liệu, bảo mật, gửi email; cố vấn chuyên môn hoặc cơ quan có thẩm quyền khi pháp luật yêu cầu; và bên kế nhiệm hợp pháp nếu website được chuyển giao.</p>
+        <p>Nhà bán lẻ bạn truy cập qua liên kết ngoài tự chịu trách nhiệm về hoạt động xử lý dữ liệu trên website của họ.</p>
       </InfoSection>
 
-      <InfoSection id="sharing" eyebrow="05 / Recipients" title="How information is shared">
-        <p>We disclose information only as reasonably necessary to run the service, respond to lawful requests, or protect rights. Recipients may include:</p>
-        <ul>
-          <li>Hosting, database, storage, security, and infrastructure providers.</li>
-          <li>Email-delivery providers used to send requested communications.</li>
-          <li>Professional advisers, regulators, courts, or law-enforcement bodies where disclosure is required or appropriate.</li>
-          <li>A successor or transaction participant if the website or its business is reorganised, sold, or transferred, subject to appropriate safeguards.</li>
-        </ul>
-        <p>Affiliate partners do not receive your newsletter email from us merely because you click a partner link. Once you visit a third-party website, that provider collects information under its own privacy terms.</p>
+      <InfoSection id="cookies" eyebrow="05 / Công nghệ" title="Cookie & liên kết bên thứ ba">
+        <p>GoodPick có thể dùng lưu trữ kỹ thuật cần thiết cho bảo mật và vận hành. Nhà bán lẻ hoặc mạng affiliate có thể đặt cookie sau khi bạn rời website, theo chính sách riêng của họ.</p>
+        <p>Hãy kiểm tra chính sách của website đích trước khi cung cấp dữ liệu hoặc thay đổi tùy chọn trình duyệt.</p>
       </InfoSection>
 
-      <InfoSection id="cookies" eyebrow="06 / Browser data" title="Cookies & external links">
-        <p>The public AIDEALSUK website does not currently use non-essential advertising cookies. Essential technical storage may be used where necessary for security or site operation.</p>
-        <p>Affiliate destinations and other third-party websites may set their own cookies, pixels, or similar technologies after you leave AIDEALSUK. Those technologies are controlled by the third party, not by us. Review the destination’s privacy and cookie information before providing data or changing your browser settings.</p>
-        <InfoCallout title="Affiliate tracking">
-          <p>Our redirect records the selected offer and related page so we can attribute aggregate performance. The destination may use its own referral cookie to recognise a qualifying transaction.</p>
-        </InfoCallout>
+      <InfoSection id="retention" eyebrow="06 / Bảo vệ" title="Lưu trữ & bảo mật">
+        <p>Thông tin được giữ trong thời gian cần thiết cho mục đích đã nêu, nghĩa vụ pháp lý, giải quyết tranh chấp và an toàn hệ thống. Chúng tôi áp dụng biện pháp kỹ thuật và tổ chức hợp lý, nhưng không hệ thống truyền hoặc lưu trữ nào an toàn tuyệt đối.</p>
       </InfoSection>
 
-      <InfoSection id="retention" eyebrow="07 / Lifecycle" title="Retention & security">
-        <p>We retain information only for as long as reasonably necessary for the purpose collected, including legal, accounting, security, and dispute-resolution needs. Newsletter records are generally kept while you remain subscribed; communications and technical logs are retained according to operational need.</p>
-        <p>We use organisational and technical safeguards intended to protect information against unauthorised access, alteration, loss, or disclosure. No internet transmission or storage method is completely secure, so absolute security cannot be guaranteed.</p>
+      <InfoSection id="rights" eyebrow="07 / Lựa chọn" title="Quyền của bạn">
+        <p>Tùy nơi cư trú và luật áp dụng, bạn có thể yêu cầu truy cập, sửa, xóa, hạn chế hoặc phản đối xử lý dữ liệu; nhận bản sao dữ liệu; hoặc rút lại đồng ý nhận bản tin.</p>
+        <p>Gửi yêu cầu đến <a href={`mailto:${BRAND_EMAIL}?subject=${encodeURIComponent('Yêu cầu quyền dữ liệu')}`}>{BRAND_EMAIL}</a>. Chúng tôi có thể cần xác minh danh tính ở mức phù hợp.</p>
       </InfoSection>
 
-      <InfoSection id="rights" eyebrow="08 / Control" title="Your privacy rights">
-        <p>Depending on where you live, you may have rights to:</p>
-        <CheckList>
-          <CheckItem>Request access to or a copy of personal information we hold about you.</CheckItem>
-          <CheckItem>Ask us to correct, delete, or restrict the use of your information.</CheckItem>
-          <CheckItem>Object to certain processing or request data portability.</CheckItem>
-          <CheckItem>Withdraw consent without affecting processing already carried out.</CheckItem>
-          <CheckItem>Complain to the data-protection authority in your jurisdiction.</CheckItem>
-        </CheckList>
-        <p>To make a request, email <a href={`mailto:${BRAND_EMAIL}?subject=Privacy%20rights%20request`}>{BRAND_EMAIL}</a>. We may need to verify your request and may retain limited information where legally permitted or required.</p>
+      <InfoSection id="children" eyebrow="08 / Độ tuổi" title="Trẻ em">
+        <p>GoodPick dành cho đối tượng chung và không chủ đích thu thập thông tin cá nhân của trẻ em dưới 16 tuổi. Nếu cho rằng trẻ đã gửi dữ liệu, hãy liên hệ để chúng tôi xem xét.</p>
       </InfoSection>
 
-      <InfoSection id="international" eyebrow="09 / Location" title="International processing">
-        <p>Our providers and readers may be located in different countries. Information may therefore be processed outside the country where you live. Where required, we use contractual or other recognised safeguards intended to protect transferred information.</p>
-      </InfoSection>
-
-      <InfoSection id="children" eyebrow="10 / Age" title="Children">
-        <p>AIDEALSUK is intended for a general audience and is not directed to children under 16. We do not knowingly collect personal information from children. If you believe a child has provided information to us, contact us so we can investigate and take appropriate action.</p>
-      </InfoSection>
-
-      <InfoSection id="changes" eyebrow="11 / Updates" title="Changes & contact">
-        <p>We may update this policy to reflect changes in our services, providers, or legal obligations. The “Updated” date identifies the current version. Material changes may also be highlighted on the website where appropriate.</p>
-        <p>Privacy questions and rights requests can be sent to <a href={`mailto:${BRAND_EMAIL}?subject=Privacy%20request`}>{BRAND_EMAIL}</a>. You can also review our <Link href="/terms">Terms &amp; Conditions</Link> and <Link href="/affiliate-disclosure">Affiliate Disclosure</Link>.</p>
+      <InfoSection id="changes" eyebrow="09 / Cập nhật" title="Thay đổi & liên hệ">
+        <p>Chính sách có thể được cập nhật khi dịch vụ, nhà cung cấp hoặc yêu cầu pháp lý thay đổi. Ngày cập nhật ở đầu trang cho biết phiên bản hiện hành.</p>
+        <p>Câu hỏi về chính sách có thể gửi đến <a href={`mailto:${BRAND_EMAIL}`}>{BRAND_EMAIL}</a>. Xem thêm <Link href="/terms">Điều khoản sử dụng</Link> và <Link href="/affiliate-disclosure">Công bố liên kết tiếp thị</Link>.</p>
       </InfoSection>
     </InstitutionalPage>
   );

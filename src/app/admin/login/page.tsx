@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Newspaper, ArrowRight, AlertCircle } from 'lucide-react';
+import { Lock, User, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
@@ -31,10 +31,10 @@ export default function AdminLoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         router.push('/admin');
       } else {
-        setError(data.message || 'Login failed. Please check your credentials.');
+        setError('Đăng nhập không thành công. Vui lòng kiểm tra lại tài khoản và mật khẩu.');
       }
-    } catch (err) {
-      setError('Server connection error.');
+    } catch {
+      setError('Không thể kết nối máy chủ. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -47,14 +47,14 @@ export default function AdminLoginPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/20 group-hover:scale-105 transition-transform duration-200">
-              <span className="font-bold text-2xl">A</span>
+              <span className="font-bold text-2xl">G</span>
             </div>
             <div className="text-left">
               <span className="text-2xl font-bold tracking-tighter text-white block">
-                AFFILIATE<span className="text-amber-400 font-light">PRO</span>
+                GOOD<span className="text-emerald-400 font-light">PICK</span> <span className="text-[9px] tracking-widest text-slate-500">CMS</span>
               </span>
               <span className="text-[10px] uppercase tracking-widest text-amber-400 font-semibold">
-                Global CMS Portal
+                Trung tâm quản trị affiliate
               </span>
             </div>
           </Link>
@@ -63,9 +63,12 @@ export default function AdminLoginPage() {
         {/* Login Card */}
         <div className="bg-[#0a0a0c]/90 border border-slate-800/80 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-white mb-1">CMS Dashboard Login</h1>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-400">
+              <ShieldCheck className="h-3.5 w-3.5" /> Khu vực bảo mật
+            </div>
+            <h1 className="text-xl font-bold text-white mb-1">Đăng nhập trang quản trị</h1>
             <p className="text-xs text-slate-400">
-              Sign in with your Administrator or Editor account to manage articles & global affiliate campaigns.
+              Dùng tài khoản quản trị viên hoặc biên tập viên để quản lý sản phẩm, ưu đãi và nội dung tiếp thị.
             </p>
           </div>
 
@@ -79,7 +82,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                Username
+                Tên đăng nhập
               </label>
               <div className="relative">
                 <User className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -87,7 +90,7 @@ export default function AdminLoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  placeholder="Nhập tên đăng nhập"
                   required
                   className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-slate-600 focus:outline-none transition-colors shadow-inner"
                 />
@@ -96,7 +99,7 @@ export default function AdminLoginPage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
-                Password
+                Mật khẩu
               </label>
               <div className="relative">
                 <Lock className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -117,10 +120,10 @@ export default function AdminLoginPage() {
               className="w-full bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 hover:scale-[1.02] disabled:opacity-50 text-slate-950 font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all mt-6 cursor-pointer"
             >
               {loading ? (
-                <span>Authenticating...</span>
+                <span>Đang xác thực...</span>
               ) : (
                 <>
-                  <span>Sign In To Portal</span>
+                  <span>Đăng nhập quản trị</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

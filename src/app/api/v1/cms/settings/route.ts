@@ -16,10 +16,10 @@ export async function GET(req: Request) {
 
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
-        site_title: 'AIDEALSUK',
+        site_title: 'GoodPick',
         metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
         focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
-        canonicalUrl: 'https://aidealsuk.com',
+        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn',
         hreflang: 'en-US',
         geoTarget: 'GLOBAL',
       });

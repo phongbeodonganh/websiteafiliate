@@ -132,7 +132,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://aidealsuk.com/insider/success?status=confirmed');
+    expect(response.headers.get('location')).toBe('https://cecana.com.vn/insider/success?status=confirmed');
   });
 
   it('redirects an invalid confirmation link to the failed page', async () => {
@@ -141,7 +141,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://aidealsuk.com/insider/failed');
+    expect(response.headers.get('location')).toBe('https://cecana.com.vn/insider/failed');
   });
 
   it('unsubscribes an active subscriber idempotently', async () => {
@@ -178,6 +178,6 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://aidealsuk.com/insider/success?status=unsubscribed');
+    expect(response.headers.get('location')).toBe('https://cecana.com.vn/insider/success?status=unsubscribed');
   });
 });

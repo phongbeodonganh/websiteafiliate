@@ -4,7 +4,7 @@ import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
 import PublicMotion from "@/components/PublicMotion";
-import SocialFloatingBar from "@/components/SocialFloatingBar";
+import ScrollToTop from "@/components/ScrollToTop";
 import {
   DEFAULT_DESCRIPTION,
   DEFAULT_OG_IMAGE,
@@ -70,7 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
         description: DEFAULT_DESCRIPTION,
         url: "/",
         siteName: DEFAULT_SITE_NAME,
-        locale: "en_US",
+        locale: "vi_VN",
         type: "website",
         images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: DEFAULT_SITE_NAME }],
       },
@@ -129,7 +129,7 @@ export default async function RootLayout({
   const gscVerification = sysSettings?.googleSiteVerification || "";
 
   return (
-    <html lang={sysSettings?.hreflang || "en"} className="h-full antialiased dark">
+    <html lang={sysSettings?.hreflang || "vi"} className="h-full antialiased">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -181,8 +181,8 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans antialiased selection:bg-[#0D766E]/15 selection:text-[#0D766E]">
         <PublicMotion />
-        <SocialFloatingBar />
         {children}
+        <ScrollToTop />
       </body>
     </html>
   );

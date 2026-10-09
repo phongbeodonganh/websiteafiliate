@@ -34,7 +34,7 @@ describe('GET /api/v1/cms/categories — seeded taxonomy read path (CMS-04)', ()
     expect(res.status).toBe(401);
   });
 
-  it('serves the six seeded categories, with AI Use Cases carrying its five sub-categories', async () => {
+  it('serves the six physical-product categories, with Tech carrying its sub-categories', async () => {
     const token = await seedAdminToken();
     await seedTaxonomy();
 
@@ -53,25 +53,23 @@ describe('GET /api/v1/cms/categories — seeded taxonomy read path (CMS-04)', ()
     const slugs = categories.map((c) => c.slug).sort();
     expect(slugs).toEqual(
       [
-        'ai-audio-code',
-        'ai-automation-agents',
-        'ai-content-copywriting',
-        'ai-marketing-sales',
-        'ai-use-cases',
-        'ai-video-image-generation',
+        'beauty',
+        'garden',
+        'home-kitchen',
+        'outdoor',
+        'tech',
+        'tools',
       ].sort()
     );
 
-    const useCases = categories.find((c) => c.slug === 'ai-use-cases');
-    expect(useCases).toBeDefined();
-    expect(useCases?.subCategories).toHaveLength(5);
-    expect(useCases?.subCategories.map((s) => s.slug).sort()).toEqual(
+    const tech = categories.find((c) => c.slug === 'tech');
+    expect(tech).toBeDefined();
+    expect(tech?.subCategories).toHaveLength(3);
+    expect(tech?.subCategories.map((s) => s.slug).sort()).toEqual(
       [
-        'ai-for-creators-media',
-        'ai-for-e-commerce-online-business',
-        'ai-for-finance-legal-consulting',
-        'ai-for-marketers-agencies',
-        'ai-for-real-estate-sales',
+        'audio-smart-home',
+        'computers-accessories',
+        'mobile-charging',
       ].sort()
     );
   });

@@ -89,8 +89,8 @@ export function InstitutionalPage({
   children,
   updated,
   readingTime,
-  asideTitle = 'Need clarification?',
-  asideCopy = 'We believe important information should be easy to understand. Contact our team if anything on this page is unclear.',
+  asideTitle = 'Bạn cần làm rõ?',
+  asideCopy = 'Thông tin quan trọng cần dễ hiểu. Hãy liên hệ nếu có nội dung nào trên trang chưa rõ ràng.',
 }: InstitutionalPageProps) {
   return (
     <div className={styles.page}>
@@ -101,8 +101,8 @@ export function InstitutionalPage({
           <div className={styles.heroGlow} aria-hidden="true" />
           <div className={styles.heroGrid}>
             <div className={styles.heroCopy} data-motion="rise">
-              <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-                <Link href="/">Home</Link>
+              <nav className={styles.breadcrumb} aria-label="Đường dẫn trang">
+                <Link href="/">Trang chủ</Link>
                 <span aria-hidden="true">/</span>
                 <span>{eyebrow}</span>
               </nav>
@@ -116,10 +116,10 @@ export function InstitutionalPage({
                 <FileText aria-hidden="true" />
                 <span>{documentCode}</span>
               </div>
-              <div className={styles.documentMark} aria-hidden="true">A</div>
+              <div className={styles.documentMark} aria-hidden="true">G</div>
               <div className={styles.documentMeta}>
                 <span><i className={styles.liveDot} /> {statusLabel}</span>
-                {updated && <span>Updated {updated}</span>}
+                {updated && <span>Cập nhật {updated}</span>}
               </div>
             </div>
           </div>
@@ -128,10 +128,10 @@ export function InstitutionalPage({
         <div className={styles.contentGrid}>
           <article className={styles.content}>{children}</article>
 
-          <aside className={styles.aside} aria-label="Page navigation">
+          <aside className={styles.aside} aria-label="Mục lục trang">
             <div className={styles.asideInner}>
               <div className={styles.indexCard}>
-                <p className={styles.asideEyebrow}>On this page</p>
+                <p className={styles.asideEyebrow}>Trong trang này</p>
                 <nav>
                   {navItems.map((item, index) => (
                     <a href={`#${item.id}`} key={item.id}>
@@ -151,7 +151,7 @@ export function InstitutionalPage({
                 <p>{asideTitle}</p>
                 <span>{asideCopy}</span>
                 <Link href="/contact">
-                  Contact AIDEALSUK <ArrowRight aria-hidden="true" />
+                  Liên hệ GoodPick <ArrowRight aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -160,12 +160,12 @@ export function InstitutionalPage({
 
         <section className={styles.closingCta} data-motion="rise">
           <div>
-            <p>AIDEALSUK / TRUST DESK</p>
-            <h2>Clear standards. Better decisions.</h2>
+            <p>GOODPICK / TRUNG TÂM MINH BẠCH</p>
+            <h2>Tiêu chuẩn rõ ràng. Quyết định tốt hơn.</h2>
           </div>
           <div className={styles.closingLinks}>
-            <Link href="/affiliate-disclosure">How we earn</Link>
-            <Link href="/about">How we work <ArrowRight aria-hidden="true" /></Link>
+            <Link href="/affiliate-disclosure">Cách chúng tôi tạo doanh thu</Link>
+            <Link href="/about">Cách chúng tôi làm việc <ArrowRight aria-hidden="true" /></Link>
           </div>
         </section>
       </main>

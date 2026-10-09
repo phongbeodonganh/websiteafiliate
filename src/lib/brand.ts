@@ -1,20 +1,15 @@
-/**
- * Single source of truth for the AIDEALSUK brand name.
- *
- * Every place that needs to display or reference the site brand should import
- * from here so renaming the brand later is a one-line change.
- */
-export const BRAND_NAME = 'AIDEALSUK';
+/** Single source of truth for the public GoodPick brand. */
+export const BRAND_NAME = 'GoodPick';
 
-/** Tagline displayed in the footer / about section */
-export const BRAND_TAGLINE = 'Your Trusted Source for AI Tool Reviews, Tech News & Exclusive Affiliate Deals.';
+/** Tagline displayed in trust, legal, and editorial surfaces. */
+export const BRAND_TAGLINE =
+  'Chọn đúng sản phẩm, mua đúng giá — với đánh giá độc lập và thông tin ưu đãi được kiểm tra.';
 
-/** Copyright line */
 export const BRAND_COPYRIGHT = (year = new Date().getFullYear()) =>
-  `© ${year} ${BRAND_NAME}. All Rights Reserved.`;
+  `© ${year} ${BRAND_NAME}. Bảo lưu mọi quyền.`;
 
-/** Canonical domain (used when DB settings are not yet loaded) */
-export const BRAND_DOMAIN = 'https://aidealsuk.com';
+/** Canonical domain used when database settings are unavailable. */
+export const BRAND_DOMAIN = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn';
 
-/** Public inbox used by the trust, legal, and editorial pages. */
-export const BRAND_EMAIL = 'hello@aidealsuk.com';
+/** Public inbox used by trust, legal, and editorial pages. */
+export const BRAND_EMAIL = 'hello@cecana.com.vn';

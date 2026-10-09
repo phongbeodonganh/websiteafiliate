@@ -64,12 +64,12 @@ describe('CR-02 — Edit-user modal is co-located inside UsersView', () => {
     expect(source.indexOf('openEditUserModal(u)')).toBeGreaterThan(-1);
   });
 
-  it('renders the UI-SPEC D-14 title "Edit team member" and contains no password input', () => {
-    expect(source.indexOf('Edit team member')).toBeGreaterThan(-1);
+  it('renders the Vietnamese edit-member title and contains no password input', () => {
+    expect(source.indexOf('Chỉnh sửa thành viên')).toBeGreaterThan(-1);
     // The Add-user modal has a password *create* field; the Edit-user modal
     // must NOT. Verify the edit-modal region does not contain a password input.
     const modalIdx = source.indexOf('{showEditUserModal && editingUser && (');
-    const modalEndMarker = 'Passwords are managed outside the CMS';
+    const modalEndMarker = 'Mật khẩu được quản lý riêng';
     const passwordNoteIdx = source.indexOf(modalEndMarker, modalIdx);
     expect(passwordNoteIdx, 'password note present in the edit modal').toBeGreaterThan(modalIdx);
 

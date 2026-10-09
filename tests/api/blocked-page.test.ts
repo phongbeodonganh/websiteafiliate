@@ -111,7 +111,7 @@ describe('/blocked page (SEC-03 / AFF-03)', () => {
     expect(html).toContain('Blocked countries');
     expect(html).toContain('VN, US');
     expect(html).toContain('Return to the safe homepage');
-    expect(html).toContain('AIDEALSUK / SECURITY');
+    expect(html).toContain('GoodPick / SECURITY');
     expect(html).toContain('Link disabled');
   });
 

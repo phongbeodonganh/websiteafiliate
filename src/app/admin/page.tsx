@@ -7,6 +7,8 @@ import { sanitizeArticleContent } from '@/lib/sanitize';
 import { generateObjectId } from '@/lib/utils';
 import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import ProductManager from '@/components/admin/ProductManager';
+import AffiliateDashboard from '@/components/admin/AffiliateDashboard';
 import {
   LayoutDashboard,
   FileText,
@@ -60,6 +62,7 @@ import {
   RefreshCw,
   TrendingDown,
   Info,
+  Package,
 } from 'lucide-react';
 
 // D-13: the admin-only CMS tab ids. Used both by `renderContent` (permission-denied
@@ -67,6 +70,7 @@ import {
 // truth for which tabs only an admin may see. Every backing route keeps its 403 —
 // this set is a UI contract, not the access control.
 const ADMIN_ONLY_TABS = new Set(['insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
+const roleLabel = (role: string) => role === 'admin' ? 'Quản trị viên' : role === 'editor' ? 'Biên tập viên' : 'Tác giả';
 
 // Reusable Luxury Button Component
 const LuxuryButton = ({ children, variant = 'primary', className = '', ...props }: any) => {
@@ -629,7 +633,7 @@ export default function AdminDashboardPage() {
 
   const handleImportGoogleSheetUrl = async () => {
     if (!importSheetUrl) {
-      showCmsToast('error', 'Paste a public Google Sheet URL to import.');
+        showCmsToast('error', 'Hãy dán đường dẫn Google Sheet công khai để nhập dữ liệu.');
       return;
     }
     setIsImportingSheet(true);
@@ -648,7 +652,7 @@ export default function AdminDashboardPage() {
       // not promise a final swept count.
       showCmsToast(
         'success',
-        `Imported ${n} domain${n === 1 ? '' : 's'} from the Google Sheet. The retroactive sweep is running in the background — affected campaigns will appear as blacklisted shortly.`
+        `Đã nhập ${n} tên miền từ Google Sheet. Hệ thống đang quét lại các chiến dịch liên quan trong nền.`
       );
       setShowImportSheetModal(false);
       loadAllData();
@@ -676,11 +680,11 @@ export default function AdminDashboardPage() {
       }
       const { swept, restored } = result.data;
       if (swept === 0 && restored === 0) {
-        showCmsToast('success', 'Re-sweep complete. No campaigns needed changing.');
+        showCmsToast('success', 'Đã quét lại. Không có chiến dịch nào cần thay đổi.');
       } else {
         showCmsToast(
           'success',
-          `Re-sweep complete. Swept ${swept} campaign${swept === 1 ? '' : 's'} to blacklisted; restored ${restored} campaign${restored === 1 ? '' : 's'} to active.`
+          `Đã quét lại: chặn ${swept} chiến dịch và khôi phục ${restored} chiến dịch về trạng thái hoạt động.`
         );
       }
       loadAllData();
@@ -747,7 +751,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteSubscriber = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this subscriber lead?')) return;
+    if (!confirm('Bạn có chắc muốn xóa người đăng ký này?')) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/subscribers/${id}`, {
@@ -755,18 +759,18 @@ export default function AdminDashboardPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) loadSubscribersData();
-    } catch (err) {
-      alert('Error deleting subscriber');
+    } catch {
+      alert('Không thể xóa người đăng ký.');
     }
   };
 
   const handleSendInsiderDigestNow = async () => {
     const activeRecipients = subscribersStats?.totalSubscribers || 0;
     if (activeRecipients === 0) {
-      setInsiderDispatchNotice({ type: 'error', text: 'No active Insider recipients are available.' });
+      setInsiderDispatchNotice({ type: 'error', text: 'Hiện chưa có người nhận bản tin đang hoạt động.' });
       return;
     }
-    if (!confirm(`Send today's Insider digest to ${activeRecipients.toLocaleString()} active recipient${activeRecipients === 1 ? '' : 's'} now? This manual send will not replace or suppress the next scheduled cron digest.`)) return;
+    if (!confirm(`Gửi bản tin hôm nay đến ${activeRecipients.toLocaleString()} người đang hoạt động ngay bây giờ? Lần gửi thủ công này không ảnh hưởng đến lịch gửi tự động tiếp theo.`)) return;
 
     const token = localStorage.getItem('token');
     setSendingInsiderDigest(true);
@@ -778,21 +782,21 @@ export default function AdminDashboardPage() {
       });
       const payload = await response.json();
       if (!response.ok || payload.status !== 'success') {
-        throw new Error(payload.message || 'The digest could not be sent.');
+        throw new Error(payload.message || 'Không thể gửi bản tin.');
       }
 
       const result = payload.data || {};
       const text = result.skipped === 'no_articles'
-        ? 'No published articles are available for this digest.'
+        ? 'Chưa có bài viết đã xuất bản để gửi trong bản tin.'
         : result.sent === 0
-          ? 'No active Insider recipients were found when the dispatch started.'
-          : `Digest sent to ${result.sent.toLocaleString()} Insider${result.sent === 1 ? '' : 's'} in ${result.batches.toLocaleString()} Resend batch${result.batches === 1 ? '' : 'es'}. The next scheduled cron digest remains active.`;
+          ? 'Không tìm thấy người nhận đang hoạt động khi bắt đầu gửi.'
+          : `Đã gửi bản tin đến ${result.sent.toLocaleString()} người trong ${result.batches.toLocaleString()} đợt. Lịch gửi tự động tiếp theo vẫn hoạt động.`;
       setInsiderDispatchNotice({ type: 'success', text });
       loadSubscribersData();
     } catch (error) {
       setInsiderDispatchNotice({
         type: 'error',
-        text: error instanceof Error ? error.message : 'The digest could not be sent.',
+        text: error instanceof Error ? error.message : 'Không thể gửi bản tin.',
       });
     } finally {
       setSendingInsiderDigest(false);
@@ -868,17 +872,17 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert('New team member added successfully!');
+        alert('Đã thêm thành viên mới.');
         setShowAddUserModal(false);
         setNewUsername('');
         setNewPassword('');
         setNewName('');
         loadUsersData();
       } else {
-        alert(`Error: ${data.message}`);
+        alert(`Lỗi: ${data.message}`);
       }
-    } catch (err) {
-      alert('Failed to add user');
+    } catch {
+      alert('Không thể thêm thành viên.');
     }
   };
 
@@ -917,7 +921,7 @@ export default function AdminDashboardPage() {
         return;
       }
 
-      showCmsToast('success', 'Team member updated.');
+      showCmsToast('success', 'Đã cập nhật thông tin thành viên.');
       setShowEditUserModal(false);
       setEditingUser(null);
       loadUsersData();
@@ -1033,7 +1037,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert('Affiliate Campaign added successfully!');
+        alert('Đã thêm chiến dịch affiliate thành công!');
         setNewAffName('');
         setNewAffUrl('');
         setNewAffProductUrl('');
@@ -1042,12 +1046,12 @@ export default function AdminDashboardPage() {
         alert(data.message);
       }
     } catch (err) {
-      alert('Error adding link');
+      alert('Không thể thêm liên kết affiliate.');
     }
   };
 
   const handleDeleteAffiliateLink = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this campaign?')) return;
+    if (!confirm('Bạn có chắc muốn xóa chiến dịch này?')) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/affiliate-links/${id}`, {
@@ -1056,7 +1060,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) loadAllData();
     } catch (err) {
-      alert('Error deleting campaign');
+      alert('Không thể xóa chiến dịch.');
     }
   };
 
@@ -1071,12 +1075,12 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert('Global System, UI Theme & SEO/GEO settings saved successfully!');
+        alert('Đã lưu cấu hình giao diện, hệ thống, SEO và GEO!');
       } else {
-        alert(`Error: ${data.message}`);
+        alert(`Lỗi: ${data.message}`);
       }
-    } catch (err) {
-      alert('Failed to save settings');
+    } catch {
+      alert('Không thể lưu cấu hình.');
     }
   };
 
@@ -1107,21 +1111,21 @@ export default function AdminDashboardPage() {
       }
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(editingCategoryObj?.id ? 'Category updated successfully!' : 'Main Category created successfully!');
+        alert(editingCategoryObj?.id ? 'Đã cập nhật danh mục.' : 'Đã tạo danh mục chính.');
         setShowCategoryModal(false);
         setEditingCategoryObj(null);
         setCatName(''); setCatSlug(''); setCatDesc(''); setCatMetaTitle(''); setCatMetaDesc('');
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        alert(`Lỗi: ${data.message}`);
       }
-    } catch (err) {
-      alert('Failed to save category');
+    } catch {
+      alert('Không thể lưu danh mục.');
     }
   };
 
   const handleDeleteCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this main category? Linked sub-categories will be removed.')) return;
+    if (!confirm('Bạn có chắc muốn xóa danh mục chính này? Các danh mục phụ liên quan cũng sẽ bị xóa.')) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/categories/${id}`, {
@@ -1129,8 +1133,8 @@ export default function AdminDashboardPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) loadAllData();
-    } catch (err) {
-      alert('Error deleting category');
+    } catch {
+      alert('Không thể xóa danh mục.');
     }
   };
 
@@ -1162,21 +1166,21 @@ export default function AdminDashboardPage() {
       }
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(editingSubCategoryObj?.id ? 'Sub-category updated!' : 'Sub-category created successfully!');
+        alert(editingSubCategoryObj?.id ? 'Đã cập nhật danh mục phụ.' : 'Đã tạo danh mục phụ.');
         setShowSubCategoryModal(false);
         setEditingSubCategoryObj(null);
         setSubCatName(''); setSubCatSlug(''); setSubCatDesc(''); setSubCatMetaTitle(''); setSubCatMetaDesc('');
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        alert(`Lỗi: ${data.message}`);
       }
-    } catch (err) {
-      alert('Failed to save sub-category');
+    } catch {
+      alert('Không thể lưu danh mục phụ.');
     }
   };
 
   const handleDeleteSubCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this sub-category?')) return;
+    if (!confirm('Bạn có chắc muốn xóa danh mục phụ này?')) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/sub-categories/${id}`, {
@@ -1184,8 +1188,8 @@ export default function AdminDashboardPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) loadAllData();
-    } catch (err) {
-      alert('Error deleting sub-category');
+    } catch {
+      alert('Không thể xóa danh mục phụ.');
     }
   };
 
@@ -1223,7 +1227,7 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen bg-[#060608] flex items-center justify-center text-amber-400 font-sans">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin"></div>
-          <span>Loading Affiliate Pro Global CMS...</span>
+          <span>Đang mở trung tâm quản trị GoodPick...</span>
         </div>
       </div>
     );
@@ -1232,122 +1236,13 @@ export default function AdminDashboardPage() {
   // --- VIEWS ---
 
   // Dashboard Overview
-  const DashboardView = () => {
-    const totalViews = dashboardData?.totalViews || 0;
-    const totalClicks = dashboardData?.totalClicks || 0;
-    const totalRevenue = dashboardData?.totalRevenue || 0;
-    const conversionRate = dashboardData?.conversionRate || 0;
-    const topArticles = dashboardData?.topArticles || [];
-    const topEditors = dashboardData?.topEditors || [];
-
-    return (
-      <div className="space-y-8 animate-in fade-in duration-500">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">
-            {currentUser.role === 'admin' ? 'Global KPI Dashboard' : 'Personal Performance Overview'}
-          </h2>
-          <p className="text-slate-400 text-sm">Monitor traffic metrics, CTR conversion rates, and estimated commissions.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard title="Total Page Views" value={totalViews.toLocaleString()} icon={Eye} trend="+14.2%" subtext="vs last month" />
-          <StatCard title="Affiliate Clicks" value={totalClicks.toLocaleString()} icon={MousePointerClick} trend="+9.5%" subtext="Verified tracking" />
-          <StatCard title="Conversion CTR" value={`${conversionRate}%`} icon={Activity} trend="+1.4%" subtext="Global average" />
-          <StatCard title="Est. Revenue" value={`$${totalRevenue.toLocaleString()}`} icon={DollarSign} trend="+18.7%" subtext="Pending audit" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Articles */}
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-medium flex items-center gap-2">
-                <Activity size={18} className="text-amber-400" /> Top Performing Articles
-              </h3>
-              <button onClick={() => navigate({ tab: 'articles' })} className="text-xs text-amber-400 hover:text-amber-300">
-                View All
-              </button>
-            </div>
-            <div className="space-y-4 flex-1">
-              {topArticles.map((article: any, idx: number) => (
-                <div
-                  key={article.id}
-                  className="group flex items-center justify-between p-4 bg-slate-950/50 rounded-xl border border-slate-800/50 hover:border-amber-500/30 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${idx === 0
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : idx === 1
-                          ? 'bg-slate-300/20 text-slate-300'
-                          : idx === 2
-                            ? 'bg-amber-700/20 text-amber-600'
-                            : 'bg-slate-800 text-slate-500'
-                        }`}
-                    >
-                      #{idx + 1}
-                    </div>
-                    <div>
-                      <p className="text-white text-sm font-medium line-clamp-1 group-hover:text-amber-400 transition-colors">
-                        {article.title}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Eye size={12} /> {article.viewCount?.toLocaleString()}
-                        </span>
-                        <span className="flex items-center gap-1 text-emerald-400/70">
-                          <MousePointerClick size={12} /> {article.clicks?.toLocaleString()} clicks
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <ArrowUpRight size={16} className="text-slate-600 group-hover:text-amber-400 transition-colors" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Leaderboard (Admin Only) */}
-          {currentUser.role === 'admin' ? (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm flex flex-col relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-bl-full pointer-events-none"></div>
-              <div className="flex items-center justify-between mb-6 relative z-10">
-                <h3 className="text-white font-medium flex items-center gap-2">
-                  <Trophy size={18} className="text-amber-400" /> Top Content Creator Leaderboard
-                </h3>
-              </div>
-              <div className="space-y-4 flex-1 relative z-10">
-                {topEditors.map((stat: any) => (
-                  <div key={stat.user.id} className="flex flex-col p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 flex items-center justify-center font-bold shadow-inner">
-                          {stat.user.avatar}
-                        </div>
-                        <div>
-                          <p className="text-white text-sm font-medium">{stat.user.name}</p>
-                          <p className="text-xs text-amber-400/80 uppercase tracking-wider">@{stat.user.username} ({stat.user.role})</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-emerald-400">{stat.clicks.toLocaleString()} Clicks</p>
-                        <p className="text-xs text-slate-500">{stat.views.toLocaleString()} Views</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm flex flex-col justify-center items-center text-slate-400 text-center">
-              <Shield size={48} className="text-amber-400/30 mb-3" />
-              <p className="font-semibold text-white">Isolated Editor Workspace</p>
-              <p className="text-xs text-slate-500 max-w-xs mt-1">Data is isolated strictly to articles created by your account (@{currentUser.username}).</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
+  const DashboardView = () => (
+    <AffiliateDashboard
+      data={dashboardData}
+      userName={currentUser.name || currentUser.username}
+      onNavigate={(tab) => navigate({ tab })}
+    />
+  );
 
   // SEO Insights View (GA4 + GSC)
   const InsightsView = () => {
@@ -1372,7 +1267,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="flex justify-between items-end">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">SEO Insights</h2>
+            <h2 className="text-2xl font-bold text-white mb-1">Hiệu quả tìm kiếm</h2>
             <p className="text-slate-400 text-sm">Dữ liệu tổng hợp từ Google Analytics 4 &amp; Search Console — {insightsDays} ngày gần nhất.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -1395,7 +1290,7 @@ export default function AdminDashboardPage() {
               disabled={insightsLoading}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-amber-500/40 transition-all disabled:opacity-50 cursor-pointer"
             >
-              <RefreshCw size={14} className={insightsLoading ? 'animate-spin' : ''} /> Refresh
+              <RefreshCw size={14} className={insightsLoading ? 'animate-spin' : ''} /> Làm mới
             </button>
           </div>
         </div>
@@ -1427,28 +1322,28 @@ export default function AdminDashboardPage() {
           <div className={`space-y-6 transition-opacity duration-200 ${insightsLoading ? 'opacity-50' : 'opacity-100'}`}>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <StatCard
-                title={`Organic Clicks (${insightsDays}d)`}
+                title={`Lượt nhấp tự nhiên (${insightsDays} ngày)`}
                 value={totals.clicks.toLocaleString()}
                 icon={MousePointerClick}
                 subtext="Google Search Console"
                 info="Số lần người dùng bấm vào kết quả tìm kiếm (không phải quảng cáo) để vào trang của bạn trên Google. Đây là traffic SEO thực tế, khác với 'Impressions' chỉ là được nhìn thấy."
               />
               <StatCard
-                title={`Impressions (${insightsDays}d)`}
+                title={`Lượt hiển thị (${insightsDays} ngày)`}
                 value={totals.impressions.toLocaleString()}
                 icon={Eye}
                 subtext="Google Search Console"
                 info="Số lần một URL của bạn xuất hiện trên trang kết quả tìm kiếm Google, dù người dùng có cuộn tới thấy hay bấm vào hay không. Impressions cao nhưng Clicks thấp = trang được Google hiển thị nhưng chưa đủ hấp dẫn để người dùng bấm vào."
               />
               <StatCard
-                title="Avg. CTR"
+                title="CTR trung bình"
                 value={`${avgCtr.toFixed(2)}%`}
                 icon={Activity}
-                subtext="Clicks / Impressions"
+                subtext="Lượt nhấp / Lượt hiển thị"
                 info="Tỷ lệ click-through = Clicks ÷ Impressions. CTR thấp thường do title/meta description chưa hấp dẫn, hoặc thứ hạng (position) còn thấp nên ít người cuộn tới thấy."
               />
               <StatCard
-                title="Avg. Position"
+                title="Vị trí trung bình"
                 value={avgPosition.toFixed(1)}
                 icon={Search}
                 subtext="Thứ hạng trung bình"
@@ -1458,7 +1353,7 @@ export default function AdminDashboardPage() {
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
               <h3 className="text-white font-medium flex items-center gap-2 mb-5">
-                <TrendingUp size={18} className="text-amber-400" /> Organic Performance Trend
+                <TrendingUp size={18} className="text-amber-400" /> Xu hướng tìm kiếm tự nhiên
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
@@ -1475,7 +1370,7 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
                 <h3 className="text-white font-medium flex items-center gap-2 mb-4">
-                  <Search size={18} className="text-cyan-400" /> Quick-Win Keywords
+                  <Search size={18} className="text-cyan-400" /> Từ khóa có thể tăng hạng nhanh
                 </h3>
                 <p className="text-xs text-slate-500 mb-4">Từ khóa vị trí 8-20, impressions cao — cơ hội tối ưu để lên top 10.</p>
                 <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
@@ -1486,8 +1381,8 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-slate-500 truncate">{q.page}</p>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <p className="text-xs text-cyan-400 font-semibold">Pos. {q.position}</p>
-                        <p className="text-[11px] text-slate-500">{q.impressions.toLocaleString()} impr.</p>
+                        <p className="text-xs text-cyan-400 font-semibold">Vị trí {q.position}</p>
+                        <p className="text-[11px] text-slate-500">{q.impressions.toLocaleString()} lượt hiển thị</p>
                       </div>
                     </div>
                   )) : (
@@ -1498,7 +1393,7 @@ export default function AdminDashboardPage() {
 
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
                 <h3 className="text-white font-medium flex items-center gap-2 mb-4">
-                  <TrendingDown size={18} className="text-red-400" /> Content Decay Alerts
+                  <TrendingDown size={18} className="text-red-400" /> Cảnh báo nội dung giảm hiệu quả
                 </h3>
                 <p className="text-xs text-slate-500 mb-4">Bài viết giảm &gt;20% clicks so với {insightsDays} ngày trước đó — ưu tiên update.</p>
                 <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
@@ -1507,7 +1402,7 @@ export default function AdminDashboardPage() {
                       <p className="text-white text-sm font-medium truncate max-w-[60%]">{d.page}</p>
                       <div className="text-right shrink-0">
                         <p className="text-xs text-red-400 font-semibold">{d.changePercent}%</p>
-                        <p className="text-[11px] text-slate-500">{d.clicksBefore} → {d.clicksAfter} clicks</p>
+                        <p className="text-[11px] text-slate-500">{d.clicksBefore} → {d.clicksAfter} lượt nhấp</p>
                       </div>
                     </div>
                   )) : (
@@ -1519,15 +1414,15 @@ export default function AdminDashboardPage() {
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm">
               <h3 className="text-white font-medium flex items-center gap-2 mb-4">
-                <MousePointerClick size={18} className="text-emerald-400" /> Traffic → Affiliate Click Funnel
+                <MousePointerClick size={18} className="text-emerald-400" /> Phễu truy cập → nhấp liên kết affiliate
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-                      <th className="p-3 font-medium">Article</th>
-                      <th className="p-3 font-medium text-right">Pageviews (GA4)</th>
-                      <th className="p-3 font-medium text-right">Affiliate Clicks</th>
+                      <th className="p-3 font-medium">Bài viết</th>
+                      <th className="p-3 font-medium text-right">Lượt xem trang (GA4)</th>
+                      <th className="p-3 font-medium text-right">Nhấp affiliate</th>
                       <th className="p-3 font-medium text-right">CTR</th>
                     </tr>
                   </thead>
@@ -1561,11 +1456,11 @@ export default function AdminDashboardPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Global Team & Creator Management</h2>
-          <p className="text-slate-400 text-sm">Add team members, assign RBAC roles, and enforce data isolation policies.</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Tài khoản & phân quyền</h2>
+          <p className="text-slate-400 text-sm">Quản lý thành viên, vai trò và phạm vi dữ liệu được phép thao tác.</p>
         </div>
         <LuxuryButton onClick={() => setShowAddUserModal(true)}>
-          <Plus size={18} /> Add New Team Member
+          <Plus size={18} /> Thêm thành viên
         </LuxuryButton>
       </div>
 
@@ -1573,11 +1468,11 @@ export default function AdminDashboardPage() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-              <th className="p-4 font-medium">User Profile</th>
-              <th className="p-4 font-medium">RBAC Role</th>
-              <th className="p-4 font-medium">Status</th>
-              <th className="p-4 font-medium">Articles</th>
-              <th className="p-4 font-medium text-right">Actions</th>
+              <th className="p-4 font-medium">Thành viên</th>
+              <th className="p-4 font-medium">Vai trò</th>
+              <th className="p-4 font-medium">Trạng thái</th>
+              <th className="p-4 font-medium">Bài viết</th>
+              <th className="p-4 font-medium text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -1604,7 +1499,7 @@ export default function AdminDashboardPage() {
                       }`}
                   >
                     {u.role === 'admin' && <Shield size={12} />}
-                    {u.role.toUpperCase()}
+                    {roleLabel(u.role)}
                   </span>
                 </td>
                 <td className="p-4">
@@ -1614,22 +1509,22 @@ export default function AdminDashboardPage() {
                         }`}
                     ></span>
                     <span className={u.status === 'active' ? 'text-slate-300' : 'text-slate-500'}>
-                      {u.status === 'active' ? 'Active' : 'Inactive'}
+                      {u.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'}
                     </span>
                   </span>
                 </td>
                 <td className="p-4">
                   <div className="flex flex-col">
-                    <span className="text-white font-medium">{u.totalArticles || 0} items</span>
-                    <span className="text-xs text-slate-500">{u.publishedArticles || 0} published</span>
+                    <span className="text-white font-medium">{u.totalArticles || 0} bài</span>
+                    <span className="text-xs text-slate-500">{u.publishedArticles || 0} đã xuất bản</span>
                   </div>
                 </td>
                 <td className="p-4 text-right">
                   <button
                     onClick={() => openEditUserModal(u)}
                     className="p-2 text-slate-400 hover:text-white"
-                    title="Edit User"
-                    aria-label={`Edit ${u.name || u.username}`}
+                    title="Sửa tài khoản"
+                    aria-label={`Sửa ${u.name || u.username}`}
                   >
                     <Edit size={16} />
                   </button>
@@ -1644,24 +1539,24 @@ export default function AdminDashboardPage() {
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">Add Team Member</h3>
+              <h3 className="text-lg font-bold text-white">Thêm thành viên</h3>
               <button onClick={() => setShowAddUserModal(false)} className="text-slate-400 hover:text-white">
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleAddUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Họ và tên</label>
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. John Miller"
+                  placeholder="Ví dụ: Nguyễn Minh Anh"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Username</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Tên đăng nhập</label>
                 <input
                   type="text"
                   value={newUsername}
@@ -1672,7 +1567,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Mật khẩu</label>
                 <input
                   type="password"
                   value={newPassword}
@@ -1683,15 +1578,15 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">RBAC Role</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Vai trò</label>
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value="editor">Editor (Isolated Content)</option>
-                  <option value="author">Author (Article Creator)</option>
-                  <option value="admin">Administrator (Full Access)</option>
+                  <option value="editor">Biên tập viên (quản lý nội dung riêng)</option>
+                  <option value="author">Tác giả (tạo bài viết)</option>
+                  <option value="admin">Quản trị viên (toàn quyền)</option>
                 </select>
               </div>
               <div className="pt-2 flex justify-end gap-3">
@@ -1700,10 +1595,10 @@ export default function AdminDashboardPage() {
                   onClick={() => setShowAddUserModal(false)}
                   className="px-4 py-2 text-xs text-slate-400 hover:text-white"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <LuxuryButton type="submit" className="py-2 px-5 text-xs">
-                  Create User
+                  Tạo tài khoản
                 </LuxuryButton>
               </div>
             </form>
@@ -1715,67 +1610,67 @@ export default function AdminDashboardPage() {
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-white">Edit team member</h3>
+              <h3 className="text-lg font-bold text-white">Chỉnh sửa thành viên</h3>
               <button
                 onClick={() => setShowEditUserModal(false)}
                 className="text-slate-400 hover:text-white"
-                title="Close"
-                aria-label="Close edit member dialog"
+                title="Đóng"
+                aria-label="Đóng cửa sổ sửa thành viên"
               >
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleEditUser} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Name</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Họ và tên</label>
                 <input
                   type="text"
                   value={editUserName}
                   onChange={(e) => setEditUserName(e.target.value)}
-                  placeholder="e.g. John Miller"
+                  placeholder="Ví dụ: Nguyễn Minh Anh"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Role</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Vai trò</label>
                 <select
                   value={editUserRole}
                   onChange={(e) => setEditUserRole(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value="editor">Editor (Isolated Content)</option>
-                  <option value="author">Author (Article Creator)</option>
-                  <option value="admin">Administrator (Full Access)</option>
+                  <option value="editor">Biên tập viên (quản lý nội dung riêng)</option>
+                  <option value="author">Tác giả (tạo bài viết)</option>
+                  <option value="admin">Quản trị viên (toàn quyền)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Status</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Trạng thái</label>
                 <select
                   value={editUserStatus}
                   onChange={(e) => setEditUserStatus(e.target.value === 'inactive' ? 'inactive' : 'active')}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
+                  <option value="active">Đang hoạt động</option>
+                  <option value="inactive">Tạm khóa</option>
                 </select>
                 {editUserStatus === 'inactive' && (
                   <p className="mt-2 text-xs text-amber-400/80">
-                    Inactive users are locked out immediately — their existing sessions stop working on the next request.
+                    Tài khoản bị khóa sẽ mất quyền truy cập ngay từ yêu cầu tiếp theo.
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Avatar</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Ảnh đại diện / ký tự</label>
                 <input
                   type="text"
                   value={editUserAvatar}
                   onChange={(e) => setEditUserAvatar(e.target.value)}
-                  placeholder="Optional — first letter of name or username is used when empty"
+                  placeholder="Không bắt buộc — để trống sẽ dùng chữ cái đầu của tên"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
               <p className="text-xs text-slate-500">
-                Passwords are managed outside the CMS. Use the reset-admin CLI to recover an account.
+                Mật khẩu được quản lý riêng. Dùng lệnh đặt lại tài khoản quản trị khi cần khôi phục truy cập.
               </p>
               <div className="pt-2 flex justify-end gap-3">
                 <button
@@ -1783,10 +1678,10 @@ export default function AdminDashboardPage() {
                   onClick={() => setShowEditUserModal(false)}
                   className="px-4 py-2 text-xs text-slate-400 hover:text-white"
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <LuxuryButton type="submit" disabled={savingEditUser} className="py-2 px-5 text-xs">
-                  {savingEditUser ? 'Saving…' : 'Save changes'}
+                  {savingEditUser ? 'Đang lưu…' : 'Lưu thay đổi'}
                 </LuxuryButton>
               </div>
             </form>
@@ -1801,8 +1696,8 @@ export default function AdminDashboardPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Content & Affiliate Placement Management</h2>
-          <p className="text-slate-400 text-sm">Author articles, assign multi-level categories, and embed multi-position affiliate links.</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Bài viết tư vấn & vị trí affiliate</h2>
+          <p className="text-slate-400 text-sm">Soạn bài, gắn danh mục và đặt liên kết tiếp thị tại nhiều vị trí trong nội dung.</p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -1813,7 +1708,7 @@ export default function AdminDashboardPage() {
             <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
           </button>
           <LuxuryButton onClick={() => navigate({ editingArticle: {} })}>
-            <Plus size={18} /> Create New Article
+            <Plus size={18} /> Tạo bài viết mới
           </LuxuryButton>
         </div>
       </div>
@@ -1822,11 +1717,11 @@ export default function AdminDashboardPage() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-              <th className="p-4 font-medium">Article Title & Category</th>
-              {currentUser.role === 'admin' && <th className="p-4 font-medium">Author</th>}
-              <th className="p-4 font-medium">Status & Featured</th>
-              <th className="p-4 font-medium">Performance</th>
-              <th className="p-4 font-medium text-right">Actions</th>
+              <th className="p-4 font-medium">Tiêu đề & danh mục</th>
+              {currentUser.role === 'admin' && <th className="p-4 font-medium">Tác giả</th>}
+              <th className="p-4 font-medium">Trạng thái & nổi bật</th>
+              <th className="p-4 font-medium">Hiệu quả</th>
+              <th className="p-4 font-medium text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -1859,13 +1754,13 @@ export default function AdminDashboardPage() {
                       }`}
                   >
                     {art.status === 'published' ? <CheckCircle2 size={12} /> : <CircleDashed size={12} />}
-                    {art.status === 'published' ? 'Published' : 'Draft'}
+                    {art.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
                   </span>
                 </td>
                 <td className="p-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-slate-300 font-medium text-xs flex items-center gap-2">
-                      <Eye size={12} className="text-slate-500" /> {art.viewCount?.toLocaleString()} views
+                      <Eye size={12} className="text-slate-500" /> {art.viewCount?.toLocaleString()} lượt xem
                     </span>
                     <span className="text-amber-400 font-medium text-xs flex items-center gap-2">
                       <DollarSign size={12} className="text-amber-500" /> ${art.revenue || 0}
@@ -1876,14 +1771,14 @@ export default function AdminDashboardPage() {
                   <button
                     onClick={() => navigate({ previewArticle: art })}
                     className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
-                    title="Preview Article"
+                    title="Xem trước bài viết"
                   >
                     <Globe size={16} />
                   </button>
                   <button
                     onClick={() => navigate({ editingArticle: art })}
                     className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                    title="Edit Article"
+                    title="Sửa bài viết"
                   >
                     <Edit size={16} />
                   </button>
@@ -2165,13 +2060,13 @@ export default function AdminDashboardPage() {
       // are required and `status` must be set; no GEO field participates (D-09).
       const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
       if (isContentEmpty) {
-        showCmsToast('error', 'Add a title, slug, and content before saving.');
+        showCmsToast('error', 'Hãy nhập tiêu đề, đường dẫn và nội dung trước khi lưu.');
         return;
       }
 
       if (!categoryId) {
-        setCategoryError('Choose a primary category.');
-        showCmsToast('error', 'Choose a primary category.');
+        setCategoryError('Hãy chọn danh mục chính.');
+        showCmsToast('error', 'Hãy chọn danh mục chính.');
         return;
       }
       setCategoryError(null);
@@ -2222,7 +2117,7 @@ export default function AdminDashboardPage() {
         : await cmsFetch('/api/v1/cms/articles', { method: 'POST', token, body: payload });
 
       if (result.ok) {
-        showCmsToast('success', 'Article saved successfully with GEO & SEO metadata!');
+        showCmsToast('success', 'Đã lưu bài viết cùng dữ liệu SEO và GEO.');
         try {
           localStorage.removeItem(draftKey);
         } catch {
@@ -2290,14 +2185,14 @@ export default function AdminDashboardPage() {
               onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
               className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
             >
-              ← Back to Articles List
+              ← Quay lại danh sách bài viết
             </button>
           </div>
           <div className="bg-rose-500/[0.07] border border-rose-500/30 rounded-2xl p-8 text-center space-y-2">
             <AlertCircle size={28} className="mx-auto text-rose-400" />
-            <p className="text-white font-bold text-sm">This article couldn&apos;t be loaded.</p>
+            <p className="text-white font-bold text-sm">Không thể tải bài viết này.</p>
             <p className="text-slate-400 text-xs">{loadError}</p>
-            <p className="text-slate-500 text-xs">Reload the page, or go back to the article list.</p>
+            <p className="text-slate-500 text-xs">Hãy tải lại trang hoặc quay về danh sách bài viết.</p>
           </div>
         </div>
       );
@@ -2311,11 +2206,11 @@ export default function AdminDashboardPage() {
               onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
               className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
             >
-              ← Back to Articles List
+              ← Quay lại danh sách bài viết
             </button>
           </div>
           <div className="flex items-center justify-center h-64 text-slate-500 text-sm gap-2">
-            <Loader2 size={16} className="animate-spin" /> Loading article…
+            <Loader2 size={16} className="animate-spin" /> Đang tải bài viết…
           </div>
         </div>
       );
@@ -2328,11 +2223,11 @@ export default function AdminDashboardPage() {
             onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
             className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
           >
-            ← Back to Articles List
+            ← Quay lại danh sách bài viết
           </button>
           <ChevronRight size={14} />
           <span className="text-amber-400 font-bold text-xs">
-            {editingArticle?.id ? 'Edit Article (SEO & GEO Studio V5.1)' : 'Create Article (SEO & GEO Studio V5.1)'}
+            {editingArticle?.id ? 'Chỉnh sửa bài viết (SEO & GEO)' : 'Tạo bài viết (SEO & GEO)'}
           </span>
           <button
             type="button"
@@ -2340,7 +2235,7 @@ export default function AdminDashboardPage() {
             disabled={!title.trim() && !content.trim()}
             className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <Globe size={13} /> Preview
+            <Globe size={13} /> Xem trước
           </button>
         </div>
 
@@ -2371,43 +2266,43 @@ export default function AdminDashboardPage() {
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                  <FileText size={16} className="text-amber-400" /> Basic Information & Main Content
+                  <FileText size={16} className="text-amber-400" /> Thông tin cơ bản & nội dung chính
                 </h3>
                 <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2.5 py-0.5 rounded font-bold border border-amber-500/20">
-                  Auto-Slug Active
+                  Tự tạo đường dẫn
                 </span>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Article Title (H1) *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Tiêu đề bài viết (H1) *</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 text-base shadow-inner font-bold"
-                  placeholder="Enter article title..."
+                  placeholder="Nhập tiêu đề bài viết..."
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Excerpt (Homepage Sapo Summary)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Mô tả ngắn hiển thị trên trang chủ</label>
                 <textarea
                   rows={2}
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300 text-xs focus:outline-none focus:border-amber-500 shadow-inner resize-none"
-                  placeholder="Short introduction for homepage cards..."
+                  placeholder="Viết phần giới thiệu ngắn cho thẻ bài viết..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Thumbnail Image</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Ảnh đại diện</label>
                 <div className="flex items-center gap-3 mb-2">
                   {thumbnailUrl && (
                     <img
                       src={thumbnailUrl}
-                      alt="Thumbnail preview"
+                      alt="Xem trước ảnh đại diện"
                       className="w-14 h-14 rounded-lg object-cover border border-slate-800 shrink-0"
                     />
                   )}
@@ -2434,7 +2329,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 mb-2 block">Article Content (Rich Text) *</label>
+                <label className="text-xs font-semibold text-slate-300 mb-2 block">Nội dung bài viết *</label>
                 <RichTextEditor
                   value={content}
                   onChange={setContent}
@@ -2449,17 +2344,17 @@ export default function AdminDashboardPage() {
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles size={16} className="text-purple-400" />
-                  <h3 className="text-white font-bold text-sm">GEO (Generative Engine Optimization) Hub</h3>
+                  <h3 className="text-white font-bold text-sm">Tối ưu hiển thị trên công cụ AI (GEO)</h3>
                 </div>
                 <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded font-bold border border-purple-500/30">
-                  AI-Ready v5.1
+                  Sẵn sàng cho AI
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-xs font-bold text-purple-300">
-                    <span>Key Takeaways (LLMs Summary)</span>
+                    <span>Ý chính cho AI tóm tắt</span>
                     <button
                       type="button"
                       onClick={handleAiTakeawaysGenerate}
@@ -2478,7 +2373,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                  <span className="text-xs font-bold text-purple-300 block">Entities & Citations</span>
+                  <span className="text-xs font-bold text-purple-300 block">Thực thể & nguồn tham chiếu</span>
                   <textarea
                     rows={4}
                     value={entitiesText}
@@ -2557,7 +2452,7 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Focus Keyword *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Từ khóa trọng tâm *</label>
                   <input
                     type="text"
                     value={focusKeyword}
@@ -2567,7 +2462,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">URL Slug *</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Đường dẫn URL *</label>
                   <input
                     type="text"
                     value={slug}
@@ -2578,7 +2473,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Meta Title</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Tiêu đề SEO</label>
                 <input
                   type="text"
                   value={metaTitle}
@@ -2588,7 +2483,7 @@ export default function AdminDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Meta Description</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Mô tả SEO</label>
                 <textarea
                   rows={2}
                   value={metaDescription}
@@ -2607,7 +2502,7 @@ export default function AdminDashboardPage() {
                 <Tag size={16} className="text-amber-400" /> Multi-Level Category Assignment
               </h3>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Primary Category (Level 1)</label>
+                <label className="block text-xs text-slate-400 mb-1">Danh mục chính *</label>
                 <select
                   value={categoryId}
                   onChange={(e) => {
@@ -2617,7 +2512,7 @@ export default function AdminDashboardPage() {
                   }}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
                 >
-                  <option value="">-- Select Category --</option>
+                  <option value="">-- Chọn danh mục --</option>
                   {categoriesList.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
@@ -2631,13 +2526,13 @@ export default function AdminDashboardPage() {
 
               {selectedCategoryObj && selectedCategoryObj.subCategories?.length > 0 && (
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Sub-category (optional)</label>
+                  <label className="block text-xs text-slate-400 mb-1">Danh mục phụ (không bắt buộc)</label>
                   <select
                     value={subCategoryId}
                     onChange={(e) => setSubCategoryId(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
                   >
-                    <option value="">-- Select Sub-Category --</option>
+                    <option value="">-- Chọn danh mục phụ --</option>
                     {selectedCategoryObj.subCategories.map((sub: any) => (
                       <option key={sub.id} value={sub.id}>
                         {sub.name}
@@ -2649,14 +2544,14 @@ export default function AdminDashboardPage() {
 
               <div className="pt-2 border-t border-slate-800 space-y-3">
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Publishing Status</label>
+                  <label className="block text-xs text-slate-400 mb-1">Trạng thái xuất bản</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs"
                   >
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
+                    <option value="published">Đã xuất bản</option>
+                    <option value="draft">Bản nháp</option>
                   </select>
                 </div>
 
@@ -2672,7 +2567,7 @@ export default function AdminDashboardPage() {
                     htmlFor="isFeatured"
                     className="text-xs font-bold text-amber-400 cursor-pointer flex items-center gap-1"
                   >
-                    <Star size={14} /> Mark as "Weekly Hot"
+                    <Star size={14} /> Đánh dấu “Nổi bật tuần”
                   </label>
                 </div>
               </div>
@@ -2682,7 +2577,7 @@ export default function AdminDashboardPage() {
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-yellow-600"></div>
               <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-                <LinkIcon size={16} className="text-amber-400" /> Multi-Position Affiliate Placement
+                <LinkIcon size={16} className="text-amber-400" /> Vị trí đặt liên kết affiliate
               </h3>
 
               <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
@@ -2709,7 +2604,7 @@ export default function AdminDashboardPage() {
                             : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
                             }`}
                         >
-                          + Top CTA
+                          + Đầu bài
                         </button>
                         <button
                           type="button"
@@ -2719,7 +2614,7 @@ export default function AdminDashboardPage() {
                             : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
                             }`}
                         >
-                          + Middle
+                          + Giữa bài
                         </button>
                         <button
                           type="button"
@@ -2729,7 +2624,7 @@ export default function AdminDashboardPage() {
                             : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/30'
                             }`}
                         >
-                          + Footer
+                          + Cuối bài
                         </button>
                       </div>
                     </div>
@@ -2739,7 +2634,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <LuxuryButton type="submit" className="w-full py-3 text-sm">
-              Save & Publish Article (SEO & GEO)
+              Lưu bài viết & trạng thái xuất bản
             </LuxuryButton>
           </div>
         </form>
@@ -2747,7 +2642,7 @@ export default function AdminDashboardPage() {
         {showLivePreview && (
           <PublicArticlePreview
             article={{
-              title: title || 'Untitled',
+              title: title || 'Chưa có tiêu đề',
               content,
               thumbnailUrl,
               authorName: currentUser?.name || currentUser?.username,
@@ -2783,26 +2678,26 @@ export default function AdminDashboardPage() {
             <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
               <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                NEXUS<span className="text-amber-400 font-light">FINANCE</span>
+                GOOD<span className="text-emerald-400 font-light">PICK</span>
               </div>
               <button
                 onClick={onBack}
                 className="text-sm text-slate-400 hover:text-white flex items-center gap-1 border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
               >
-                Close Preview
+                Đóng xem trước
               </button>
             </div>
           </nav>
 
           <article className="max-w-3xl mx-auto px-6 py-16">
             <div className="mb-10 text-center">
-              <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">In-Depth Analysis</div>
+              <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">Bài tư vấn chuyên sâu</div>
               <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{article.title}</h1>
               <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
-                <span>By <strong>{article.authorName || 'Global Analyst'}</strong></span>
+                <span>Biên soạn bởi <strong>{article.authorName || 'Đội ngũ GoodPick'}</strong></span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} views
+                  <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} lượt xem
                 </span>
               </div>
             </div>
@@ -2828,8 +2723,8 @@ export default function AdminDashboardPage() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Global Affiliate Campaigns</h2>
-          <p className="text-slate-400 text-sm">Manage central affiliate links, product landing pages for AI scraper, commission rates, and cookie windows.</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Chiến dịch affiliate cũ</h2>
+          <p className="text-slate-400 text-sm">Quản lý liên kết theo dõi, trang đích, hoa hồng và thời hạn cookie của các chiến dịch trước đây.</p>
         </div>
         <button
           type="button"
@@ -2842,22 +2737,22 @@ export default function AdminDashboardPage() {
 
       <form onSubmit={handleAddAffiliateLink} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 backdrop-blur-sm">
         <h3 className="text-white font-medium flex items-center gap-2">
-          <Plus size={18} className="text-amber-400" /> Add New Affiliate Campaign
+          <Plus size={18} className="text-amber-400" /> Thêm chiến dịch affiliate
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Campaign / Platform Name *</label>
+            <label className="block text-xs text-slate-400 mb-1">Tên chiến dịch / nền tảng *</label>
             <input
               type="text"
               value={newAffName}
               onChange={(e) => setNewAffName(e.target.value)}
-              placeholder="e.g. Binance Exchange, Scalenut AI..."
+              placeholder="Ví dụ: Gian hàng Shopee chính hãng..."
               required
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white"
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Base Tracking URL (Affiliate Ref Link) *</label>
+            <label className="block text-xs text-slate-400 mb-1">Liên kết theo dõi affiliate *</label>
             <input
               type="url"
               value={newAffUrl}
@@ -2871,7 +2766,7 @@ export default function AdminDashboardPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Product URL (Landing Page cho Jina AI Scraper)</label>
+            <label className="block text-xs text-slate-400 mb-1">Trang sản phẩm gốc (dùng lấy dữ liệu)</label>
             <input
               type="url"
               value={newAffProductUrl}
@@ -2882,20 +2777,20 @@ export default function AdminDashboardPage() {
             <p className="text-[10px] text-slate-500 mt-1">Trang chủ sản phẩm không chứa ref code dùng để Jina AI cào dữ liệu làm nguyên liệu viết bài.</p>
           </div>
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Commission Rate & Cookie Window</label>
+            <label className="block text-xs text-slate-400 mb-1">Mức hoa hồng & thời hạn cookie</label>
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="text"
                 value={newAffCommission}
                 onChange={(e) => setNewAffCommission(e.target.value)}
-                placeholder="30% Recurring"
+                placeholder="Ví dụ: 10%"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
               />
               <input
                 type="text"
                 value={newAffCookie}
                 onChange={(e) => setNewAffCookie(e.target.value)}
-                placeholder="30 Days"
+                placeholder="Ví dụ: 30 ngày"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
               />
             </div>
@@ -2917,7 +2812,7 @@ export default function AdminDashboardPage() {
           disabled={affUrlBlacklistError?.isError}
           className={`py-2 text-xs ${affUrlBlacklistError?.isError ? 'opacity-40 cursor-not-allowed' : ''}`}
         >
-          Save Affiliate Campaign
+          Lưu chiến dịch affiliate
         </LuxuryButton>
       </form>
 
@@ -2925,12 +2820,12 @@ export default function AdminDashboardPage() {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-              <th className="p-4 font-medium">Campaign Name</th>
-              <th className="p-4 font-medium">Commission Rate</th>
-              <th className="p-4 font-medium">Cookie Window</th>
-              <th className="p-4 font-medium">Total Clicks</th>
-              <th className="p-4 font-medium">Base Tracking URL</th>
-              <th className="p-4 font-medium text-right">Actions</th>
+              <th className="p-4 font-medium">Tên chiến dịch</th>
+              <th className="p-4 font-medium">Hoa hồng</th>
+              <th className="p-4 font-medium">Thời hạn cookie</th>
+              <th className="p-4 font-medium">Tổng lượt nhấp</th>
+              <th className="p-4 font-medium">Liên kết theo dõi</th>
+              <th className="p-4 font-medium text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="text-sm">
@@ -2941,12 +2836,12 @@ export default function AdminDashboardPage() {
                     <span className="font-bold">{link.name}</span>
                     {link.status === 'blacklisted' && (
                       <span className="bg-rose-500/10 text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-500/20">
-                        BLACKLISTED
+                        ĐÃ CHẶN
                       </span>
                     )}
                     {link.status === 'inactive' && (
                       <span className="bg-slate-500/10 text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-600/40">
-                        INACTIVE
+                        TẠM DỪNG
                       </span>
                     )}
                   </div>
@@ -2962,7 +2857,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </td>
                 <td className="p-4 text-amber-400 text-xs flex items-center gap-1.5">
-                  <Clock size={14} /> {link.cookie || '30 Days'}
+                  <Clock size={14} /> {link.cookie || '30 ngày'}
                 </td>
                 <td className="p-4">
                   <span className="text-sky-400 font-medium bg-sky-400/10 px-2.5 py-1 rounded-md text-xs border border-sky-400/20 inline-flex items-center gap-1">
@@ -2986,11 +2881,11 @@ export default function AdminDashboardPage() {
                   <button
                     onClick={() => handleQuickBlacklist(link.id, link.name)}
                     className="p-1.5 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg flex items-center gap-1 font-semibold transition-colors"
-                    title="Move to Blacklist"
+                    title="Đưa vào danh sách chặn"
                   >
-                    <ShieldAlert size={14} /> Blacklist
+                    <ShieldAlert size={14} /> Chặn
                   </button>
-                  <button onClick={() => handleDeleteAffiliateLink(link.id)} className="p-2 text-slate-400 hover:text-red-400" title="Delete Campaign">
+                  <button onClick={() => handleDeleteAffiliateLink(link.id)} className="p-2 text-slate-400 hover:text-red-400" title="Xóa chiến dịch">
                     <Trash2 size={16} />
                   </button>
                 </td>
@@ -3345,8 +3240,8 @@ export default function AdminDashboardPage() {
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Categories & Sub-Categories Hierarchy</h2>
-          <p className="text-slate-400 text-sm">Manage multi-level category structure, custom slugs, and dedicated SEO metadata.</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Danh mục sản phẩm</h2>
+          <p className="text-slate-400 text-sm">Sắp xếp danh mục chính, danh mục phụ, đường dẫn và thông tin SEO.</p>
         </div>
         <LuxuryButton
           onClick={() => {
@@ -3355,7 +3250,7 @@ export default function AdminDashboardPage() {
             setShowCategoryModal(true);
           }}
         >
-          <Plus size={18} /> Add Main Category (Level 1)
+          <Plus size={18} /> Thêm danh mục chính
         </LuxuryButton>
       </div>
 
@@ -3377,7 +3272,7 @@ export default function AdminDashboardPage() {
                   {cat.description && <p className="text-xs text-slate-400 mt-1">{cat.description}</p>}
                   {(cat.metaTitle || cat.metaDescription) && (
                     <div className="flex items-center gap-2 mt-1 text-[11px] text-emerald-400">
-                      <Sparkles size={12} /> SEO Meta Title & Desc Configured
+                      <Sparkles size={12} /> Đã cấu hình thông tin SEO
                     </div>
                   )}
                 </div>
@@ -3392,7 +3287,7 @@ export default function AdminDashboardPage() {
                   }}
                   className="px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-lg text-xs font-semibold hover:bg-cyan-500/20 flex items-center gap-1.5 transition-all"
                 >
-                  <Plus size={14} /> Add Sub-Category
+                  <Plus size={14} /> Thêm danh mục phụ
                 </button>
                 <button
                   onClick={() => {
@@ -3405,14 +3300,14 @@ export default function AdminDashboardPage() {
                     setShowCategoryModal(true);
                   }}
                   className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                  title="Edit Category"
+                  title="Sửa danh mục"
                 >
                   <Edit size={16} />
                 </button>
                 <button
                   onClick={() => handleDeleteCategory(cat.id)}
                   className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                  title="Delete Category"
+                  title="Xóa danh mục"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -3422,7 +3317,7 @@ export default function AdminDashboardPage() {
             {/* Sub-categories List */}
             <div className="pl-4 pt-2">
               <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Layers size={14} className="text-cyan-400" /> Level 2 Sub-Categories ({cat.subCategories?.length || 0})
+                <Layers size={14} className="text-cyan-400" /> Danh mục phụ ({cat.subCategories?.length || 0})
               </h4>
               {cat.subCategories && cat.subCategories.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -3459,7 +3354,7 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-600 italic">No sub-categories yet under {cat.name}. Click "+ Add Sub-Category" to create one.</p>
+                <p className="text-xs text-slate-600 italic">Danh mục {cat.name} chưa có mục phụ. Hãy bấm “Thêm danh mục phụ” để tạo.</p>
               )}
             </div>
           </div>
@@ -3473,7 +3368,7 @@ export default function AdminDashboardPage() {
             <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <FolderTree size={20} className="text-amber-400" />
-                {editingCategoryObj ? 'Edit Main Category' : 'Add Main Category (Level 1)'}
+                {editingCategoryObj ? 'Sửa danh mục chính' : 'Thêm danh mục chính'}
               </h3>
               <button onClick={() => setShowCategoryModal(false)} className="text-slate-400 hover:text-white">
                 <X size={20} />
@@ -3481,7 +3376,7 @@ export default function AdminDashboardPage() {
             </div>
             <form onSubmit={handleSaveCategory} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Category Name *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Tên danh mục *</label>
                 <input
                   type="text"
                   value={catName}
@@ -3497,7 +3392,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">URL Slug *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Đường dẫn URL *</label>
                 <input
                   type="text"
                   value={catSlug}
@@ -3508,7 +3403,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Mô tả</label>
                 <textarea
                   rows={2}
                   value={catDesc}
@@ -3518,9 +3413,9 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div className="border-t border-slate-800 pt-3 space-y-3">
-                <p className="text-xs font-bold text-amber-400 flex items-center gap-1"><Sparkles size={14} /> Category SEO Meta</p>
+                <p className="text-xs font-bold text-amber-400 flex items-center gap-1"><Sparkles size={14} /> Thông tin SEO danh mục</p>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">SEO Meta Title</label>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Tiêu đề SEO</label>
                   <input
                     type="text"
                     value={catMetaTitle}
@@ -3530,7 +3425,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">SEO Meta Description</label>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Mô tả SEO</label>
                   <textarea
                     rows={2}
                     value={catMetaDesc}
@@ -3542,10 +3437,10 @@ export default function AdminDashboardPage() {
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowCategoryModal(false)} className="px-4 py-2 text-xs text-slate-400 hover:text-white">
-                  Cancel
+                  Hủy
                 </button>
                 <LuxuryButton type="submit" className="py-2 px-5 text-xs">
-                  Save Category
+                  Lưu danh mục
                 </LuxuryButton>
               </div>
             </form>
@@ -3560,7 +3455,7 @@ export default function AdminDashboardPage() {
             <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Layers size={20} className="text-cyan-400" />
-                {editingSubCategoryObj ? 'Edit Sub-Category' : 'Add Sub-Category (Level 2)'}
+                {editingSubCategoryObj ? 'Sửa danh mục phụ' : 'Thêm danh mục phụ'}
               </h3>
               <button onClick={() => setShowSubCategoryModal(false)} className="text-slate-400 hover:text-white">
                 <X size={20} />
@@ -3568,14 +3463,14 @@ export default function AdminDashboardPage() {
             </div>
             <form onSubmit={handleSaveSubCategory} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Parent Category *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Danh mục cha *</label>
                 <select
                   value={subCatParentId}
                   onChange={(e) => setSubCatParentId(e.target.value)}
                   required
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value="">Select Parent Category...</option>
+                  <option value="">Chọn danh mục cha...</option>
                   {categoriesList.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -3584,7 +3479,7 @@ export default function AdminDashboardPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Sub-Category Name *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Tên danh mục phụ *</label>
                 <input
                   type="text"
                   value={subCatName}
@@ -3600,7 +3495,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">URL Slug *</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Đường dẫn URL *</label>
                 <input
                   type="text"
                   value={subCatSlug}
@@ -3611,7 +3506,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Mô tả</label>
                 <textarea
                   rows={2}
                   value={subCatDesc}
@@ -3621,9 +3516,9 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div className="border-t border-slate-800 pt-3 space-y-3">
-                <p className="text-xs font-bold text-cyan-400 flex items-center gap-1"><Sparkles size={14} /> Sub-Category SEO Meta</p>
+                <p className="text-xs font-bold text-cyan-400 flex items-center gap-1"><Sparkles size={14} /> Thông tin SEO danh mục phụ</p>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">SEO Meta Title</label>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Tiêu đề SEO</label>
                   <input
                     type="text"
                     value={subCatMetaTitle}
@@ -3633,7 +3528,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">SEO Meta Description</label>
+                  <label className="block text-[11px] font-semibold text-slate-400 mb-1">Mô tả SEO</label>
                   <textarea
                     rows={2}
                     value={subCatMetaDesc}
@@ -3645,10 +3540,10 @@ export default function AdminDashboardPage() {
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowSubCategoryModal(false)} className="px-4 py-2 text-xs text-slate-400 hover:text-white">
-                  Cancel
+                  Hủy
                 </button>
                 <LuxuryButton type="submit" className="py-2 px-5 text-xs">
-                  Save Sub-Category
+                  Lưu danh mục phụ
                 </LuxuryButton>
               </div>
             </form>
@@ -3663,11 +3558,11 @@ export default function AdminDashboardPage() {
     <form onSubmit={handleSaveSettings} className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex justify-between items-end border-b border-slate-800 pb-4">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Global System, Theme & SEO/GEO Settings</h2>
-          <p className="text-slate-400 text-sm">Customize visual colors, typography, brand logo, Local GEO search tags, and AI crawler schemas.</p>
+          <h2 className="text-2xl font-bold text-white mb-1">Cấu hình website</h2>
+          <p className="text-slate-400 text-sm">Tùy chỉnh nhận diện, giao diện, thông tin tìm kiếm và dữ liệu dành cho công cụ AI.</p>
         </div>
         <LuxuryButton type="submit" className="py-2.5 px-6">
-          <CheckCircle2 size={18} /> Save All Settings
+          <CheckCircle2 size={18} /> Lưu toàn bộ cấu hình
         </LuxuryButton>
       </div>
 
@@ -3681,7 +3576,7 @@ export default function AdminDashboardPage() {
             : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
             }`}
         >
-          <Palette size={16} /> UI Appearance & Colors
+          <Palette size={16} /> Giao diện & màu sắc
         </button>
         <button
           type="button"
@@ -3691,7 +3586,7 @@ export default function AdminDashboardPage() {
             : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
             }`}
         >
-          <Globe size={16} /> SEO & GEO AI Engine
+          <Globe size={16} /> SEO & dữ liệu AI
         </button>
       </div>
 
@@ -3700,17 +3595,17 @@ export default function AdminDashboardPage() {
           {/* Theme & Palette */}
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-5">
             <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Palette size={18} className="text-amber-400" /> Color Scheme & Palette Presets
+              <Palette size={18} className="text-amber-400" /> Bảng màu giao diện
             </h3>
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-2">Preset Color Schemes</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-2">Mẫu màu có sẵn</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
-                  { name: 'Dark Slate & Amber (Default)', primary: '#0f172a', accent: '#f59e0b', mode: 'dark' },
-                  { name: 'Cyber Emerald', primary: '#064e3b', accent: '#10b981', mode: 'dark' },
-                  { name: 'Sapphire Blue', primary: '#1e3a8a', accent: '#3b82f6', mode: 'dark' },
-                  { name: 'Ruby Crimson', primary: '#881337', accent: '#f43f5e', mode: 'dark' },
-                  { name: 'Sunset Orange', primary: '#7c2d12', accent: '#f97316', mode: 'dark' },
+                  { name: 'Đá phiến & hổ phách (mặc định)', primary: '#0f172a', accent: '#f59e0b', mode: 'dark' },
+                  { name: 'Xanh ngọc công nghệ', primary: '#064e3b', accent: '#10b981', mode: 'dark' },
+                  { name: 'Xanh lam sapphire', primary: '#1e3a8a', accent: '#3b82f6', mode: 'dark' },
+                  { name: 'Đỏ ruby', primary: '#881337', accent: '#f43f5e', mode: 'dark' },
+                  { name: 'Cam hoàng hôn', primary: '#7c2d12', accent: '#f97316', mode: 'dark' },
                 ].map((p) => (
                   <button
                     key={p.name}
@@ -3730,7 +3625,7 @@ export default function AdminDashboardPage() {
 
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Primary Color (Hex)</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Màu chính (Hex)</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -3747,7 +3642,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Accent / CTA Color (Hex)</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Màu nhấn / nút hành động (Hex)</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -3767,28 +3662,28 @@ export default function AdminDashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Theme Mode</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Chế độ giao diện</label>
                 <select
                   value={settingsData?.themeMode || 'dark'}
                   onChange={(e) => setSettingsData({ ...settingsData, themeMode: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white"
                 >
-                  <option value="dark">Dark Luxury (Default)</option>
-                  <option value="light">Light Mode</option>
-                  <option value="emerald">Emerald Cyber</option>
-                  <option value="amber">Amber Gold</option>
+                  <option value="dark">Tối cao cấp (mặc định)</option>
+                  <option value="light">Sáng</option>
+                  <option value="emerald">Xanh ngọc</option>
+                  <option value="amber">Vàng hổ phách</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Font Family</label>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Phông chữ</label>
                 <select
                   value={settingsData?.fontFamily || 'Inter'}
                   onChange={(e) => setSettingsData({ ...settingsData, fontFamily: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white"
                 >
-                  <option value="Inter">Inter (Clean Modern)</option>
-                  <option value="Roboto">Roboto (Classic Sans)</option>
-                  <option value="Outfit">Outfit (Geometric Modern)</option>
+                  <option value="Inter">Inter (hiện đại, gọn gàng)</option>
+                  <option value="Roboto">Roboto (không chân cổ điển)</option>
+                  <option value="Outfit">Outfit (hình học hiện đại)</option>
                   <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
                 </select>
               </div>
@@ -3798,27 +3693,27 @@ export default function AdminDashboardPage() {
           {/* Branding & Visual Assets */}
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-5">
             <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Layout size={18} className="text-cyan-400" /> Branding & Visual Elements
+              <Layout size={18} className="text-cyan-400" /> Nhận diện & hình ảnh thương hiệu
             </h3>
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Header Logo Image URL</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">URL logo đầu trang</label>
               <input
                 type="text"
                 value={settingsData?.logoUrl || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, logoUrl: e.target.value })}
-                placeholder="https://example.com/logo.png (Empty = Text Logo)"
+                placeholder="https://example.com/logo.png (để trống sẽ dùng logo chữ)"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-xs text-white"
               />
               {settingsData?.logoUrl && (
                 <div className="mt-2 p-2 bg-slate-950 rounded-lg border border-slate-800 flex items-center gap-2">
-                  <span className="text-[10px] text-slate-500">Preview:</span>
-                  <img src={settingsData.logoUrl} alt="Logo Preview" className="h-6 object-contain" />
+                  <span className="text-[10px] text-slate-500">Xem trước:</span>
+                  <img src={settingsData.logoUrl} alt="Xem trước logo" className="h-6 object-contain" />
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Favicon Icon URL</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">URL biểu tượng favicon</label>
               <input
                 type="text"
                 value={settingsData?.faviconUrl || ''}
@@ -3829,34 +3724,34 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Header Announcement Banner Text</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Nội dung thông báo đầu trang</label>
               <input
                 type="text"
                 value={settingsData?.bannerText || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, bannerText: e.target.value })}
-                placeholder="🔥 Announcement Text at top bar..."
+                placeholder="🔥 Nhập thông báo hiển thị ở thanh đầu trang..."
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-xs text-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Footer Copyright & Bio</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Bản quyền & giới thiệu cuối trang</label>
               <textarea
                 rows={2}
                 value={settingsData?.footerText || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, footerText: e.target.value })}
-                placeholder="© 2026 AIDEALSUK. All rights reserved..."
+                placeholder="© 2026 GoodPick. Bảo lưu mọi quyền..."
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-xs text-white resize-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">Developer Custom CSS Overrides</label>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">CSS tùy chỉnh cho nhà phát triển</label>
               <textarea
                 rows={3}
                 value={settingsData?.customCss || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, customCss: e.target.value })}
-                placeholder="/* Additional CSS styles */ .custom-class { color: red; }"
+                placeholder="/* Kiểu CSS bổ sung */ .custom-class { color: red; }"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 font-mono resize-none"
               />
             </div>
@@ -3868,10 +3763,10 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-in fade-in duration-300">
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-5">
             <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Globe size={18} className="text-amber-400" /> Core Search Metadata (SEO)
+              <Globe size={18} className="text-amber-400" /> Thông tin tìm kiếm cốt lõi (SEO)
             </h3>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-2">Global Site Title</label>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Tiêu đề toàn website</label>
               <input
                 type="text"
                 value={settingsData?.siteTitle || ''}
@@ -3880,7 +3775,7 @@ export default function AdminDashboardPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-400 mb-2">Meta Description</label>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Mô tả SEO</label>
               <textarea
                 rows={3}
                 value={settingsData?.metaDescription || ''}
@@ -3889,28 +3784,28 @@ export default function AdminDashboardPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-2">Focus Target Keywords</label>
+              <label className="block text-xs font-medium text-slate-400 mb-2">Nhóm từ khóa mục tiêu</label>
               <input
                 type="text"
                 value={settingsData?.focusKeywords || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, focusKeywords: e.target.value })}
-                placeholder="crypto, finance, investing, affiliate deals"
+                placeholder="ưu đãi công nghệ, đồ gia dụng, dụng cụ làm vườn, hướng dẫn mua sắm"
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-xs text-white"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">Canonical Domain URL</label>
+                <label className="block text-xs font-medium text-slate-400 mb-2">Tên miền chuẩn (canonical)</label>
                 <input
                   type="text"
                   value={settingsData?.canonicalUrl || ''}
                   onChange={(e) => setSettingsData({ ...settingsData, canonicalUrl: e.target.value })}
-                  placeholder="https://nexusfinance.global"
+                  placeholder="https://goodpick.vn"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">OpenGraph Social Share Image URL</label>
+                <label className="block text-xs font-medium text-slate-400 mb-2">URL ảnh chia sẻ mạng xã hội</label>
                 <input
                   type="text"
                   value={settingsData?.ogImageUrl || ''}
@@ -3924,24 +3819,24 @@ export default function AdminDashboardPage() {
 
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-5">
             <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-              <MapPin size={18} className="text-cyan-400" /> GEO & AI Crawler Structured Optimization
+              <MapPin size={18} className="text-cyan-400" /> Dữ liệu khu vực & trình thu thập AI
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">Language Locale (hreflang)</label>
+                <label className="block text-xs font-medium text-slate-400 mb-2">Ngôn ngữ (hreflang)</label>
                 <select
                   value={settingsData?.hreflang || 'en-US'}
                   onChange={(e) => setSettingsData({ ...settingsData, hreflang: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white"
                 >
-                  <option value="en-US">English (en-US)</option>
-                  <option value="vi-VN">Vietnamese (vi-VN)</option>
-                  <option value="ja-JP">Japanese (ja-JP)</option>
-                  <option value="de-DE">German (de-DE)</option>
+                  <option value="en-US">Tiếng Anh (en-US)</option>
+                  <option value="vi-VN">Tiếng Việt (vi-VN)</option>
+                  <option value="ja-JP">Tiếng Nhật (ja-JP)</option>
+                  <option value="de-DE">Tiếng Đức (de-DE)</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">Target Country Code</label>
+                <label className="block text-xs font-medium text-slate-400 mb-2">Mã quốc gia mục tiêu</label>
                 <input
                   type="text"
                   value={settingsData?.geoTarget || 'GLOBAL'}
@@ -3954,7 +3849,7 @@ export default function AdminDashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">GEO Region Name (geo.region)</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Mã khu vực (geo.region)</label>
                 <input
                   type="text"
                   value={settingsData?.geoRegionName || 'US-NY'}
@@ -3964,7 +3859,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">GEO City Placename (geo.placename)</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Tên thành phố (geo.placename)</label>
                 <input
                   type="text"
                   value={settingsData?.geoPlacename || 'New York'}
@@ -3977,7 +3872,7 @@ export default function AdminDashboardPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Latitude</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Vĩ độ</label>
                 <input
                   type="number"
                   step="any"
@@ -3987,7 +3882,7 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Longitude</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Kinh độ</label>
                 <input
                   type="number"
                   step="any"
@@ -3999,7 +3894,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Google Analytics Measurement ID (GA4)</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Mã đo lường Google Analytics (GA4)</label>
               <input
                 type="text"
                 value={settingsData?.googleAnalyticsId || ''}
@@ -4026,13 +3921,13 @@ export default function AdminDashboardPage() {
 
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-medium text-slate-400">Schema JSON-LD (AI Engine Friendly)</label>
+                <label className="block text-xs font-medium text-slate-400">Dữ liệu có cấu trúc JSON-LD</label>
                 <button
                   type="button"
                   onClick={generateDefaultSchemaJsonLd}
                   className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold"
                 >
-                  <Sparkles size={12} /> Auto-Generate Schema
+                  <Sparkles size={12} /> Tự tạo dữ liệu mẫu
                 </button>
               </div>
               <textarea
@@ -4057,7 +3952,7 @@ export default function AdminDashboardPage() {
 
     const exportToCsv = () => {
       if (subscribersList.length === 0) {
-        alert('No subscribers to export');
+        alert('Chưa có người đăng ký để xuất dữ liệu.');
         return;
       }
       const headers = ['ID', 'Email Address', 'Subscription Status', 'Subscribed Date', 'Last Digest'];
@@ -4082,11 +3977,11 @@ export default function AdminDashboardPage() {
       <div className="space-y-6 animate-in fade-in duration-500 pb-10">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-white mb-1">Insider Dispatch</h2>
-            <p className="text-slate-400 text-sm">Manage confirmed readers, confirmation status, daily delivery, and unsubscribes.</p>
+            <h2 className="text-2xl font-bold text-white mb-1">Người đăng ký nhận tin</h2>
+            <p className="text-slate-400 text-sm">Quản lý người đọc, trạng thái xác nhận, bản tin hằng ngày và yêu cầu hủy đăng ký.</p>
           </div>
           <LuxuryButton onClick={exportToCsv} className="py-2.5 px-5">
-            <Download size={18} /> Export Leads (.CSV)
+            <Download size={18} /> Xuất danh sách (.CSV)
           </LuxuryButton>
         </div>
 
@@ -4097,27 +3992,27 @@ export default function AdminDashboardPage() {
             <div>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">
-                  <Radio size={11} className="animate-pulse" /> Daily automation
+                  <Radio size={11} className="animate-pulse" /> Gửi tự động hằng ngày
                 </span>
-                <span className="text-xs font-mono text-slate-500">00:00 GMT+12 · previous-day brief</span>
+                <span className="text-xs font-mono text-slate-500">00:00 GMT+12 · tổng hợp ngày trước đó</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Recipients</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Người nhận</p>
                   <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{(subscribersStats?.totalSubscribers || 0).toLocaleString()}</p>
-                  <p className="text-xs text-slate-500">Active and confirmed</p>
+                  <p className="text-xs text-slate-500">Đang hoạt động và đã xác nhận</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Awaiting confirmation</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Chờ xác nhận</p>
                   <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-300">{(subscribersStats?.pendingCount || 0).toLocaleString()}</p>
-                  <p className="text-xs text-slate-500">Not included in delivery</p>
+                  <p className="text-xs text-slate-500">Chưa được nhận bản tin</p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Last dispatch</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">Lần gửi gần nhất</p>
                   <p className="mt-2 text-sm font-mono text-slate-200">
                     {subscribersStats?.lastDispatchAt
                       ? new Date(subscribersStats.lastDispatchAt).toLocaleString()
-                      : 'No digest sent yet'}
+                      : 'Chưa gửi bản tin nào'}
                   </p>
                 </div>
               </div>
@@ -4129,10 +4024,10 @@ export default function AdminDashboardPage() {
                 className="min-w-[210px] py-3 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sendingInsiderDigest
-                  ? <><Loader2 size={16} className="animate-spin" /> Sending digest...</>
-                  : <><Send size={16} /> Send digest now</>}
+                  ? <><Loader2 size={16} className="animate-spin" /> Đang gửi bản tin...</>
+                  : <><Send size={16} /> Gửi bản tin ngay</>}
               </LuxuryButton>
-              <p className="max-w-[260px] text-[11px] leading-relaxed text-slate-500 xl:text-right">Sends today’s GMT+12 brief immediately. The next scheduled cron digest remains active.</p>
+              <p className="max-w-[260px] text-[11px] leading-relaxed text-slate-500 xl:text-right">Gửi ngay bản tổng hợp hôm nay. Lịch gửi tự động tiếp theo vẫn được giữ nguyên.</p>
             </div>
           </div>
           {insiderDispatchNotice && (
@@ -4151,9 +4046,9 @@ export default function AdminDashboardPage() {
 
         {/* Lead KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard title="New Insiders Today" value={(subscribersStats?.countToday || 0).toLocaleString()} icon={Sparkles} subtext="Confirmed today in GMT+12" />
-          <StatCard title="New This Week" value={(subscribersStats?.countThisWeek || 0).toLocaleString()} icon={TrendingUp} subtext="Confirmed in the last 7 days" />
-          <StatCard title="Unsubscribed" value={(subscribersStats?.unsubscribedCount || 0).toLocaleString()} icon={X} subtext="Excluded from all delivery" />
+          <StatCard title="Mới hôm nay" value={(subscribersStats?.countToday || 0).toLocaleString()} icon={Sparkles} subtext="Đã xác nhận trong ngày" />
+          <StatCard title="Mới trong tuần" value={(subscribersStats?.countThisWeek || 0).toLocaleString()} icon={TrendingUp} subtext="Đã xác nhận trong 7 ngày" />
+          <StatCard title="Đã hủy đăng ký" value={(subscribersStats?.unsubscribedCount || 0).toLocaleString()} icon={X} subtext="Không còn nhận bản tin" />
         </div>
 
         {/* Search Bar */}
@@ -4164,11 +4059,11 @@ export default function AdminDashboardPage() {
               type="text"
               value={subscriberSearchQuery}
               onChange={(e) => setSubscriberSearchQuery(e.target.value)}
-              placeholder="Search by email address..."
+              placeholder="Tìm theo địa chỉ email..."
               className="w-full bg-slate-950 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
             />
           </div>
-          <span className="text-xs text-slate-500 font-mono">Showing {filteredSubscribers.length} of {subscribersList.length} leads</span>
+          <span className="text-xs text-slate-500 font-mono">Hiển thị {filteredSubscribers.length}/{subscribersList.length} người</span>
         </div>
 
         {/* Subscribers Table */}
@@ -4176,10 +4071,10 @@ export default function AdminDashboardPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-                <th className="p-4 font-medium">Subscriber Email</th>
-                <th className="p-4 font-medium">Subscribed Date</th>
-                <th className="p-4 font-medium">Lead Status</th>
-                <th className="p-4 font-medium text-right">Actions</th>
+                <th className="p-4 font-medium">Email người đăng ký</th>
+                <th className="p-4 font-medium">Ngày đăng ký</th>
+                <th className="p-4 font-medium">Trạng thái</th>
+                <th className="p-4 font-medium text-right">Thao tác</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -4205,8 +4100,8 @@ export default function AdminDashboardPage() {
                               : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                         }`}
                         title={sub.lastDigestAt
-                          ? `Last digest: ${new Date(sub.lastDigestAt).toLocaleString()}`
-                          : `Email status: ${sub.emailStatus || 'sent'}`}
+                          ? `Bản tin gần nhất: ${new Date(sub.lastDigestAt).toLocaleString()}`
+                          : `Trạng thái email: ${sub.emailStatus || 'đã gửi'}`}
                       >
                         {sub.status === 'active'
                           ? <CheckCircle2 size={12} />
@@ -4214,14 +4109,14 @@ export default function AdminDashboardPage() {
                             ? <X size={12} />
                             : <Clock size={12} />}
                         {sub.status === 'active'
-                          ? 'Active'
+                          ? 'Đang hoạt động'
                           : sub.status === 'unsubscribed'
-                            ? 'Unsubscribed'
-                            : 'Pending confirmation'}
+                            ? 'Đã hủy đăng ký'
+                            : 'Chờ xác nhận'}
                       </span>
                     </td>
                     <td className="p-4 text-right">
-                      <button onClick={() => handleDeleteSubscriber(sub.id)} className="p-2 text-slate-400 hover:text-red-400" title="Delete Lead">
+                      <button onClick={() => handleDeleteSubscriber(sub.id)} className="p-2 text-slate-400 hover:text-red-400" title="Xóa người đăng ký">
                         <Trash2 size={16} />
                       </button>
                     </td>
@@ -4230,7 +4125,7 @@ export default function AdminDashboardPage() {
               ) : (
                 <tr>
                   <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
-                    No subscriber leads found matching "{subscriberSearchQuery}".
+                    Không tìm thấy người đăng ký phù hợp với “{subscriberSearchQuery}”.
                   </td>
                 </tr>
               )}
@@ -4246,6 +4141,7 @@ export default function AdminDashboardPage() {
     if (editingArticle !== null) return <ArticleEditorForm />;
 
     if (activeTab === 'dashboard') return <DashboardView />;
+    if (activeTab === 'products') return <ProductManager categories={categoriesList} />;
     if (activeTab === 'insights' && currentUser.role === 'admin') return <InsightsView />;
     if (activeTab === 'articles') return <ArticlesView />;
     if (activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
@@ -4264,20 +4160,20 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
           <div className="flex items-center gap-2 text-rose-400">
             <ShieldAlert size={20} />
-            <span className="text-sm font-bold">Access denied</span>
+            <span className="text-sm font-bold">Không có quyền truy cập</span>
           </div>
-          <p className="text-slate-400 text-sm">You don&apos;t have access to this section.</p>
+          <p className="text-slate-400 text-sm">Tài khoản của bạn không được phép mở khu vực này.</p>
           <button
             onClick={() => navigate({ tab: 'articles' })}
             className="text-xs font-bold text-rose-400 hover:text-rose-300 underline underline-offset-4"
           >
-            Back to Articles
+            Quay lại bài viết
           </button>
         </div>
       );
     }
 
-    return <div className="text-slate-500 flex items-center justify-center h-64 text-sm">Under Construction...</div>;
+    return <div className="text-slate-500 flex items-center justify-center h-64 text-sm">Tính năng đang được hoàn thiện...</div>;
   };
 
   const NavItem = ({ id, icon: Icon, label, requiredRole }: any) => {
@@ -4310,27 +4206,28 @@ export default function AdminDashboardPage() {
             <div className="h-20 flex items-center px-6 border-b border-slate-800/60">
               <Link href="/" className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                  <span className="text-slate-900 font-bold text-lg">A</span>
+                  <span className="text-slate-900 font-bold text-lg">G</span>
                 </div>
-                AFFILIATE<span className="text-amber-400 font-light">PRO</span>
+                GOOD<span className="text-emerald-400 font-light">PICK</span> <span className="text-[9px] tracking-widest text-slate-500">CMS</span>
               </Link>
             </div>
 
             <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
-              <NavItem id="dashboard" icon={LayoutDashboard} label="Global Dashboard" />
-              <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Content</div>
-              <NavItem id="articles" icon={FileText} label="Article Management" />
+              <NavItem id="dashboard" icon={LayoutDashboard} label="Tổng quan kinh doanh" />
+              <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Nội dung bán hàng</div>
+              <NavItem id="products" icon={Package} label="Sản phẩm & ưu đãi" />
+              <NavItem id="articles" icon={FileText} label="Bài viết tư vấn" />
 
               {currentUser.role === 'admin' && (
                 <>
-                  <NavItem id="insights" icon={TrendingUp} label="SEO Insights" requiredRole="admin" />
-                  <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">System (Admin)</div>
-                  <NavItem id="subscribers" icon={Mail} label="Insider" requiredRole="admin" />
-                  <NavItem id="categories" icon={FolderTree} label="Categories & Sub-Cats" requiredRole="admin" />
-                  <NavItem id="users" icon={Users} label="Team & Creators" requiredRole="admin" />
-                  <NavItem id="blacklist" icon={ShieldAlert} label="Link & Blacklist Center" requiredRole="admin" />
-                  <NavItem id="links" icon={LinkIcon} label="Affiliate Campaigns" requiredRole="admin" />
-                  <NavItem id="settings" icon={Settings} label="Global SEO & System" requiredRole="admin" />
+                  <NavItem id="insights" icon={TrendingUp} label="Phân tích SEO" requiredRole="admin" />
+                  <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Vận hành hệ thống</div>
+                  <NavItem id="subscribers" icon={Mail} label="Người đăng ký" requiredRole="admin" />
+                  <NavItem id="categories" icon={FolderTree} label="Danh mục sản phẩm" requiredRole="admin" />
+                  <NavItem id="users" icon={Users} label="Tài khoản & phân quyền" requiredRole="admin" />
+                  <NavItem id="blacklist" icon={ShieldAlert} label="An toàn liên kết" requiredRole="admin" />
+                  <NavItem id="links" icon={LinkIcon} label="Link affiliate cũ" requiredRole="admin" />
+                  <NavItem id="settings" icon={Settings} label="Cấu hình website" requiredRole="admin" />
                 </>
               )}
             </nav>
@@ -4342,7 +4239,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-sm font-medium text-white truncate">{currentUser.name || currentUser.username}</p>
-                  <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">{currentUser.role}</p>
+                  <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">{roleLabel(currentUser.role)}</p>
                 </div>
               </div>
             </div>
@@ -4356,7 +4253,7 @@ export default function AdminDashboardPage() {
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="text"
-                    placeholder="Search articles or team..."
+                    placeholder="Tìm sản phẩm, bài viết hoặc thành viên..."
                     className="w-full bg-slate-900/50 border border-slate-700/50 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
                   />
                 </div>
@@ -4364,10 +4261,10 @@ export default function AdminDashboardPage() {
 
               <div className="flex items-center gap-6">
                 <Link href="/" target="_blank" className="text-xs text-slate-400 hover:text-amber-400 flex items-center gap-1">
-                  Public Website <Globe size={14} />
+                  Xem website <Globe size={14} />
                 </Link>
                 <div className="w-px h-6 bg-slate-800"></div>
-                <button onClick={handleLogout} className="text-slate-400 hover:text-red-400 p-2 rounded-full hover:bg-red-400/10 transition-colors" title="Sign Out">
+                <button onClick={handleLogout} className="text-slate-400 hover:text-red-400 p-2 rounded-full hover:bg-red-400/10 transition-colors" title="Đăng xuất">
                   <LogOut size={18} />
                 </button>
               </div>
@@ -4405,7 +4302,7 @@ export default function AdminDashboardPage() {
                 href="/admin/login"
                 className="mt-1.5 inline-block font-bold text-amber-400 hover:text-amber-300"
               >
-                Sign in
+                Đăng nhập lại
               </Link>
             )}
           </div>
@@ -4464,7 +4361,7 @@ export default function AdminDashboardPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Base Tracking URL (Link Affiliate Ref) *</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Liên kết theo dõi affiliate *</label>
                   <input
                     type="url"
                     value={aiModalBaseUrl}
@@ -4475,7 +4372,7 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Product URL (Landing Page Cào Data Jina AI)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">URL trang sản phẩm (dùng lấy dữ liệu)</label>
                   <input
                     type="url"
                     value={aiModalProductUrl}
@@ -4495,7 +4392,7 @@ export default function AdminDashboardPage() {
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
                   >
                     <option value="vi-VN">Tiếng Việt (vi-VN)</option>
-                    <option value="en-US">English (en-US)</option>
+                    <option value="en-US">Tiếng Anh (en-US)</option>
                   </select>
                 </div>
                 <div>
@@ -4524,10 +4421,10 @@ export default function AdminDashboardPage() {
                 <p className="text-slate-200 font-bold flex items-center gap-1.5">
                   ⚙️ Tiến trình xử lý 4 bước tự động:
                 </p>
-                <p>1. Check Blacklist Interceptor real-time bảo vệ URL.</p>
+                <p>1. Kiểm tra danh sách chặn theo thời gian thực để bảo vệ URL.</p>
                 <p>2. Cào landing page bằng Jina AI Reader (<code className="text-cyan-300">r.jina.ai</code>).</p>
-                <p>3. Gemini 2.5 Flash sinh bài viết chuẩn SEO/GEO + JSON Schema Enforcement.</p>
-                <p>4. Post-Sanitization Link Checker tự động lọc & lưu nháp (Draft) vào Database.</p>
+                <p>3. Gemini 2.5 Flash tạo bài viết chuẩn SEO/GEO và dữ liệu JSON Schema.</p>
+                <p>4. Kiểm tra liên kết sau xử lý, tự động lọc và lưu bản nháp vào cơ sở dữ liệu.</p>
               </div>
 
               <div className="pt-2 flex justify-end gap-3">

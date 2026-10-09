@@ -3,8 +3,8 @@ import { ArticleModel } from './models';
 
 // One-off cleanup for a Gemini AI content-generation bug: it sometimes leaked
 // raw Markdown link syntax `[text](url)` into an <a href="..."> attribute
-// instead of emitting clean HTML (e.g. href="/article/[https://aidealsuk.com]
-// (https://aidealsuk.com)/article/some-other-slug"). Google then crawled these
+// instead of emitting clean HTML (e.g. href="/article/[https://example.com]
+// (https://example.com)/article/some-other-slug"). Search engines then crawled these
 // as real broken URLs, showing up as 404s in Search Console. The generation
 // path is fixed in src/lib/sanitizer.ts + src/lib/gemini.ts; this script finds
 // and cleans up articles that were already saved with the bad markup.

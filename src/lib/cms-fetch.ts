@@ -38,21 +38,21 @@ function envelopeMessage(envelope: unknown): string | undefined {
 export function errorMessageForResponse(status: number, serverMessage?: string): string {
   switch (status) {
     case 401:
-      return 'Your session expired. Sign in again to continue.';
+      return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.';
     case 403:
-      return "You don't have permission to do that. Ask an admin if you need access.";
+      return 'Bạn không có quyền thực hiện thao tác này. Hãy liên hệ quản trị viên nếu cần cấp quyền.';
     case 404:
-      return 'That article no longer exists. It may have been deleted.';
+      return 'Nội dung này không còn tồn tại hoặc đã bị xóa.';
     case 400:
       return serverMessage && serverMessage.trim().length > 0
         ? serverMessage
-        : 'That request was rejected. Check the fields and try again.';
+        : 'Yêu cầu chưa hợp lệ. Hãy kiểm tra các trường thông tin và thử lại.';
     case 500:
-      return 'Something went wrong on the server. Try again in a moment.';
+      return 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.';
     case 0:
-      return "Can't reach the server. Check your connection and try again.";
+      return 'Không thể kết nối máy chủ. Hãy kiểm tra đường truyền và thử lại.';
     default:
-      return "That action didn't complete. Try again.";
+      return 'Thao tác chưa hoàn tất. Vui lòng thử lại.';
   }
 }
 
