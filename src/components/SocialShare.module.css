@@ -53,7 +53,7 @@
 }
 
 .actions button:focus-visible {
-  outline: 2px solid #85ddd5;
+  outline: 2px solid #1947d1;
   outline-offset: 3px;
 }
 

@@ -111,11 +111,11 @@ export default function TechFinanceNewsClient({
   const activeQuery = searchParams.get("q")?.trim() || "";
   const insiderResult = searchParams.get("insider");
   const insiderMessage = insiderResult === 'confirmed'
-    ? 'Your AIDEALSUK Insider subscription is confirmed.'
+    ? 'Your GoodPick email subscription is confirmed.'
     : insiderResult === 'already-active'
-      ? 'This email is already an AIDEALSUK Insider.'
+      ? 'This email is already subscribed to the GoodPick Edit.'
     : insiderResult === 'unsubscribed'
-      ? 'You have been unsubscribed from AIDEALSUK Insider.'
+      ? 'You have been unsubscribed from the GoodPick Edit.'
       : insiderResult === 'invalid'
         ? 'This Insider link is invalid or has expired.'
         : '';
@@ -219,34 +219,34 @@ export default function TechFinanceNewsClient({
           <div className={styles.heroSignal} aria-hidden="true" />
           <div className={styles.heroScan} aria-hidden="true"><span /></div>
           <div className={styles.heroCopy}>
-            <p className={styles.heroEyebrow}>Independent intelligence for the AI economy</p>
+            <p className={styles.heroEyebrow}>Independent guidance for considered purchases</p>
             <h1 id="homepage-hero-title">
               <span className={styles.heroTitleLine}>Read the signal.</span>
               <span className={styles.heroTitleAccent}>Build what comes next.</span>
             </h1>
             <p className={styles.heroLede}>
-              Sharp reporting on artificial intelligence, money, and the tools worth your attention—edited for people making real decisions.
+              Practical product comparisons, retailer context and buying guides for people making real decisions.
             </p>
             <div className={styles.heroActions}>
               <Link className={styles.heroPrimaryAction} href="/latest">
                 Read Latest News <ArrowUpRight aria-hidden="true" />
               </Link>
               <Link className={styles.heroSecondaryAction} href="/affiliates">
-                Explore AI Tools <ArrowUpRight aria-hidden="true" />
+                Explore Products <ArrowUpRight aria-hidden="true" />
               </Link>
             </div>
           </div>
 
-          <aside className={styles.signalPanel} aria-label="AIDEALSUK coverage desk">
+          <aside className={styles.signalPanel} aria-label="GoodPick buying desk">
             <div className={styles.signalPanelHeader}>
-              <span>AIDEALSUK / SIGNAL DESK</span>
+              <span>GOODPICK / BUYING DESK</span>
               <span className={styles.signalStatus}><i aria-hidden="true" /> Current edition</span>
             </div>
             <p className={styles.signalKicker}>What we track</p>
             <div className={styles.signalTopics}>
-              <div><span>Reporting</span><strong>AI systems &amp; automation</strong></div>
-              <div><span>Markets</span><strong>Capital, policy &amp; finance</strong></div>
-              <div><span>Reviews</span><strong>Tools worth paying for</strong></div>
+              <div><span>Products</span><strong>Practical fit &amp; ownership</strong></div>
+              <div><span>Offers</span><strong>Price, delivery &amp; returns</strong></div>
+              <div><span>Guides</span><strong>What is worth paying for</strong></div>
             </div>
             <p className={styles.signalFootnote}>Clarity over volume. Evidence over hype.</p>
           </aside>
@@ -339,7 +339,7 @@ export default function TechFinanceNewsClient({
                 <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
                 <p className={styles.lede}>{featuredDescriptionFor(featured)}</p>
                 <p className={styles.meta}>
-                  By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
+                  By {featured.authorName || "GoodPick Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "BUYING GUIDE"}
                 </p>
                 <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <span aria-hidden="true">&rarr;</span></Link>
               </div>

@@ -47,17 +47,17 @@ export default function EditorialFooter() {
         </div>
 
         <div>
-          <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">Khám phá</h4>
+          <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">Explore</h4>
           <ul className="m-0 flex list-none flex-col gap-2.5 p-0 text-[13px]">
-            <li><Link href="/" className="footer-link text-neutral-300 no-underline hover:text-white">Sản phẩm đề xuất</Link></li>
-            <li><Link href="/latest" className="footer-link text-neutral-300 no-underline hover:text-white">Bài viết mới</Link></li>
-            <li><Link href="/editorial-picks" className="footer-link text-neutral-300 no-underline hover:text-white">Biên tập viên chọn</Link></li>
-            <li><Link href="/affiliates" className="footer-link text-neutral-300 no-underline hover:text-white">Ưu đãi liên kết</Link></li>
+            <li><Link href="/" className="footer-link text-neutral-300 no-underline hover:text-white">Recommended products</Link></li>
+            <li><Link href="/latest" className="footer-link text-neutral-300 no-underline hover:text-white">Latest guides</Link></li>
+            <li><Link href="/editorial-picks" className="footer-link text-neutral-300 no-underline hover:text-white">Editor&apos;s picks</Link></li>
+            <li><Link href="/affiliates" className="footer-link text-neutral-300 no-underline hover:text-white">Retailer partners</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">Danh mục</h4>
+          <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">Categories</h4>
           <ul className="m-0 flex list-none flex-col gap-2.5 p-0 text-[13px]">
             {categories.slice(0, 5).map((category) => (
               <li key={category.id}><Link href={`/category/${category.slug}`} className="footer-link text-neutral-300 no-underline hover:text-white">{category.name}</Link></li>
@@ -67,27 +67,27 @@ export default function EditorialFooter() {
         </div>
 
         <div>
-          <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">Thông tin tin cậy</h4>
+          <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">Trust</h4>
           <ul className="m-0 flex list-none flex-col gap-2.5 p-0 text-[13px]">
-            <li><Link href="/about" className="footer-link text-neutral-300 no-underline hover:text-white">Về chúng tôi</Link></li>
-            <li><Link href="/contact" className="footer-link text-neutral-300 no-underline hover:text-white">Liên hệ</Link></li>
-            <li><Link href="/privacy-policy" className="footer-link text-neutral-300 no-underline hover:text-white">Chính sách bảo mật</Link></li>
-            <li><Link href="/terms" className="footer-link text-neutral-300 no-underline hover:text-white">Điều khoản sử dụng</Link></li>
-            <li><Link href="/affiliate-disclosure" className="footer-link text-neutral-300 no-underline hover:text-white">Công bố liên kết tiếp thị</Link></li>
+            <li><Link href="/about" className="footer-link text-neutral-300 no-underline hover:text-white">About us</Link></li>
+            <li><Link href="/contact" className="footer-link text-neutral-300 no-underline hover:text-white">Contact</Link></li>
+            <li><Link href="/privacy-policy" className="footer-link text-neutral-300 no-underline hover:text-white">Privacy policy</Link></li>
+            <li><Link href="/terms" className="footer-link text-neutral-300 no-underline hover:text-white">Terms of use</Link></li>
+            <li><Link href="/affiliate-disclosure" className="footer-link text-neutral-300 no-underline hover:text-white">Affiliate disclosure</Link></li>
           </ul>
         </div>
       </div>
 
       <div className="mx-auto max-w-[1440px] px-6 sm:px-8">
         <p className="m-0 border-t border-white/[0.08] pt-5 text-[11px] leading-relaxed text-neutral-500">
-          <strong className="text-neutral-300">Công bố liên kết tiếp thị:</strong>{' '}
-          GoodPick có thể nhận hoa hồng khi bạn mua qua một số liên kết. Bạn không phải trả thêm phí và điều này không ảnh hưởng đến đánh giá biên tập.
+          <strong className="text-neutral-300">Affiliate disclosure:</strong>{' '}
+          GoodPick may earn commission from qualifying purchases. You pay no extra and commercial relationships do not buy a favourable verdict.
         </p>
       </div>
 
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-6 py-5 text-[11px] text-neutral-500 sm:px-8">
-        <p className="m-0">© {YEAR} {BRAND_NAME}. Bảo lưu mọi quyền.</p>
-        <p className="m-0">Giá và tình trạng hàng có thể thay đổi tại website nhà bán lẻ.</p>
+        <p className="m-0">© {YEAR} {BRAND_NAME}. All rights reserved.</p>
+        <p className="m-0">Prices and availability can change on retailer websites.</p>
       </div>
     </footer>
   );
