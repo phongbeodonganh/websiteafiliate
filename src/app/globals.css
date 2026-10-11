@@ -2,21 +2,24 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --editorial-canvas: #f5f5f2;
+  --editorial-canvas: #f6f7fb;
   --editorial-surface: #ffffff;
-  --editorial-ink: #111111;
-  --editorial-copy: #374151;
-  --editorial-muted: #5f6670;
-  --editorial-divider: #e2e2de;
-  --ed-verdict: #0D766E;
-  --ed-cta-hover: #1a1a1a;
-  --ed-accent-glow: rgba(13, 118, 110, 0.25);
-  --editorial-accent: #0d766e;
-  --editorial-accent-soft: #e5f2f0;
-  --editorial-dark: #111111;
-  --editorial-dark-copy: #d5dcdb;
-  --editorial-signal: #85ddd5;
-  --editorial-shadow: 0 8px 24px rgba(17, 17, 17, 0.06);
+  --editorial-ink: #101828;
+  --editorial-copy: #475467;
+  --editorial-muted: #667085;
+  --editorial-divider: #d9dfec;
+  --ed-verdict: #1947d1;
+  --ed-cta-hover: #1239ad;
+  --ed-accent-glow: rgba(25, 71, 209, 0.22);
+  --editorial-accent: #1947d1;
+  --editorial-accent-soft: #eaf0ff;
+  --editorial-dark: #101828;
+  --editorial-dark-copy: #d7deec;
+  --editorial-signal: #bff4dd;
+  --editorial-alert: #ff6338;
+  --editorial-shadow: 0 16px 42px rgba(29, 53, 107, 0.09);
+  --public-frame: 1272px;
+  --public-gutter: clamp(16px, 3vw, 32px);
 }
 
 html {
@@ -36,6 +39,29 @@ body {
 ::selection {
   background: var(--editorial-accent-soft);
   color: var(--editorial-accent);
+}
+
+.marketplace-home { max-width: 100%; }
+.marketplace-hero > *,
+.marketplace-hero-copy,
+.marketplace-top-deal,
+.marketplace-hero-search,
+.marketplace-hero-code { max-width: 100%; min-width: 0; }
+.marketplace-top-deal,
+.marketplace-hero-search { width: 100%; }
+.marketplace-hero-search input { min-width: 0; width: 0; }
+.marketplace-deal-button { min-width: 0; }
+.marketplace-top-deal h2 { overflow-wrap: anywhere; }
+
+@media (max-width: 760px) {
+  .marketplace-hero-copy { overflow: hidden; }
+  .marketplace-hero-code,
+  .marketplace-hero-code > * { width: 100%; }
+  .marketplace-deal-button { white-space: normal; }
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 /* ── Typography & Font Family Standards ── */

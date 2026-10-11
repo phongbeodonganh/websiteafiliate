@@ -45,7 +45,7 @@ export function extractDomainFromUrl(urlStr: string): { hostname: string; rootDo
       rootDomain,
       fullUrl: parsed.href,
     };
-  } catch (err) {
+  } catch {
     const rawClean = urlStr.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
     return {
       hostname: rawClean,
@@ -106,7 +106,7 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
           isBlacklisted: true,
           projectName: item.project_name || item.extracted_domain,
           matchedDomain: item.extracted_domain,
-          reason: item.reason || 'Flagged by the AIDEALSUK safety review — fraud or unpaid commissions.',
+          reason: item.reason || 'Flagged by the GoodPick safety review — the destination may be unsafe or commercially unreliable.',
           blockedCountries: item.blocked_countries || [],
           matchType: 'exact_url',
         };
@@ -126,7 +126,7 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
           isBlacklisted: true,
           projectName: item.project_name || item.extracted_domain,
           matchedDomain: item.extracted_domain || itemRoot,
-          reason: item.reason || 'Flagged by the AIDEALSUK safety review — fraud or unpaid commissions.',
+          reason: item.reason || 'Flagged by the GoodPick safety review — the destination may be unsafe or commercially unreliable.',
           blockedCountries: item.blocked_countries || [],
           matchType: 'domain',
         };
@@ -265,7 +265,7 @@ export async function sweepBlacklistAndRestore(): Promise<{ swept: number; resto
  */
 export async function sweepRetroactiveBlacklist(
   targetDomainOrUrl: string
-): Promise<{ totalUpdatedLinks: number; updatedLinks: any[] }> {
+): Promise<{ totalUpdatedLinks: number; updatedLinks: Record<string, unknown>[] }> {
   const { hostname, rootDomain } = extractDomainFromUrl(targetDomainOrUrl);
   const domain = rootDomain || hostname || targetDomainOrUrl;
   const { swept } = await sweepDomains([domain]);

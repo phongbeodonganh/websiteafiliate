@@ -38,7 +38,7 @@ function summarizeArticle(article: {
   meta_description?: string;
   content?: string;
 }) {
-  const source = article.excerpt || article.meta_description || article.content || 'Read the full story on AIDEALSUK.';
+  const source = article.excerpt || article.meta_description || article.content || 'Read the full buying guide on GoodPick.';
   const plainText = source.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   return plainText.length > 220 ? `${plainText.slice(0, 217).trimEnd()}...` : plainText;
 }
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const siteName = process.env.EMAIL_SITE_NAME?.trim() || 'AIDEALSUK';
+    const siteName = process.env.EMAIL_SITE_NAME?.trim() || 'GoodPick';
     const siteUrl = getInsiderSiteUrl();
     const dispatchKey = manualCurrentPeriod
       ? `manual-${randomUUID()}`

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel, SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -13,7 +14,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   try {
     const body = await req.json();
-    const { name, slug, description, metaTitle, metaDescription } = body;
+    const { name, slug, description, metaTitle, metaDescription, homepageImageUrl, showOnHomepage, navOrder } = body;
 
     await connectToDatabase();
 
@@ -27,8 +28,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (description !== undefined) cat.description = description;
     if (metaTitle !== undefined) cat.meta_title = metaTitle;
     if (metaDescription !== undefined) cat.meta_description = metaDescription;
+    if (homepageImageUrl !== undefined) cat.homepage_image_url = homepageImageUrl;
+    if (showOnHomepage !== undefined) cat.show_on_homepage = Boolean(showOnHomepage);
+    if (navOrder !== undefined && Number.isFinite(Number(navOrder))) cat.nav_order = Number(navOrder);
 
     await cat.save();
+    revalidatePath('/');
 
     return NextResponse.json({
       status: 'success',
@@ -39,6 +44,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         description: cat.description,
         metaTitle: cat.meta_title,
         metaDescription: cat.meta_description,
+        homepageImageUrl: cat.homepage_image_url,
+        showOnHomepage: cat.show_on_homepage,
+        navOrder: cat.nav_order,
         createdAt: cat.created_at,
       },
     });
@@ -59,6 +67,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await connectToDatabase();
     await CategoryModel.findByIdAndDelete(id);
     await SubCategoryModel.deleteMany({ category_id: id });
+    revalidatePath('/');
 
     return NextResponse.json({ status: 'success', message: 'Đã xóa danh mục' });
   } catch (error) {

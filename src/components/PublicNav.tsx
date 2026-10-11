@@ -11,7 +11,6 @@ import {
   X,
   Layers,
   Sparkles,
-  TrendingUp,
   Tag,
   ArrowRight,
   Filter,
@@ -26,13 +25,20 @@ interface CategoryItem {
 
 interface PublicNavProps {
   categoriesList: CategoryItem[];
-  siteSettings?: any;
+  siteSettings?: PublicSiteSettings;
+}
+
+interface PublicSiteSettings {
+  accentColor?: string;
+  logoUrl?: string;
+  bannerText?: string;
+  siteTitle?: string;
 }
 
 export default function PublicNav({ categoriesList, siteSettings: initialSettings }: PublicNavProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [siteSettings, setSiteSettings] = useState<any>(initialSettings || null);
+  const [siteSettings, setSiteSettings] = useState<PublicSiteSettings | null>(initialSettings || null);
 
   const currentTab = searchParams.get('tab') || 'latest';
   const currentCat = searchParams.get('category') || '';
@@ -41,8 +47,6 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
 
   const [searchQuery, setSearchQuery] = useState(currentQuery);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,8 +59,6 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
           }
         })
         .catch(() => {});
-    } else {
-      setSiteSettings(initialSettings);
     }
   }, [initialSettings]);
 
@@ -105,10 +107,9 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
     router.push('/');
   };
 
-  const accentColor = siteSettings?.accentColor || '#0056B3';
   const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'AIDEALSUK';
+  const siteTitle = siteSettings?.siteTitle || 'GoodPick';
 
   return (
     <nav className="fixed top-0 left-0 w-full z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all duration-300 shadow-sm">
@@ -259,7 +260,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search AI tools, prompt guides..."
+              placeholder="Search products and buying guides..."
               className="w-full bg-slate-100/80 border border-slate-200 rounded-full pl-10 pr-9 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0056B3] focus:bg-white transition-colors shadow-inner"
             />
             {searchQuery && (
@@ -310,7 +311,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
               )}
               {currentQuery && (
                 <span className="bg-slate-200 text-slate-800 font-semibold px-2 py-0.5 rounded border border-slate-300">
-                  Keyword: "{currentQuery}"
+                  Keyword: &ldquo;{currentQuery}&rdquo;
                 </span>
               )}
             </div>

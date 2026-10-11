@@ -16,7 +16,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
               <div className="w-9 h-9 rounded-xl bg-[#0056B3] flex items-center justify-center text-white font-bold shadow-md">
                 <Newspaper className="w-5 h-5" />
               </div>
-              <span className="text-lg font-extrabold text-slate-900">AIDEALSUK</span>
+              <span className="text-lg font-extrabold text-slate-900">GOODPICK</span>
             </div>
             <p className="text-sm text-slate-600 max-w-md leading-relaxed mb-4">
               {bioText || 'Your Trusted Source for AI Tool Reviews, Tech News & Exclusive Affiliate Deals. Delivering in-depth software benchmarks, lifetime deals, and revenue automation insights.'}
@@ -42,7 +42,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
             <h4 className="text-slate-900 font-bold text-sm mb-4">Quick Links</h4>
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/admin/login" className="hover:text-[#0056B3] transition-colors flex items-center gap-1">CMS Login <ExternalLink className="w-3 h-3" /></Link></li>
-              <li><Link href="/" className="hover:text-[#0056B3] transition-colors">AIDEALSUK</Link></li>
+              <li><Link href="/" className="hover:text-[#0056B3] transition-colors">GoodPick</Link></li>
               <li><Link href="/affiliates" className="hover:text-[#0056B3] transition-colors">Affiliate Deals</Link></li>
             </ul>
           </div>
@@ -54,7 +54,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
             Some links on this site are affiliate links. If you click through and make a purchase, we may earn a commission at no additional cost to you. We only recommend products we genuinely believe in.
           </p>
           <p className="text-center font-medium">
-            {copyrightText || `© ${new Date().getFullYear()} AIDEALSUK. All Rights Reserved.`}
+            {copyrightText || `© ${new Date().getFullYear()} GoodPick. All rights reserved.`}
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel, SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
 
   try {
     await connectToDatabase();
-    const allCategories = await CategoryModel.find().sort({ created_at: -1 });
+    const allCategories = await CategoryModel.find().sort({ show_on_homepage: -1, nav_order: 1, created_at: -1 });
     const allSubCategories = await SubCategoryModel.find();
 
     const data = allCategories.map((cat) => {
@@ -36,6 +37,9 @@ export async function GET(req: Request) {
         description: catObj.description,
         metaTitle: catObj.meta_title,
         metaDescription: catObj.meta_description,
+        homepageImageUrl: catObj.homepage_image_url,
+        showOnHomepage: catObj.show_on_homepage,
+        navOrder: catObj.nav_order,
         createdAt: catObj.created_at,
         subCategories: subs,
       };
@@ -58,7 +62,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, slug, description, metaTitle, metaDescription } = body;
+    const { name, slug, description, metaTitle, metaDescription, homepageImageUrl, showOnHomepage, navOrder } = body;
 
     if (!name || !slug) {
       return NextResponse.json({ status: 'error', message: 'Name and slug are required' }, { status: 400 });
@@ -73,7 +77,11 @@ export async function POST(req: Request) {
       description,
       meta_title: metaTitle,
       meta_description: metaDescription,
+      homepage_image_url: homepageImageUrl,
+      show_on_homepage: Boolean(showOnHomepage),
+      nav_order: Number.isFinite(Number(navOrder)) ? Number(navOrder) : 0,
     });
+    revalidatePath('/');
 
     return NextResponse.json({
       status: 'success',
@@ -84,6 +92,9 @@ export async function POST(req: Request) {
         description: inserted.description,
         metaTitle: inserted.meta_title,
         metaDescription: inserted.meta_description,
+        homepageImageUrl: inserted.homepage_image_url,
+        showOnHomepage: inserted.show_on_homepage,
+        navOrder: inserted.nav_order,
         createdAt: inserted.created_at,
       },
     });

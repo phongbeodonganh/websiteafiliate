@@ -2,13 +2,20 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Newspaper, ShieldCheck, UserCheck, Search, Menu, X, ArrowUpRight } from 'lucide-react';
+import { Newspaper, ShieldCheck, UserCheck, Menu, X, ArrowUpRight } from 'lucide-react';
+
+interface PublicSiteSettings {
+  accentColor?: string;
+  logoUrl?: string;
+  bannerText?: string;
+  siteTitle?: string;
+}
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [siteSettings, setSiteSettings] = useState<any>(null);
+  const [siteSettings, setSiteSettings] = useState<PublicSiteSettings | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,7 +50,7 @@ export default function Header() {
   const accentColor = siteSettings?.accentColor || '#f59e0b';
   const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'AIDEALSUK';
+  const siteTitle = siteSettings?.siteTitle || 'GoodPick';
 
   return (
     <header
@@ -94,13 +101,13 @@ export default function Header() {
               href="/"
               className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
             >
-              Trang Chủ
+              Home
             </Link>
             <a
               href="#featured-deals"
               className="text-sm font-medium text-slate-300 hover:text-emerald-400 transition-colors flex items-center gap-1"
             >
-              Deal Nổi Bật <ArrowUpRight className="w-3.5 h-3.5" />
+              Featured Picks <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </nav>
 
@@ -123,7 +130,7 @@ export default function Header() {
                 href="/admin/login"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md shadow-blue-600/20 hover:shadow-blue-600/40 transition-all"
               >
-                Đăng Nhập CMS
+                CMS login
               </Link>
             )}
           </div>
@@ -147,7 +154,7 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
             className="block text-slate-200 font-medium py-2 hover:text-emerald-400"
           >
-            Trang Chủ
+            Home
           </Link>
           {user ? (
             <Link
@@ -155,7 +162,7 @@ export default function Header() {
               onClick={() => setMobileMenuOpen(false)}
               className="block bg-slate-800 text-slate-200 px-4 py-2.5 rounded-lg text-sm font-medium"
             >
-              Vào CMS Quản Trị ({user.username})
+              Open CMS ({user.username})
             </Link>
           ) : (
             <Link
@@ -163,7 +170,7 @@ export default function Header() {
               onClick={() => setMobileMenuOpen(false)}
               className="block text-center bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold"
             >
-              Đăng Nhập CMS
+              CMS login
             </Link>
           )}
         </div>

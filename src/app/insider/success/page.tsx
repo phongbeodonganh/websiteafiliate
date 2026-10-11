@@ -3,7 +3,7 @@ import InsiderResult from '../InsiderResult';
 
 export const metadata: Metadata = {
   title: 'Insider confirmed',
-  description: 'Your AIDEALSUK Insider email status.',
+  description: 'Your GoodPick email subscription status.',
   robots: { index: false, follow: false },
 };
 
@@ -21,9 +21,9 @@ export default async function InsiderSuccessPage({ searchParams }: SuccessPagePr
         tone="success"
         eyebrow="Preference saved"
         title="You have been unsubscribed."
-        description="Daily Insider dispatches will no longer be sent to this address. You can join again whenever you want."
+        description="The GoodPick Edit will no longer be sent to this address. You can join again whenever you want."
         detail="Email delivery stopped"
-        primaryHref="/#newsletter-section"
+        primaryHref="/#newsletter"
         primaryLabel="Join again"
       />
     );
@@ -34,11 +34,11 @@ export default async function InsiderSuccessPage({ searchParams }: SuccessPagePr
       <InsiderResult
         tone="success"
         eyebrow="Access already active"
-        title="You’re already an Insider."
-        description="This email address was confirmed before, so there is nothing else you need to do. Your daily briefing remains active."
+        title="You’re already on the list."
+        description="This email address was confirmed before, so there is nothing else you need to do. Your GoodPick Edit remains active."
         detail="No duplicate subscription created"
         primaryHref="/"
-        primaryLabel="Read today’s stories"
+        primaryLabel="Browse the latest picks"
       />
     );
   }
@@ -47,11 +47,11 @@ export default async function InsiderSuccessPage({ searchParams }: SuccessPagePr
     <InsiderResult
       tone="success"
       eyebrow="Confirmation complete"
-      title="Welcome to the inside track."
-      description="Your email is confirmed. We’ll send one concise daily summary of the latest and hottest stories, with a direct route back to AIDEALSUK."
-      detail="First dispatch at the next scheduled run"
+      title="Welcome to the useful edit."
+      description="Your email is confirmed. We’ll send a concise selection of worthwhile products, price drops and buying guidance."
+      detail="First edit at the next scheduled send"
       primaryHref="/"
-      primaryLabel="Explore AIDEALSUK"
+      primaryLabel="Explore GoodPick"
     />
   );
 }

@@ -100,7 +100,7 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(401);
-      expect(result.message).toBe('Your session expired. Sign in again to continue.');
+      expect(result.message).toBe('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.');
     }
   });
 
@@ -111,7 +111,7 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.message).toBe(
-        "You don't have permission to do that. Ask an admin if you need access."
+        'Bạn không có quyền thực hiện thao tác này. Hãy liên hệ quản trị viên nếu cần cấp quyền.'
       );
     }
   });
@@ -123,7 +123,7 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(404);
-      expect(result.message).toBe('That article no longer exists. It may have been deleted.');
+      expect(result.message).toBe('Nội dung này không còn tồn tại hoặc đã bị xóa.');
     }
   });
 
@@ -133,7 +133,7 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     const result = await cmsFetch('/api/v1/cms/articles', { method: 'POST', token: 't', body: {} });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('Something went wrong on the server. Try again in a moment.');
+      expect(result.message).toBe('Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.');
     }
   });
 
@@ -154,7 +154,7 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     const result = await cmsFetch('/api/v1/cms/articles', { method: 'POST', token: 't', body: {} });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toBe('That request was rejected. Check the fields and try again.');
+      expect(result.message).toBe('Yêu cầu chưa hợp lệ. Hãy kiểm tra các trường thông tin và thử lại.');
     }
   });
 
@@ -165,7 +165,7 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(200);
-      expect(result.message).toBe("That action didn't complete. Try again.");
+      expect(result.message).toBe('Thao tác chưa hoàn tất. Vui lòng thử lại.');
     }
   });
 
@@ -176,30 +176,30 @@ describe('cmsFetch — status-mapped failures (never throws)', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.status).toBe(0);
-      expect(result.message).toBe("Can't reach the server. Check your connection and try again.");
+      expect(result.message).toBe('Không thể kết nối máy chủ. Hãy kiểm tra đường truyền và thử lại.');
     }
   });
 });
 
 describe('errorMessageForResponse — direct status matrix', () => {
   it('maps each documented status to its UI-SPEC copy', () => {
-    expect(errorMessageForResponse(401)).toBe('Your session expired. Sign in again to continue.');
+    expect(errorMessageForResponse(401)).toBe('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.');
     expect(errorMessageForResponse(403)).toBe(
-      "You don't have permission to do that. Ask an admin if you need access."
+      'Bạn không có quyền thực hiện thao tác này. Hãy liên hệ quản trị viên nếu cần cấp quyền.'
     );
     expect(errorMessageForResponse(404)).toBe(
-      'That article no longer exists. It may have been deleted.'
+      'Nội dung này không còn tồn tại hoặc đã bị xóa.'
     );
     expect(errorMessageForResponse(400, 'Custom validation text')).toBe('Custom validation text');
     expect(errorMessageForResponse(400)).toBe(
-      'That request was rejected. Check the fields and try again.'
+      'Yêu cầu chưa hợp lệ. Hãy kiểm tra các trường thông tin và thử lại.'
     );
     expect(errorMessageForResponse(500)).toBe(
-      'Something went wrong on the server. Try again in a moment.'
+      'Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.'
     );
     expect(errorMessageForResponse(0)).toBe(
-      "Can't reach the server. Check your connection and try again."
+      'Không thể kết nối máy chủ. Hãy kiểm tra đường truyền và thử lại.'
     );
-    expect(errorMessageForResponse(418)).toBe("That action didn't complete. Try again.");
+    expect(errorMessageForResponse(418)).toBe('Thao tác chưa hoàn tất. Vui lòng thử lại.');
   });
 });

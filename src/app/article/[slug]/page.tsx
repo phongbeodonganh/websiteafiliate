@@ -13,8 +13,8 @@ import EditorVerdict from '@/components/EditorVerdict';
 import StickyMobileBar from '@/components/StickyMobileBar';
 import SocialShare from '@/components/SocialShare';
 import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
-import EditorialHeader from '@/components/EditorialHeader';
-import EditorialFooter from '@/components/EditorialFooter';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter';
 import EditorialBackdrop from '@/components/EditorialBackdrop';
 import PublicArticleImage from '@/components/PublicArticleImage';
 import ArticleContent from '@/components/ArticleContent';
@@ -155,7 +155,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   const baseUrl = normalizeSiteUrl(settings?.canonicalUrl as string | undefined);
   const canonicalUrl = `${baseUrl}/article/${doc.slug as string}`;
   const socialImage = normalizeHttpUrl(doc.thumbnail_url as string | undefined, normalizeHttpUrl(settings?.ogImageUrl as string | undefined, DEFAULT_OG_IMAGE));
-  const siteTitle = (settings?.site_title as string) || 'AIDEALSUK';
+  const siteTitle = (settings?.site_title as string) || 'GoodPick';
   return {
     title,
     description,
@@ -197,8 +197,6 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const articleId = (doc._id as Types.ObjectId).toString();
   const populatedAuthor = doc.author_id as unknown as PopulatedAuthor | undefined;
   const populatedCategory = doc.category_id as unknown as PopulatedCategory | undefined;
-  const authorId = populatedAuthor?._id;
-  const categoryId = populatedCategory?._id;
   const categoryName = populatedCategory?.name;
   const categorySlug = populatedCategory?.slug;
   const authorName = populatedAuthor?.name || populatedAuthor?.username;
@@ -238,7 +236,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     dateModified: (doc.updated_at as Date) || (doc.created_at as Date),
     ...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
     mainEntityOfPage: `${normalizeSiteUrl(settings?.canonicalUrl as string | undefined)}/article/${doc.slug as string}`,
-    publisher: { '@type': 'Organization', name: (settings?.site_title as string) || 'AIDEALSUK' },
+    publisher: { '@type': 'Organization', name: (settings?.site_title as string) || 'GoodPick' },
   };
 
   const baseUrl = normalizeSiteUrl(settings?.canonicalUrl as string | undefined);
@@ -260,7 +258,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     })),
   };
 
-  // C-1: FAQPage JSON-LD dựng từ faq_schema; null khi không có cặp hoàn chỉnh.
+  // C-1: Build FAQPage JSON-LD from faq_schema; return null without a complete pair.
   const faqPageSchema = buildFaqPageSchema(doc.faq_schema as FaqPair[] | undefined);
 
   return (
@@ -271,7 +269,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       {faqPageSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqPageSchema) }} />
       )}
-      <EditorialHeader />
+      <StorefrontHeader />
       <AffiliateRecommendationSheet key={articleId} articleId={articleId} articleOffers={placements.map((placement) => placement.link)} />
 
       {/* ── Visible Breadcrumb Navigation (SEO + UX) ── */}
@@ -300,9 +298,9 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
             <div className={styles.mastheadFooter}>
               <div className={styles.authorMeta}>
-                <AuthorAvatar className={styles.authorAvatar} name={authorName || 'AIDEALSUK Editorial'} src={authorAvatar} />
+                <AuthorAvatar className={styles.authorAvatar} name={authorName || 'GoodPick Editorial'} src={authorAvatar} />
                 <div className={styles.authorMetaText}>
-                  <p>By {authorName || 'AIDEALSUK Editorial'}</p>
+                  <p>By {authorName || 'GoodPick Editorial'}</p>
                   <div className={styles.metadata}>
                     <span><CalendarDays aria-hidden="true" /> {publishedDate}</span>
                     <span><Clock3 aria-hidden="true" /> {readingMinutes} min read</span>
@@ -343,7 +341,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
               <div className={styles.articleEnd}>
                 <span aria-hidden="true">◆</span>
-                <p>A fresh perspective is worth sharing.</p>
+                <p>A useful buying guide is worth sharing.</p>
                 <SocialShare title={doc.title as string} variant="compact" />
               </div>
 
@@ -374,7 +372,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               {remainingPlacements.length > 0 && (
                 <aside className={styles.placements} aria-label="Affiliate recommendations" data-motion="rise">
                   <p className={styles.sectionEyebrow}>Selected partner offers</p>
-                  <h2>Tools worth a closer look</h2>
+                  <h2>Products worth a closer look</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {remainingPlacements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
                   </div>
@@ -382,23 +380,23 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               )}
 
               <section className={styles.authorBio} aria-labelledby="author-bio-title" data-motion="rise">
-                <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'AIDEALSUK Editorial'} src={authorAvatar} />
+                <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'GoodPick Editorial'} src={authorAvatar} />
                 <div>
                   <p className={styles.sectionEyebrow}>About the author</p>
-                  <h2 id="author-bio-title">{authorName || 'AIDEALSUK Editorial'}</h2>
+                  <h2 id="author-bio-title">{authorName || 'GoodPick Editorial'}</h2>
                   <p>
                     {authorName
-                      ? `${authorName} contributes reporting and analysis to AIDEALSUK across artificial intelligence, finance, and the tools shaping modern work.`
-                      : 'The AIDEALSUK editorial desk reports on artificial intelligence, finance, and the tools shaping modern work—with clarity over hype.'}
+                      ? `${authorName} contributes product research and practical buying guidance to GoodPick for shoppers across Europe.`
+                      : 'The GoodPick editorial desk compares physical products, retailer offers and ownership trade-offs—with clarity over hype.'}
                   </p>
                 </div>
               </section>
             </div>
 
-            <aside className={styles.rightRail} role="complementary" aria-label="Latest news" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
-              <div className={styles.rightSticky} tabIndex={0} role="region" aria-label="Latest news">
+            <aside className={styles.rightRail} role="complementary" aria-label="Latest buying guides" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
+              <div className={styles.rightSticky} tabIndex={0} role="region" aria-label="Latest buying guides">
                 {latestArticles.length > 0 && <section className={styles.latestNews}>
-                  <p>Recently Published</p><h2>Latest News</h2>
+                  <p>Recently published</p><h2>Latest guides</h2>
                   <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
                   <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
                 </section>}
@@ -411,7 +409,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       {relatedArticles.length > 0 && (
         <section className={styles.related} aria-labelledby="related-title" data-motion="rise">
           <div className={styles.relatedHeading}>
-            <div><p>Continue Reading</p><h2 id="related-title">Read Next</h2></div>
+            <div><p>Continue comparing</p><h2 id="related-title">Read next</h2></div>
             <Link href="/latest">All latest stories <ArrowRight aria-hidden="true" /></Link>
           </div>
           <div className={styles.relatedGrid}>
@@ -442,7 +440,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
         />
       )}
 
-      <EditorialFooter />
+      <StorefrontFooter />
     </div>
   );
 }

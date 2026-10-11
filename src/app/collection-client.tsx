@@ -3,10 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Clock3, Eye, Flame, Loader2, Search, SlidersHorizontal, Sparkles, Star, Tag, X } from 'lucide-react';
-import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import PublicArticleImage from '@/components/PublicArticleImage';
-import EditorialHeader from '@/components/EditorialHeader';
-import EditorialFooter from '@/components/EditorialFooter';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter';
 import styles from './collection.module.css';
 
 export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category';
@@ -21,17 +20,17 @@ interface Affiliate {
 }
 interface Pagination { total: number; page: number; limit: number; totalPages: number; hasMore: boolean; }
 const config = {
-  latest: { title: 'Latest Articles', eyebrow: 'Fresh from the newsroom', description: 'New ideas. New perspectives. Stay a step ahead in AI, technology and finance.', feature: 'The latest story', section: 'More from the newsroom', icon: Clock3 },
-  hottest: { title: 'Hottest Articles', eyebrow: 'The reader favourites', description: 'Discover the stories getting attention. Ranked by the people reading them.', feature: 'The most-read story', section: 'The most-read list', icon: Flame },
-  editorial: { title: 'Editorial Picks', eyebrow: 'Selected by our editors', description: 'A closer look at what matters. Reporting, ideas and analysis worth your time.', feature: 'In the spotlight', section: 'Worth a closer read', icon: Sparkles },
-  affiliates: { title: 'Affiliate Deals', eyebrow: 'The partner directory', description: 'Explore partner tools and programmes. Compare the details, find your next opportunity.', feature: '', section: 'Explore the directory', icon: Tag },
-  category: { title: 'Category Articles', eyebrow: 'Explore the topic', description: 'The latest reporting and fresh perspectives, all in one place.', feature: 'Start here', section: 'Explore more stories', icon: BookOpen },
+  latest: { title: 'Latest Buying Guides', eyebrow: 'Fresh from the buying desk', description: 'Practical advice, product explainers and new comparisons for considered purchases.', feature: 'The latest guide', section: 'More from the buying desk', icon: Clock3 },
+  hottest: { title: 'Most-Read Guides', eyebrow: 'Reader favourites', description: 'The product questions and comparisons shoppers are reading most right now.', feature: 'The most-read guide', section: 'The most-read list', icon: Flame },
+  editorial: { title: 'Editor’s Picks', eyebrow: 'Selected by our editors', description: 'Considered product advice and comparisons worth your time.', feature: 'In the spotlight', section: 'Worth a closer read', icon: Sparkles },
+  affiliates: { title: 'Retailer Partners', eyebrow: 'Commercial transparency', description: 'Explore partner programmes and the commercial relationships behind eligible links.', feature: '', section: 'Partner directory', icon: Tag },
+  category: { title: 'Buying Guides', eyebrow: 'Explore the category', description: 'Product guidance and comparisons for one part of everyday life.', feature: 'Start here', section: 'More buying guides', icon: BookOpen },
 };
 const collections = [
-  { kind: 'latest', href: '/latest', label: 'Latest', icon: Clock3 },
-  { kind: 'hottest', href: '/hottest', label: 'Hottest', icon: Flame },
-  { kind: 'editorial', href: '/editorial-picks', label: 'Editorial Picks', icon: Sparkles },
-  { kind: 'affiliates', href: '/affiliates', label: 'Affiliate Deals', icon: Tag },
+  { kind: 'latest', href: '/latest', label: 'Latest guides', icon: Clock3 },
+  { kind: 'hottest', href: '/hottest', label: 'Most read', icon: Flame },
+  { kind: 'editorial', href: '/editorial-picks', label: 'Editor’s picks', icon: Sparkles },
+  { kind: 'affiliates', href: '/affiliates', label: 'Partners', icon: Tag },
 ];
 function formatDate(value?: string) {
   if (!value || Number.isNaN(new Date(value).getTime())) return '';
@@ -63,11 +62,11 @@ function Story({ article, rank, variant = 'card', label }: { article: Article; r
         <span className={styles.imageArrow} aria-hidden="true"><ArrowUpRight size={22} /></span>
       </div>
       <div className={styles.storyBody}>
-        <div className={styles.storyCategory}>{rank && <span className={styles.rank} aria-label={`Rank ${rank}`}>{String(rank).padStart(2, '0')}</span>}<span>{article.categoryName || 'News & insights'}</span></div>
+        <div className={styles.storyCategory}>{rank && <span className={styles.rank} aria-label={`Rank ${rank}`}>{String(rank).padStart(2, '0')}</span>}<span>{article.categoryName || 'Buying guide'}</span></div>
         <h2>{article.title}</h2>
         {variant !== 'compact' && <p className={styles.excerpt}>{plainText(article.excerpt || article.content)}</p>}
         <ArticleMeta article={article} views={Boolean(rank)} />
-        {variant === 'lead' && <span className={styles.readStory}>Read the story <ArrowRight size={17} aria-hidden="true" /></span>}
+        {variant === 'lead' && <span className={styles.readStory}>Read the guide <ArrowRight size={17} aria-hidden="true" /></span>}
       </div>
     </Link>
   </article>;
@@ -140,12 +139,12 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
   }
 
   return <div className={styles.page} data-kind={kind}>
-    <EditorialHeader />
+    <StorefrontHeader />
     <main className={styles.shell} id="collection-content">
       <nav className={styles.breadcrumb} aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">{title}</span></nav>
       <header className={styles.hero} data-motion="rise">
         <div><p className={styles.eyebrow}><Icon size={14} aria-hidden="true" />{details.eyebrow}</p><h1>{title}<span aria-hidden="true">.</span></h1><p className={styles.description}>{details.description}</p></div>
-        <div className={styles.heroNote}><span>THE AIDEALSUK EDITION</span><p>{isDeals ? 'Discover. Compare. Choose.' : kind === 'hottest' ? 'See what’s being read.' : kind === 'editorial' ? 'Less noise. More perspective.' : 'Your next good read starts here.'}</p><ArrowDown size={24} aria-hidden="true" /></div>
+        <div className={styles.heroNote}><span>THE GOODPICK BUYING DESK</span><p>{isDeals ? 'Clear relationships. No hidden influence.' : kind === 'hottest' ? 'See what shoppers are reading.' : kind === 'editorial' ? 'Less noise. Better choices.' : 'Your next considered purchase starts here.'}</p><ArrowDown size={24} aria-hidden="true" /></div>
       </header>
       <nav className={styles.collectionNav} aria-label="Article collections">{collections.map(item => <Link key={item.kind} href={item.href} aria-current={kind === item.kind ? 'page' : undefined}><item.icon size={15} aria-hidden="true" />{item.label}<ArrowUpRight size={14} aria-hidden="true" /></Link>)}</nav>
       {isDeals && <div className={styles.disclosure}><Tag size={18} aria-hidden="true" /><p>Some links are affiliate links. We may earn a commission when you use them. <Link href="/affiliate-disclosure">How affiliate links work <ArrowUpRight size={12} aria-hidden="true" /></Link></p></div>}
@@ -168,7 +167,7 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
             <section aria-labelledby="more-heading" className={styles.moreStories}><div className={styles.sectionHeading}><div><p className={styles.eyebrow}>{kind === 'hottest' ? 'Ranked by total reads' : 'Keep your curiosity going'}</p><h2 id="more-heading">{details.section}</h2></div><BookOpen size={23} aria-hidden="true" /></div>
               {articles.length > 3 ? <div className={`${styles.storyGrid} ${kind === 'hottest' ? styles.rankedList : ''}`}>{articles.slice(3).map((article, i) => <Story key={article.id} article={article} rank={kind === 'hottest' ? i + 4 : undefined} />)}</div> : <p className={styles.endNote}>You’re up to date with this collection. Explore another edition below.</p>}
             </section>
-            <aside className={styles.rail} aria-label="Explore AIDEALSUK"><div className={styles.desk}><Sparkles size={22} aria-hidden="true" /><p className={styles.eyebrow}>Make room for a good read</p><h2>A different<br />perspective awaits.</h2><p>Follow a fresh idea, explore an in-depth story, or discover a tool for your next project.</p>{collections.filter(item => item.kind !== kind).map(item => <Link key={item.kind} href={item.href}>{item.label}<ArrowUpRight size={16} /></Link>)}</div><VerticalAffiliateSidebar sticky={false} variant="article" hideWhenEmpty /></aside>
+            <aside className={styles.rail} aria-label="Explore GoodPick"><div className={styles.desk}><Sparkles size={22} aria-hidden="true" /><p className={styles.eyebrow}>Choose with context</p><h2>A better shortlist<br />starts here.</h2><p>Explore another category, read an in-depth guide or return to the current product selection.</p>{collections.filter(item => item.kind !== kind).map(item => <Link key={item.kind} href={item.href}>{item.label}<ArrowUpRight size={16} /></Link>)}</div></aside>
           </div>
         </>}
         {isDeals && affiliates.length > 0 && <section aria-label="Partner programmes" className={styles.dealGrid}>{affiliates.map((affiliate, i) => <article key={affiliate.id} className={styles.deal} data-featured={affiliate.isTopPick || undefined} data-motion="rise" style={{ '--motion-delay': `${(i % 3) * 60}ms` } as CSSProperties}>
@@ -180,8 +179,8 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
         </article>)}</section>}
         {count > 0 && <div className={styles.pagination}><p>Showing {count} of {pagination.total} {isDeals ? 'programmes' : 'stories'}</p>{pagination.hasMore && <button type="button" disabled={loading} onClick={() => updateRequest({ page: pagination.page + 1 })}>{loading ? <Loader2 size={17} className={styles.spin} /> : <ArrowDown size={17} />}{loading ? 'Loading more…' : isDeals ? 'Explore more partners' : 'Discover more stories'}</button>}<div className={styles.countTrack} aria-hidden="true"><span style={{ width: `${Math.min(100, count / Math.max(1, pagination.total) * 100)}%` }} /></div></div>}
       </>}
-      <div className={styles.closing}><span>AI. Technology. Finance.</span><Link href="/">Stay curious. Keep reading. <ArrowUpRight size={18} /></Link></div>
+      <div className={styles.closing}><span>Products. Prices. Practical advice.</span><Link href="/#products">Compare the latest picks <ArrowUpRight size={18} /></Link></div>
     </main>
-    <EditorialFooter />
+    <StorefrontFooter />
   </div>;
 }

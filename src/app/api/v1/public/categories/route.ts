@@ -5,7 +5,7 @@ import { CategoryModel, SubCategoryModel, ArticleModel } from '@/lib/db/models';
 export async function GET() {
   try {
     await connectToDatabase();
-    const allCategories = await CategoryModel.find();
+    const allCategories = await CategoryModel.find().sort({ show_on_homepage: -1, nav_order: 1, created_at: 1 });
     const allSubCategories = await SubCategoryModel.find();
     const allArticles = await ArticleModel.find({ status: 'published' }, 'category_id sub_category_id');
 
@@ -38,6 +38,9 @@ export async function GET() {
         description: catDoc.description,
         metaTitle: catDoc.meta_title,
         metaDescription: catDoc.meta_description,
+        homepageImageUrl: catDoc.homepage_image_url,
+        showOnHomepage: catDoc.show_on_homepage,
+        navOrder: catDoc.nav_order,
         createdAt: catDoc.created_at,
         articleCount: allArticles.filter((a) => a.category_id?.toString() === catIdStr).length,
         subCategories: subs,

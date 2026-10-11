@@ -19,7 +19,7 @@ const SUBSCRIBE_WINDOW_MS = 60 * 1000;
 
 function tooManyRequests(retryAfterSeconds: number) {
   return NextResponse.json(
-    { status: 'error', message: 'Quá nhiều yêu cầu. Vui lòng thử lại sau ít phút.' },
+    { status: 'error', message: 'Too many requests. Please try again in a few minutes.' },
     { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
   );
 }
@@ -47,14 +47,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { status: 'error', message: 'Please enter a valid email address' },
         { status: 400 },
-      );
-    }
-
-    if (!isEmailConfigured()) {
-      console.error('Insider API error: email service is not configured');
-      return NextResponse.json(
-        { status: 'error', message: 'Email service is temporarily unavailable. Please try again later.' },
-        { status: 503 },
       );
     }
 
@@ -92,6 +84,17 @@ export async function POST(req: Request) {
       });
     }
 
+    if (!isEmailConfigured()) {
+      console.error('Insider API warning: email service is not configured; subscriber saved as pending');
+      await SubscriberModel.findByIdAndUpdate(subscriberId, {
+        $set: { ...(!alreadyActive ? { status: 'pending' as const } : {}), email_status: 'failed' },
+      });
+      return NextResponse.json(
+        { status: 'success', message: 'Your email is saved. Confirmation delivery is delayed; please try again shortly.' },
+        { status: 202 },
+      );
+    }
+
     const confirmationToken = createInsiderToken(
       'confirm',
       subscriberId.toString(),
@@ -100,11 +103,23 @@ export async function POST(req: Request) {
     const confirmationUrl = new URL('/api/v1/public/insider/confirm', getInsiderSiteUrl());
     confirmationUrl.searchParams.set('token', confirmationToken);
 
-    const emailResult = await sendInsiderConfirmationEmail(
-      cleanEmail,
-      confirmationUrl.toString(),
-      `insider-confirm-${subscriberId.toString()}-${confirmationExpiresAt.getTime()}`,
-    );
+    let emailResult: { id: string };
+    try {
+      emailResult = await sendInsiderConfirmationEmail(
+        cleanEmail,
+        confirmationUrl.toString(),
+        `insider-confirm-${subscriberId.toString()}-${confirmationExpiresAt.getTime()}`,
+      );
+    } catch (emailError) {
+      console.error('Insider confirmation delivery error:', emailError);
+      await SubscriberModel.findByIdAndUpdate(subscriberId, {
+        $set: { ...(!alreadyActive ? { status: 'pending' as const } : {}), email_status: 'failed', confirmation_expires_at: confirmationExpiresAt },
+      });
+      return NextResponse.json(
+        { status: 'success', message: 'Your email is saved. Confirmation delivery is delayed; please try again shortly.' },
+        { status: 202 },
+      );
+    }
     await SubscriberModel.findByIdAndUpdate(subscriberId, {
       $set: {
         ...(!alreadyActive ? { status: 'pending' as const } : {}),
@@ -119,8 +134,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       status: 'success',
       message: alreadyActive
-        ? 'A confirmation check was sent. The link will show that you are already an Insider.'
-        : 'Please check your inbox and confirm your Insider subscription.',
+        ? 'A confirmation check was sent. The link will show that your subscription is already active.'
+        : 'Please check your inbox and confirm your GoodPick deal alerts.',
     });
   } catch (error) {
     console.error('Create Insider API error:', error);

@@ -51,7 +51,7 @@ export default function AffiliateInsertModal({
     const html =
       template === 'inline'
         ? `<a href="${href}" ${dataAttrs}>${selectedLink.name}</a>`
-        : `<div class="my-8 flex flex-col items-center justify-center p-6 bg-[#0056B3]/10 border border-[#0056B3]/30 rounded-2xl text-center"><p class="font-bold text-[#0056B3] text-lg mb-2">🔥 Recommended Offer (${selectedLink.name}):</p><p class="text-xs text-slate-500 mb-4">Commission: ${selectedLink.commission || 'Exclusive'} • Cookie: ${selectedLink.cookie || '30 Days'}</p><a href="${href}" ${dataAttrs} class="affiliate-btn inline-flex items-center justify-center px-8 py-3.5 font-bold text-white transition-all duration-200 bg-[#FF6B6B] hover:bg-[#ff5252] rounded-full hover:scale-105 shadow-md shadow-rose-500/20">👉 Claim Offer On ${selectedLink.name}</a></div>`;
+        : `<div class="my-8 flex flex-col items-center justify-center p-6 bg-[#0056B3]/10 border border-[#0056B3]/30 rounded-2xl text-center"><p class="font-bold text-[#0056B3] text-lg mb-2">🔥 Ưu đãi đề xuất (${selectedLink.name}):</p><p class="text-xs text-slate-500 mb-4">Hoa hồng: ${selectedLink.commission || 'Độc quyền'} • Cookie: ${selectedLink.cookie || '30 ngày'}</p><a href="${href}" ${dataAttrs} class="affiliate-btn inline-flex items-center justify-center px-8 py-3.5 font-bold text-white transition-all duration-200 bg-[#FF6B6B] hover:bg-[#ff5252] rounded-full hover:scale-105 shadow-md shadow-rose-500/20">👉 Xem ưu đãi tại ${selectedLink.name}</a></div>`;
 
     onInsert(html);
     setSelectedId('');
@@ -64,7 +64,7 @@ export default function AffiliateInsertModal({
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-slate-800">
           <h3 className="text-white font-bold text-sm flex items-center gap-2">
-            <Link2 size={16} className="text-amber-400" /> Chèn Affiliate
+            <Link2 size={16} className="text-amber-400" /> Chèn liên kết affiliate
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X size={18} />
@@ -84,7 +84,7 @@ export default function AffiliateInsertModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm affiliate link theo tên..."
+              placeholder="Tìm liên kết affiliate theo tên..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -106,7 +106,7 @@ export default function AffiliateInsertModal({
               >
                 <div className="font-semibold">{link.name}</div>
                 <div className="text-[10px] text-slate-500">
-                  Commission: {link.commission || 'N/A'} • Cookie: {link.cookie || 'N/A'}
+                  Hoa hồng: {link.commission || 'Chưa có'} • Cookie: {link.cookie || 'Chưa có'}
                 </div>
               </button>
             ))}
@@ -124,7 +124,7 @@ export default function AffiliateInsertModal({
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <Link2 size={13} /> Link chữ inline
+                <Link2 size={13} /> Liên kết trong dòng
               </button>
               <button
                 type="button"

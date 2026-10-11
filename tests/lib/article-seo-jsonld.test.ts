@@ -4,7 +4,7 @@
  * Locks the structured-data contract on the article page:
  *   - Schema type is NewsArticle with schema.org context
  *   - mainEntityOfPage is the canonical URL (normalizeSiteUrl + /article/ + slug)
- *   - Publisher falls back to "AIDEALSUK" when settings is null
+ *   - Publisher falls back to "GoodPick" when settings is null
  *   - Image is omitted when no thumbnail_url
  *   - serializeJsonLd escapes all < characters
  *
@@ -23,14 +23,14 @@ const pageSrc = readFileSync(
 
 describe('NewsArticle JSON-LD structured data (D-14, SEO-02)', () => {
   describe('Part A — schema construction logic', () => {
-    const baseSettings = { canonicalUrl: 'https://aidealsuk.com', site_title: 'AIDEALSUK Tech' };
+    const baseSettings = { canonicalUrl: 'https://cecana.com.vn', site_title: 'GoodPick' };
 
     it('mainEntityOfPage is the canonical URL (baseUrl/article/slug)', () => {
       const slug = 'ai-tools-review';
       const settings = baseSettings;
       const baseUrl = normalizeSiteUrl(settings.canonicalUrl);
       const mainEntityOfPage = `${baseUrl}/article/${slug}`;
-      expect(mainEntityOfPage).toBe('https://aidealsuk.com/article/ai-tools-review');
+      expect(mainEntityOfPage).toBe('https://cecana.com.vn/article/ai-tools-review');
     });
 
     it('schema type is NewsArticle with schema.org context', () => {
@@ -42,10 +42,10 @@ describe('NewsArticle JSON-LD structured data (D-14, SEO-02)', () => {
       expect(articleSchema['@type']).toBe('NewsArticle');
     });
 
-    it('publisher name falls back to AIDEALSUK when settings is null', () => {
+    it('publisher name falls back to GoodPick when settings is null', () => {
       const settings = null;
-      const publisherName = (settings as { site_title: string } | null)?.site_title || 'AIDEALSUK';
-      expect(publisherName).toBe('AIDEALSUK');
+      const publisherName = (settings as { site_title: string } | null)?.site_title || 'GoodPick';
+      expect(publisherName).toBe('GoodPick');
     });
 
     it('mainEntityOfPage uses DEFAULT_SITE_URL when settings is null', () => {
@@ -54,7 +54,7 @@ describe('NewsArticle JSON-LD structured data (D-14, SEO-02)', () => {
         (settings as { canonicalUrl: string } | null)?.canonicalUrl,
       );
       expect(baseUrl).toBe(DEFAULT_SITE_URL);
-      expect(baseUrl).toBe('https://aidealsuk.com');
+      expect(baseUrl).toBe('https://goodpick.eu');
     });
 
     it('image field is omitted when thumbnail_url is absent', () => {

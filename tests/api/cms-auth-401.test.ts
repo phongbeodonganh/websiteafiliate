@@ -44,6 +44,8 @@ import { POST as genArticlePOST } from '@/app/api/v1/cms/ai/generate-article/rou
 import { POST as genTakeawaysPOST } from '@/app/api/v1/cms/ai/generate-takeaways/route';
 import { GET as articlesGET, POST as articlesPOST } from '@/app/api/v1/cms/articles/route';
 import { GET as articleGET, PUT as articlePUT, DELETE as articleDELETE } from '@/app/api/v1/cms/articles/[id]/route';
+import { GET as productsGET, POST as productsPOST } from '@/app/api/v1/cms/products/route';
+import { GET as productGET, PUT as productPUT, DELETE as productDELETE } from '@/app/api/v1/cms/products/[id]/route';
 import { GET as blacklistGET, POST as blacklistPOST, DELETE as blacklistDELETE } from '@/app/api/v1/cms/blacklist/route';
 import { POST as blacklistCheckPOST } from '@/app/api/v1/cms/blacklist/check/route';
 import { POST as blacklistImportPOST } from '@/app/api/v1/cms/blacklist/import/route';
@@ -169,6 +171,14 @@ const ROUTES: RouteEntry[] = [
   { verb: 'GET', routeFile: 'src/app/api/v1/cms/articles/[id]/route.ts', path: '/api/v1/cms/articles/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: articleGET },
   { verb: 'PUT', routeFile: 'src/app/api/v1/cms/articles/[id]/route.ts', path: '/api/v1/cms/articles/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: articlePUT },
   { verb: 'DELETE', routeFile: 'src/app/api/v1/cms/articles/[id]/route.ts', path: '/api/v1/cms/articles/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: articleDELETE },
+
+  // physical products: authenticated creators manage their own catalog; admins
+  // can manage all products. Every unauthenticated verb returns 401.
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/products/route.ts', path: '/api/v1/cms/products', expectedNoAuthStatus: 401, hasParamsArg: false, handler: productsGET },
+  { verb: 'POST', routeFile: 'src/app/api/v1/cms/products/route.ts', path: '/api/v1/cms/products', expectedNoAuthStatus: 401, hasParamsArg: false, handler: productsPOST },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/products/[id]/route.ts', path: '/api/v1/cms/products/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: productGET },
+  { verb: 'PUT', routeFile: 'src/app/api/v1/cms/products/[id]/route.ts', path: '/api/v1/cms/products/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: productPUT },
+  { verb: 'DELETE', routeFile: 'src/app/api/v1/cms/products/[id]/route.ts', path: '/api/v1/cms/products/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: productDELETE },
 
   // blacklist (read routes GET/POST → 401; admin-only writes quick/import/import-sheet-url use
   // the combined guard but historically return 401 not 403; DELETE admin-only → 401)
