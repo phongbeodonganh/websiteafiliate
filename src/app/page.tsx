@@ -50,6 +50,15 @@ const categoryIcons: Record<string, ReactNode> = {
   outdoor: <TentTree aria-hidden="true" />,
 };
 
+const categoryImages: Record<string, string> = {
+  "home-kitchen": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=720&q=82",
+  fashion: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=720&q=82",
+  tech: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=720&q=82",
+  mobility: "https://images.unsplash.com/photo-1502744688674-c619d1586c9e?auto=format&fit=crop&w=720&q=82",
+  wellness: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=720&q=82",
+  outdoor: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=720&q=82",
+};
+
 const money = (value: number) =>
   new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
 
@@ -102,6 +111,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       {!query && !category && featured && (
         <section className={styles.hero} aria-labelledby="home-title" data-motion="fade">
           <div className={styles.heroStage}>
+            <div className={styles.heroCollage} aria-hidden="true">
+              <span className={`${styles.collagePhoto} ${styles.collagePhotoOne}`}>
+                {/* Decorative editorial collage; the source is intentionally kept as a normal image. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={categoryImages.fashion} alt="" width="260" height="190" />
+              </span>
+              <span className={`${styles.collagePhoto} ${styles.collagePhotoTwo}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={categoryImages.mobility} alt="" width="290" height="220" />
+              </span>
+              <span className={`${styles.collagePhoto} ${styles.collagePhotoThree}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={categoryImages.outdoor} alt="" width="250" height="190" />
+              </span>
+              <span className={styles.collageSun} />
+              <span className={styles.collageFlower}>✦</span>
+            </div>
             <div className={styles.heroCopy}>
               <p className={styles.eyebrow}><Sparkles size={14} /> Everyday buying guide</p>
               <h1 id="home-title">Choose well.<br /><span>Use it daily.</span></h1>
@@ -115,6 +141,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <span><CheckCircle2 size={14} /> Clear trade-offs</span>
                 <span><RefreshCw size={14} /> Recently checked</span>
                 <span><ShieldCheck size={14} /> Affiliate links disclosed</span>
+              </div>
+              <div className={styles.heroStickers} aria-hidden="true">
+                <span>Human checked</span>
+                <span>6 useful worlds</span>
               </div>
             </div>
 
@@ -159,16 +189,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       {!query && !category && (
-        <section className={styles.section} aria-labelledby="categories-title">
+        <section className={`${styles.section} ${styles.categorySection}`} aria-labelledby="categories-title">
           <div className={styles.sectionHeading} data-motion="fade">
             <div><p className={styles.eyebrow}>Shop by real life</p><h2 id="categories-title">Start with where it fits.</h2><p className={styles.sectionLead}>Six useful worlds keep a broad catalogue understandable, whether you need a spoon, a jacket or a laptop.</p></div>
           </div>
           <div className={styles.categoryGrid}>
             {STOREFRONT_CATEGORIES.map((item) => (
-              <Link className={styles.categoryCard} href={`/?category=${item.slug}#products`} key={item.slug}>
-                <span className={styles.categoryIcon}>{categoryIcons[item.slug]}</span>
-                <strong>{item.label}</strong>
-                <span>{item.description} <ArrowRight size={12} /></span>
+              <Link className={styles.categoryCard} data-category={item.slug} href={`/?category=${item.slug}#products`} key={item.slug}>
+                <span className={styles.categoryVisual}>
+                  {/* Category images are decorative; the adjacent label names the destination. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={categoryImages[item.slug]} alt="" width="360" height="240" loading="lazy" decoding="async" />
+                  <span className={styles.categoryIcon}>{categoryIcons[item.slug]}</span>
+                </span>
+                <span className={styles.categoryCopy}>
+                  <strong>{item.label}</strong>
+                  <span>{item.description} <ArrowRight size={12} /></span>
+                </span>
               </Link>
             ))}
           </div>
@@ -176,7 +213,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       )}
 
       {!query && !category && featuredList.length > 0 && (
-        <section className={styles.sectionAlt} id="featured">
+        <section className={`${styles.sectionAlt} ${styles.featuredSection}`} id="featured">
           <div className={`${styles.section} ${styles.sectionInner}`}>
             <div className={styles.sectionHeading} data-motion="fade">
               <div><p className={styles.eyebrow}>Editor&apos;s shortlist</p><h2>Picks that earn their place.</h2><p className={styles.sectionLead}>Every card answers the practical questions first: who it suits, what it costs and when we checked it.</p></div>
