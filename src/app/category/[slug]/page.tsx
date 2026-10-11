@@ -46,6 +46,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     await connectToDatabase();
     databaseCategory = await CategoryModel.findOne({ slug }).select("name -_id").lean() as { name: string } | null;
   } catch { }
-  if (databaseCategory) return <CollectionClient kind="category" categorySlug={slug} categoryName={databaseCategory.name} />;
+  if (databaseCategory) return <CollectionClient kind="category" categorySlug={slug} categoryName={databaseCategory.name} header={<StorefrontHeader />} />;
   notFound();
 }

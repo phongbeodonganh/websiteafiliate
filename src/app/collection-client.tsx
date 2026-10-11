@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Clock3, Eye, Flame, Loader2, Search, SlidersHorizontal, Sparkles, Star, Tag, X } from 'lucide-react';
 import PublicArticleImage from '@/components/PublicArticleImage';
-import StorefrontHeader from '@/components/storefront/StorefrontHeader';
 import StorefrontFooter from '@/components/storefront/StorefrontFooter';
 import styles from './collection.module.css';
 
@@ -72,10 +71,10 @@ function Story({ article, rank, variant = 'card', label }: { article: Article; r
   </article>;
 }
 
-export default function CollectionClient({ kind, categorySlug, categoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string }) {
-  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} />;
+export default function CollectionClient({ kind, categorySlug, categoryName, header }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; header: ReactNode }) {
+  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} header={header} />;
 }
-function CollectionView({ kind, categorySlug, categoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string }) {
+function CollectionView({ kind, categorySlug, categoryName, header }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; header: ReactNode }) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 9, totalPages: 0, hasMore: false });
@@ -139,7 +138,7 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
   }
 
   return <div className={styles.page} data-kind={kind}>
-    <StorefrontHeader />
+    {header}
     <main className={styles.shell} id="collection-content">
       <nav className={styles.breadcrumb} aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">{title}</span></nav>
       <header className={styles.hero} data-motion="rise">
