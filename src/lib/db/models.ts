@@ -33,6 +33,9 @@ export interface ICategory extends Document {
   description?: string;
   meta_title?: string;
   meta_description?: string;
+  homepage_image_url?: string;
+  show_on_homepage: boolean;
+  nav_order: number;
   created_at: Date;
 }
 
@@ -42,6 +45,9 @@ const CategorySchema = new Schema<ICategory>({
   description: { type: String },
   meta_title: { type: String },
   meta_description: { type: String },
+  homepage_image_url: { type: String },
+  show_on_homepage: { type: Boolean, default: false },
+  nav_order: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now }
 });
 

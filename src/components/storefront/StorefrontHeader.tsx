@@ -1,21 +1,13 @@
 import Link from "next/link";
 import { Compass, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { getStorefrontCategories } from "@/lib/storefront-categories";
 import styles from "./storefront.module.css";
 
-export const STOREFRONT_CATEGORIES = [
-  { label: "Home & Kitchen", slug: "home-kitchen", description: "Cook, clean and live well" },
-  { label: "Fashion", slug: "fashion", description: "Wearable everyday essentials" },
-  { label: "Technology", slug: "tech", description: "Devices that solve a real job" },
-  { label: "Mobility", slug: "mobility", description: "Commute, drive and travel" },
-  { label: "Family & Wellness", slug: "wellness", description: "Care for people and routines" },
-  { label: "Outdoors", slug: "outdoor", description: "Gear for time outside" },
-];
-
-const categoryLinks = STOREFRONT_CATEGORIES.map((category) => (
-  <Link key={category.slug} href={`/?category=${category.slug}#products`}>{category.label}</Link>
-));
-
-export default function StorefrontHeader({ query = "" }: { query?: string }) {
+export default async function StorefrontHeader({ query = "" }: { query?: string }) {
+  const categories = await getStorefrontCategories();
+  const categoryLinks = categories.map((category) => (
+    <Link key={category.slug} href={`/?category=${category.slug}#products`}>{category.name}</Link>
+  ));
   return (
     <>
       <div className={styles.utilityBar}>

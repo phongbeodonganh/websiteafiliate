@@ -17,13 +17,14 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { slug } = await params;
   const product = await getStorefrontProduct(slug);
   if (!product) return { title: "Product not found" };
-  const title = `${product.name}: price, offers and verdict`;
+  const title = product.metaTitle || `${product.name}: price, offers and verdict`;
+  const description = product.metaDescription || product.shortDescription;
   return {
     title,
-    description: product.shortDescription,
+    description,
     alternates: { canonical: `/products/${product.slug}` },
-    openGraph: { title, description: product.shortDescription, type: "website", images: product.images[0]?.url ? [{ url: product.images[0].url, alt: product.images[0].alt || product.name }] : [] },
-    twitter: { card: "summary_large_image", title, description: product.shortDescription, images: product.images[0]?.url ? [product.images[0].url] : [] },
+    openGraph: { title, description, type: "website", images: product.images[0]?.url ? [{ url: product.images[0].url, alt: product.images[0].alt || product.name }] : [] },
+    twitter: { card: "summary_large_image", title, description, images: product.images[0]?.url ? [product.images[0].url] : [] },
   };
 }
 
@@ -49,7 +50,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         "@type": "Product", "@id": `${pageUrl}#product`, url: pageUrl, name: product.name, description: product.shortDescription, sku: product.sku,
         image: product.images.map((image) => image.url), brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
         aggregateRating: product.ratingCount ? { "@type": "AggregateRating", ratingValue: product.rating, reviewCount: product.ratingCount, bestRating: 5 } : undefined,
-        offers: product.offers.map((offer) => ({ "@type": "Offer", priceCurrency: "EUR", price: offer.price, availability: offer.stockStatus === "in_stock" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", itemCondition: "https://schema.org/NewCondition", seller: { "@type": "Organization", name: offer.storeName } })),
+        offers: product.offers.map((offer) => ({ "@type": "Offer", priceCurrency: "USD", price: offer.price, availability: offer.stockStatus === "in_stock" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", itemCondition: "https://schema.org/NewCondition", seller: { "@type": "Organization", name: offer.storeName } })),
       },
       {
         "@type": "BreadcrumbList",

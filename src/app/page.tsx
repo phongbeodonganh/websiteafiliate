@@ -19,10 +19,11 @@ import {
 } from "lucide-react";
 import ProductCard from "@/components/storefront/ProductCard";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter";
-import StorefrontHeader, { STOREFRONT_CATEGORIES } from "@/components/storefront/StorefrontHeader";
+import StorefrontHeader from "@/components/storefront/StorefrontHeader";
 import StorefrontNewsletter from "@/components/storefront/StorefrontNewsletter";
 import { getHomepageArticles, type HomepageArticle } from "@/lib/homepage-articles";
 import { getStorefrontProducts } from "@/lib/products/public";
+import { getStorefrontCategories } from "@/lib/storefront-categories";
 import { createPageMetadata, normalizeSiteUrl, serializeJsonLd } from "@/lib/seo";
 import styles from "@/components/storefront/storefront.module.css";
 
@@ -50,22 +51,15 @@ const categoryIcons: Record<string, ReactNode> = {
   outdoor: <TentTree aria-hidden="true" />,
 };
 
-const categoryImages: Record<string, string> = {
-  "home-kitchen": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=720&q=82",
-  fashion: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=720&q=82",
-  tech: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=720&q=82",
-  mobility: "https://images.unsplash.com/photo-1502744688674-c619d1586c9e?auto=format&fit=crop&w=720&q=82",
-  wellness: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=720&q=82",
-  outdoor: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=720&q=82",
-};
-
 const money = (value: number) =>
-  new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const category = typeof params.category === "string" ? params.category : "";
+  const storefrontCategories = await getStorefrontCategories();
+  const categoryBySlug = new Map(storefrontCategories.map((item) => [item.slug, item]));
   const products = await getStorefrontProducts({ query, category, limit: 12, demoFallback: true });
   const allProducts = query || category
     ? await getStorefrontProducts({ limit: 12, demoFallback: true })
@@ -99,7 +93,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     })),
   };
 
-  const filteredCategory = STOREFRONT_CATEGORIES.find((item) => item.slug === category);
+  const filteredCategory = storefrontCategories.find((item) => item.slug === category);
 
   return (
     <div className={styles.page}>
@@ -115,15 +109,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <span className={`${styles.collagePhoto} ${styles.collagePhotoOne}`}>
                 {/* Decorative editorial collage; the source is intentionally kept as a normal image. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={categoryImages.fashion} alt="" width="260" height="190" />
+                {categoryBySlug.get("fashion")?.imageUrl && <img src={categoryBySlug.get("fashion")!.imageUrl} alt="" width="260" height="190" />}
               </span>
               <span className={`${styles.collagePhoto} ${styles.collagePhotoTwo}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={categoryImages.mobility} alt="" width="290" height="220" />
+                {categoryBySlug.get("mobility")?.imageUrl && <img src={categoryBySlug.get("mobility")!.imageUrl} alt="" width="290" height="220" />}
               </span>
               <span className={`${styles.collagePhoto} ${styles.collagePhotoThree}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={categoryImages.outdoor} alt="" width="250" height="190" />
+                {categoryBySlug.get("outdoor")?.imageUrl && <img src={categoryBySlug.get("outdoor")!.imageUrl} alt="" width="250" height="190" />}
               </span>
               <span className={styles.collageSun} />
               <span className={styles.collageFlower}>✦</span>
@@ -144,7 +138,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               </div>
               <div className={styles.heroStickers} aria-hidden="true">
                 <span>Human checked</span>
-                <span>6 useful worlds</span>
+                <span>{storefrontCategories.length} useful worlds</span>
               </div>
             </div>
 
@@ -176,7 +170,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
           </div>
           <div className={styles.heroTicker} aria-hidden="true">
-            <div><i>HOME &amp; KITCHEN</i><i>•</i><i>FASHION</i><i>•</i><i>TECHNOLOGY</i><i>•</i><i>MOBILITY</i><i>•</i><i>WELLNESS</i><i>•</i><i>OUTDOORS</i><i>•</i><i>HOME &amp; KITCHEN</i><i>•</i><i>FASHION</i><i>•</i><i>TECHNOLOGY</i><i>•</i></div>
+            <div>{[...storefrontCategories, ...storefrontCategories].map((item, index) => <span key={`${item.id}-${index}`}><i>{item.name.toUpperCase()}</i><i>•</i></span>)}</div>
           </div>
         </section>
       )}
@@ -194,16 +188,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div><p className={styles.eyebrow}>Shop by real life</p><h2 id="categories-title">Start with where it fits.</h2><p className={styles.sectionLead}>Six useful worlds keep a broad catalogue understandable, whether you need a spoon, a jacket or a laptop.</p></div>
           </div>
           <div className={styles.categoryGrid}>
-            {STOREFRONT_CATEGORIES.map((item) => (
+            {storefrontCategories.map((item) => (
               <Link className={styles.categoryCard} data-category={item.slug} href={`/?category=${item.slug}#products`} key={item.slug}>
                 <span className={styles.categoryVisual}>
                   {/* Category images are decorative; the adjacent label names the destination. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={categoryImages[item.slug]} alt="" width="360" height="240" loading="lazy" decoding="async" />
-                  <span className={styles.categoryIcon}>{categoryIcons[item.slug]}</span>
+                  {item.imageUrl && <img src={item.imageUrl} alt="" width="360" height="240" loading="lazy" decoding="async" />}
+                  <span className={styles.categoryIcon}>{categoryIcons[item.slug] || <Sparkles aria-hidden="true" />}</span>
                 </span>
                 <span className={styles.categoryCopy}>
-                  <strong>{item.label}</strong>
+                  <strong>{item.name}</strong>
                   <span>{item.description} <ArrowRight size={12} /></span>
                 </span>
               </Link>
@@ -228,7 +222,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className={styles.sectionHeading} data-motion="fade">
           <div>
             <p className={styles.eyebrow}>{query ? "Search results" : category ? "Filtered collection" : "Recently checked"}</p>
-            <h2>{query ? `Good picks for “${query}”` : filteredCategory ? filteredCategory.label : "Useful products, clearly explained."}</h2>
+            <h2>{query ? `Good picks for “${query}”` : filteredCategory ? filteredCategory.name : "Useful products, clearly explained."}</h2>
             {!query && !category && <p className={styles.sectionLead}>Compare the fit, the compromise and current retailer offers before you leave GoodPick.</p>}
           </div>
           {(query || category) && <Link href="/">Clear filter <ArrowRight size={15} /></Link>}

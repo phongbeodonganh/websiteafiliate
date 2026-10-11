@@ -6,7 +6,7 @@ import type { StorefrontProduct } from "@/lib/products/public";
 import { getMarketplaceMeta } from "@/lib/marketplaces";
 import styles from "./product-detail.module.css";
 
-const money = (value: number) => new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(value);
+const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 const offerHref = (product: StorefrontProduct, offerId: string, directUrl?: string, placement = "main_cta") => directUrl || `/api/v1/public/products/redirect?product_id=${product.id}&offer_id=${offerId}&placement=${placement}`;
 
 export default function ProductDetailClient({ product }: { product: StorefrontProduct }) {

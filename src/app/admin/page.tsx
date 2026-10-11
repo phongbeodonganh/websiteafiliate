@@ -343,6 +343,9 @@ export default function AdminDashboardPage() {
   const [catDesc, setCatDesc] = useState('');
   const [catMetaTitle, setCatMetaTitle] = useState('');
   const [catMetaDesc, setCatMetaDesc] = useState('');
+  const [catHomepageImageUrl, setCatHomepageImageUrl] = useState('');
+  const [catShowOnHomepage, setCatShowOnHomepage] = useState(false);
+  const [catNavOrder, setCatNavOrder] = useState('0');
 
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
   const [editingSubCategoryObj, setEditingSubCategoryObj] = useState<any>(null);
@@ -1093,6 +1096,9 @@ export default function AdminDashboardPage() {
       description: catDesc,
       metaTitle: catMetaTitle,
       metaDescription: catMetaDesc,
+      homepageImageUrl: catHomepageImageUrl,
+      showOnHomepage: catShowOnHomepage,
+      navOrder: Number(catNavOrder) || 0,
     };
     try {
       let res;
@@ -1115,6 +1121,7 @@ export default function AdminDashboardPage() {
         setShowCategoryModal(false);
         setEditingCategoryObj(null);
         setCatName(''); setCatSlug(''); setCatDesc(''); setCatMetaTitle(''); setCatMetaDesc('');
+        setCatHomepageImageUrl(''); setCatShowOnHomepage(false); setCatNavOrder('0');
         loadAllData();
       } else {
         alert(`Lỗi: ${data.message}`);
@@ -3247,6 +3254,7 @@ export default function AdminDashboardPage() {
           onClick={() => {
             setEditingCategoryObj(null);
             setCatName(''); setCatSlug(''); setCatDesc(''); setCatMetaTitle(''); setCatMetaDesc('');
+            setCatHomepageImageUrl(''); setCatShowOnHomepage(false); setCatNavOrder('0');
             setShowCategoryModal(true);
           }}
         >
@@ -3268,6 +3276,7 @@ export default function AdminDashboardPage() {
                     <span className="bg-slate-800 text-amber-300 text-xs px-2.5 py-0.5 rounded-full font-mono">
                       /{cat.slug}
                     </span>
+                    {cat.showOnHomepage && <span className="bg-emerald-400/10 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold">Header #{Number(cat.navOrder || 0) + 1}</span>}
                   </div>
                   {cat.description && <p className="text-xs text-slate-400 mt-1">{cat.description}</p>}
                   {(cat.metaTitle || cat.metaDescription) && (
@@ -3297,6 +3306,9 @@ export default function AdminDashboardPage() {
                     setCatDesc(cat.description || '');
                     setCatMetaTitle(cat.metaTitle || '');
                     setCatMetaDesc(cat.metaDescription || '');
+                    setCatHomepageImageUrl(cat.homepageImageUrl || '');
+                    setCatShowOnHomepage(Boolean(cat.showOnHomepage));
+                    setCatNavOrder(String(cat.navOrder ?? 0));
                     setShowCategoryModal(true);
                   }}
                   className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -3411,6 +3423,16 @@ export default function AdminDashboardPage() {
                   placeholder="Category overview..."
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500 resize-none"
                 />
+              </div>
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[.04] p-4 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div><p className="text-xs font-bold text-emerald-400">Hiển thị trên storefront</p><p className="mt-0.5 text-[11px] text-slate-500">Dùng danh mục này trong header và khối danh mục homepage.</p></div>
+                  <input type="checkbox" checked={catShowOnHomepage} onChange={(e) => setCatShowOnHomepage(e.target.checked)} className="h-4 w-4 accent-emerald-400" />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-[1fr_100px]">
+                  <div><label className="block text-[11px] font-semibold text-slate-400 mb-1">Ảnh đại diện homepage</label><input type="url" value={catHomepageImageUrl} onChange={(e) => setCatHomepageImageUrl(e.target.value)} placeholder="https://media.example.com/category.webp" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white" /></div>
+                  <div><label className="block text-[11px] font-semibold text-slate-400 mb-1">Thứ tự</label><input type="number" min="0" value={catNavOrder} onChange={(e) => setCatNavOrder(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white" /></div>
+                </div>
               </div>
               <div className="border-t border-slate-800 pt-3 space-y-3">
                 <p className="text-xs font-bold text-amber-400 flex items-center gap-1"><Sparkles size={14} /> Thông tin SEO danh mục</p>
@@ -4145,7 +4167,11 @@ export default function AdminDashboardPage() {
     if (activeTab === 'insights' && currentUser.role === 'admin') return <InsightsView />;
     if (activeTab === 'articles') return <ArticlesView />;
     if (activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
-    if (activeTab === 'categories' && currentUser.role === 'admin') return <CategoriesView />;
+    // CategoriesView is declared inside this dashboard and reads the parent's form
+    // state. Calling it as a render helper keeps the modal inputs mounted while a
+    // keystroke updates that state; rendering <CategoriesView /> would create a new
+    // component type on every dashboard render and drop input focus after each key.
+    if (activeTab === 'categories' && currentUser.role === 'admin') return CategoriesView();
     if (activeTab === 'users' && currentUser.role === 'admin') return <UsersView />;
     if (activeTab === 'links' && currentUser.role === 'admin') return <LinksView />;
     if (activeTab === 'blacklist' && currentUser.role === 'admin') return <BlacklistView />;

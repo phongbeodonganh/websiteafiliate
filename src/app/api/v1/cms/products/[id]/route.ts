@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { isValidObjectId, type HydratedDocument } from "mongoose";
 import { getAuthUser } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { ProductModel, type IProduct } from "@/lib/db/product-models";
+import { BrandModel, ProductModel, type IProduct } from "@/lib/db/product-models";
 import { normalizeProductInput } from "@/lib/products/validation";
 import { slugify } from "@/lib/utils";
 
@@ -38,6 +38,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (body.slug) body.slug = slugify(body.slug);
     const normalized = normalizeProductInput(body, true);
     if (normalized.errors.length) return NextResponse.json({ status: "error", message: normalized.errors.join(" · ") }, { status: 400 });
+    if (Object.prototype.hasOwnProperty.call(body, "brand_name")) {
+      const brandName = typeof body.brand_name === "string" ? body.brand_name.trim().slice(0, 120) : "";
+      if (brandName) {
+        const brandSlug = slugify(brandName);
+        const brand = await BrandModel.findOneAndUpdate(
+          { slug: brandSlug },
+          { $setOnInsert: { name: brandName, slug: brandSlug } },
+          { returnDocument: "after", upsert: true },
+        );
+        normalized.data.brand_id = brand._id;
+      } else {
+        normalized.data.brand_id = undefined;
+      }
+    }
     product.set(normalized.data);
     await product.save();
     revalidatePath("/");

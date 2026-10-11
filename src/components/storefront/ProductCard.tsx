@@ -4,7 +4,7 @@ import type { StorefrontProduct } from "@/lib/products/public";
 import styles from "./storefront.module.css";
 
 const money = (value: number) =>
-  new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(value);
+  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 
 export default function ProductCard({ product }: { product: StorefrontProduct }) {
   const checkedAt = new Date(product.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" });

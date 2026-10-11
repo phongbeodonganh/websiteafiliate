@@ -50,6 +50,9 @@ export type StorefrontProduct = {
   warrantyMonths?: number;
   trust: { authentic: boolean; freeShipping: boolean; returnDays?: number; warrantyText?: string };
   faq: { question: string; answer: string }[];
+  metaTitle?: string;
+  metaDescription?: string;
+  focusKeyword?: string;
   updatedAt: string;
   demo?: boolean;
 };
@@ -359,6 +362,9 @@ function serializeProduct(input: unknown): StorefrontProduct {
       warrantyText: doc.trust?.warranty_text,
     },
     faq: doc.faq_schema || [],
+    metaTitle: doc.meta_title || undefined,
+    metaDescription: doc.meta_description || undefined,
+    focusKeyword: doc.focus_keyword || undefined,
     updatedAt: new Date(doc.updated_at || doc.created_at || Date.now()).toISOString(),
   };
 }
