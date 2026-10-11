@@ -1,47 +1,57 @@
 import Link from "next/link";
-import { Heart, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { Compass, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
 import styles from "./storefront.module.css";
 
 export const STOREFRONT_CATEGORIES = [
-  { label: "Công nghệ", slug: "tech" },
-  { label: "Nhà & Bếp", slug: "home-kitchen" },
-  { label: "Làm vườn", slug: "garden" },
-  { label: "Dụng cụ", slug: "tools" },
-  { label: "Ngoài trời", slug: "outdoor" },
-  { label: "Làm đẹp", slug: "beauty" },
+  { label: "Home & Kitchen", slug: "home-kitchen", description: "Cook, clean and live well" },
+  { label: "Fashion", slug: "fashion", description: "Wearable everyday essentials" },
+  { label: "Technology", slug: "tech", description: "Devices that solve a real job" },
+  { label: "Mobility", slug: "mobility", description: "Commute, drive and travel" },
+  { label: "Family & Wellness", slug: "wellness", description: "Care for people and routines" },
+  { label: "Outdoors", slug: "outdoor", description: "Gear for time outside" },
 ];
+
+const categoryLinks = STOREFRONT_CATEGORIES.map((category) => (
+  <Link key={category.slug} href={`/?category=${category.slug}#products`}>{category.label}</Link>
+));
 
 export default function StorefrontHeader({ query = "" }: { query?: string }) {
   return (
     <>
       <div className={styles.utilityBar}>
         <div className={styles.utilityInner}>
-          <span><ShieldCheck size={14} /> Ưu đãi được đội ngũ GoodPick kiểm tra</span>
-          <span>Đánh giá độc lập · Bạn không phải trả thêm phí</span>
+          <span><ShieldCheck size={14} /> Independent picks, practical trade-offs.</span>
+          <span>Retailer offers checked · Affiliate links disclosed</span>
         </div>
       </div>
       <header className={styles.header}>
         <div className={styles.headerMain}>
-          <Link href="/" className={styles.logo} aria-label="Trang chủ GoodPick">
+          <Link href="/" className={styles.logo} aria-label="GoodPick home">
             <span className={styles.logoMark}><Sparkles size={18} /></span>
             <span>GOOD<span>PICK</span></span>
           </Link>
           <form action="/" className={styles.searchForm} role="search">
             <Search size={18} aria-hidden="true" />
-            <input name="q" defaultValue={query} aria-label="Tìm sản phẩm" placeholder="Bạn đang muốn tìm sản phẩm gì?" />
-            <button type="submit">Tìm kiếm</button>
+            <input name="q" defaultValue={query} aria-label="Search products and buying guides" placeholder="Search a product, brand or daily need" />
+            <button type="submit">Find</button>
           </form>
           <div className={styles.headerActions}>
-            <Link href="/#featured"><Heart size={18} /> <span>Sản phẩm nổi bật</span></Link>
-            <button type="button" aria-label="Mở danh mục"><Menu size={22} /></button>
+            <Link href="/#products"><Compass size={17} /> <span>Explore picks</span></Link>
+            <details className={styles.mobileMenu}>
+              <summary aria-label="Open product menu"><Menu size={22} /></summary>
+              <nav aria-label="Mobile product navigation">
+                <Link href="/#products">All good picks</Link>
+                {categoryLinks}
+                <Link href="/#guides">Buying guides</Link>
+                <Link href="/#how-we-pick">How we choose</Link>
+              </nav>
+            </details>
           </div>
         </div>
-        <nav className={styles.categoryNav} aria-label="Danh mục sản phẩm">
-          <Link href="/">Tất cả ưu đãi</Link>
-          {STOREFRONT_CATEGORIES.map((category) => (
-            <Link key={category.slug} href={`/?category=${category.slug}#deals`}>{category.label}</Link>
-          ))}
-          <Link href="/#guides">Hướng dẫn chọn mua</Link>
+        <nav className={styles.categoryNav} aria-label="Product navigation">
+          <Link href="/#products">All picks</Link>
+          {categoryLinks}
+          <Link href="/#guides" className={styles.navMethod}>Buying guides</Link>
         </nav>
       </header>
     </>

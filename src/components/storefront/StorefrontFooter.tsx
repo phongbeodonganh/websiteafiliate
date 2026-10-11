@@ -7,41 +7,40 @@ export default function StorefrontFooter() {
     <footer className={styles.footer} data-motion="fade">
       <div className={styles.footerGrid}>
         <div className={styles.footerBrand}>
-          <Link href="/" className={styles.logo} aria-label="Trang chủ GoodPick">
+          <Link href="/" className={styles.logo} aria-label="GoodPick home">
             <span className={styles.logoMark}><Sparkles size={18} /></span>
             <span>GOOD<span>PICK</span></span>
           </Link>
-          <p>Đánh giá độc lập, so sánh dễ hiểu và ưu đãi được kiểm tra để bạn chọn đúng sản phẩm ngay từ đầu.</p>
-          <span className={styles.footerPromise}><BadgeCheck size={15} /> Minh bạch liên kết tiếp thị</span>
+          <p>Independent product picks, useful trade-offs and retailer comparisons for the things people use every day.</p>
+          <span className={styles.footerPromise}><BadgeCheck size={15} /> Every pick shows what was checked and when</span>
         </div>
         <div>
-          <strong>Danh mục</strong>
-          <Link href="/?category=tech#deals">Công nghệ</Link>
-          <Link href="/?category=home-kitchen#deals">Nhà &amp; Bếp</Link>
-          <Link href="/?category=garden#deals">Làm vườn</Link>
-          <Link href="/#guides">Hướng dẫn chọn mua</Link>
+          <strong>Explore</strong>
+          <Link href="/#products">All good picks</Link>
+          <Link href="/?category=home-kitchen#products">Home &amp; Kitchen</Link>
+          <Link href="/?category=tech#products">Technology</Link>
+          <Link href="/?category=mobility#products">Mobility</Link>
         </div>
         <div>
-          <strong>Thông tin tin cậy</strong>
-          <Link href="/about">Về chúng tôi</Link>
-          <Link href="/contact">Liên hệ</Link>
-          <Link href="/privacy-policy">Chính sách bảo mật</Link>
-          <Link href="/terms">Điều khoản sử dụng</Link>
-          <Link href="/affiliate-disclosure">Công bố liên kết tiếp thị</Link>
+          <strong>About GoodPick</strong>
+          <Link href="/#how-we-pick">How we choose</Link>
+          <Link href="/about-us">About us</Link>
+          <Link href="/contact">Contact</Link>
+          <Link href="/disclosure">Affiliate disclosure</Link>
         </div>
         <div className={styles.footerNewsletter}>
           <Mail size={20} />
-          <strong>Điều đáng biết, mỗi tuần một lần.</strong>
-          <p>Giá giảm và hướng dẫn chọn mua thực sự hữu ích. Không gửi thư mỗi ngày.</p>
-          <Link href="/#newsletter">Đăng ký bản tin</Link>
+          <strong>One useful buying email.</strong>
+          <p>New picks, meaningful price drops and no inbox clutter.</p>
+          <Link href="/#newsletter">Join the weekly shortlist</Link>
         </div>
       </div>
       <div className={styles.footerDisclosure}>
-        <strong>Công bố liên kết tiếp thị:</strong> GoodPick có thể nhận hoa hồng khi bạn mua qua liên kết trên trang. Bạn không phải trả thêm phí và hoa hồng không ảnh hưởng đến đánh giá của chúng tôi.
+        <strong>Affiliate disclosure:</strong> GoodPick may earn a commission when you use selected retailer links. You pay no extra, and a commercial relationship never changes our editorial verdict.
       </div>
       <div className={styles.footerBottom}>
-        <span>© {new Date().getFullYear()} GoodPick. Bảo lưu mọi quyền.</span>
-        <span>Thông tin giá có thể thay đổi tại website của nhà bán lẻ.</span>
+        <span>© {new Date().getFullYear()} GoodPick. All rights reserved.</span>
+        <span><Link href="/terms">Terms</Link> · <Link href="/privacy">Privacy</Link> · Prices and availability can change after checking.</span>
       </div>
     </footer>
   );
