@@ -93,22 +93,20 @@ export default async function BlockedPage({ searchParams }: BlockedPageProps) {
   const blockedCountries = data?.blockedCountries ?? [];
 
   return (
-    <main className="relative isolate grid min-h-svh place-items-center overflow-hidden bg-[var(--editorial-canvas)] p-4 text-[var(--editorial-ink)] sm:p-8">
-      {/* Quiet print-inspired backdrop grid (InsiderResult precedent) */}
+    <main className="relative isolate grid min-h-svh place-items-center overflow-hidden bg-[#FFD978] p-4 text-[var(--editorial-ink)] sm:p-8">
+      {/* Flat poster backdrop shared with the public GoodPick surfaces. */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(17, 17, 17, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(17, 17, 17, 0.045) 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
-          maskImage: 'linear-gradient(to bottom, black, transparent 88%)',
+            'radial-gradient(circle at 8% 20%, #FFB9AA 0 110px, transparent 111px), radial-gradient(circle at 92% 80%, #C9B8FF 0 150px, transparent 151px)',
         }}
       />
 
       <section
         aria-labelledby="blocked-title"
-        className="w-full max-w-[720px] border border-[var(--editorial-divider)] bg-[var(--editorial-surface)] shadow-[8px_8px_0_rgba(17,17,17,0.07)] sm:shadow-[18px_18px_0_rgba(17,17,17,0.07)]"
+        className="w-full max-w-[720px] overflow-hidden rounded-3xl border-2 border-[var(--editorial-ink)] bg-[var(--editorial-surface)] shadow-[7px_7px_0_#C9B8FF] sm:shadow-[12px_12px_0_#C9B8FF]"
       >
         {/* Masthead */}
         <header className="flex items-center justify-between gap-4 border-b border-[var(--editorial-divider)] p-6">
@@ -129,7 +127,7 @@ export default async function BlockedPage({ searchParams }: BlockedPageProps) {
           {/* Status mark — the page's only saturated element (focal point) */}
           <div
             aria-hidden="true"
-            className="grid h-[68px] w-[68px] place-items-center border border-[rgba(185,28,28,0.45)] bg-[rgba(185,28,28,0.08)] text-[#B91C1C] sm:h-[88px] sm:w-[88px]"
+            className="grid h-[68px] w-[68px] place-items-center rounded-2xl border-2 border-[var(--editorial-ink)] bg-[#FFDDD3] text-[#B91C1C] shadow-[5px_5px_0_var(--editorial-ink)] sm:h-[88px] sm:w-[88px]"
           >
             <ShieldAlert aria-hidden="true" className="h-9 w-9 sm:h-11 sm:w-11" strokeWidth={1.7} />
           </div>
@@ -190,7 +188,7 @@ export default async function BlockedPage({ searchParams }: BlockedPageProps) {
               prefers-reduced-motion; focus ring in accent red */}
           <Link
             href="/"
-            className="mt-12 inline-flex min-h-[48px] w-full items-center justify-center gap-2 bg-[var(--editorial-ink)] px-8 text-xs font-extrabold uppercase tracking-[0.08em] text-white no-underline transition-transform duration-200 hover:-translate-y-0.5 focus-visible:[outline:3px_solid_#B91C1C] focus-visible:[outline-offset:3px] motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
+            className="mt-12 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--editorial-ink)] bg-[#FF6B35] px-8 text-xs font-extrabold uppercase tracking-[0.08em] text-white no-underline shadow-[4px_4px_0_var(--editorial-ink)] transition-transform duration-200 hover:-translate-y-0.5 focus-visible:[outline:3px_solid_#B91C1C] focus-visible:[outline-offset:3px] motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
           >
             Return to the safe homepage
           </Link>

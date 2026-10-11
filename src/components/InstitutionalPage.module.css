@@ -758,3 +758,18 @@
     transform: none;
   }
 }
+
+/* Flat-poster route system */
+.page { --trust-bg: #f5f7f4; --trust-panel: #fffdf7; --trust-panel-soft: #fffdf7; --trust-line: #cbd6d0; --trust-muted: #697972; --trust-ink: #17211f; --trust-accent: #0d766e; background-color: var(--trust-bg); background-image: radial-gradient(ellipse 180px 250px at -3% 58%, #ffb9aa 0 99%, transparent 100%), radial-gradient(ellipse 210px 290px at 103% 82%, #c9b8ff 0 99%, transparent 100%); }
+.hero { background: #ffd978; border-bottom: 2px solid var(--trust-ink); }
+.hero::before { background: none; }
+.heroGlow { background: #ff6b35; border: 2px solid var(--trust-ink); box-shadow: 0 0 0 62px rgba(255, 185, 170, .7); height: 260px; left: auto; right: -90px; top: -100px; width: 260px; }
+.documentCard { background: #0d766e; border: 2px solid var(--trust-ink); border-radius: 20px; box-shadow: 10px 10px 0 #ffb9aa; }
+.callout { border: 2px solid var(--trust-ink); border-radius: 16px; }
+.calloutAccent { background: #cff6e5; border-color: var(--trust-ink); box-shadow: 5px 5px 0 #ffd978; }
+.valueCard, .channelCard { background: #fffdf7; border: 2px solid var(--trust-ink); border-radius: 14px; }
+.indexCard, .helpCard { background: #fffdf7; border: 2px solid var(--trust-ink); border-radius: 16px; box-shadow: 6px 6px 0 #c9b8ff; }
+@media (max-width: 760px) {
+  .documentCard, .calloutAccent, .indexCard, .helpCard { box-shadow: 5px 5px 0 #c9b8ff; }
+  .heroGlow { right: -150px; }
+}
