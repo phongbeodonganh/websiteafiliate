@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Clock3, FileText, ShieldCheck } from 'lucide-react';
-import EditorialFooter from '@/components/EditorialFooter';
-import EditorialHeader from '@/components/EditorialHeader';
+import StorefrontFooter from '@/components/storefront/StorefrontFooter';
+import StorefrontHeader from '@/components/storefront/StorefrontHeader';
 import styles from './InstitutionalPage.module.css';
 
 export interface InstitutionalNavItem {
@@ -89,20 +89,20 @@ export function InstitutionalPage({
   children,
   updated,
   readingTime,
-  asideTitle = 'Bạn cần làm rõ?',
-  asideCopy = 'Thông tin quan trọng cần dễ hiểu. Hãy liên hệ nếu có nội dung nào trên trang chưa rõ ràng.',
+  asideTitle = 'Need something clarified?',
+  asideCopy = 'Important information should be easy to understand. Contact us if anything on this page is unclear.',
 }: InstitutionalPageProps) {
   return (
     <div className={styles.page}>
-      <EditorialHeader />
+      <StorefrontHeader />
 
       <main>
         <header className={styles.hero}>
           <div className={styles.heroGlow} aria-hidden="true" />
           <div className={styles.heroGrid}>
             <div className={styles.heroCopy} data-motion="rise">
-              <nav className={styles.breadcrumb} aria-label="Đường dẫn trang">
-                <Link href="/">Trang chủ</Link>
+              <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+                <Link href="/">Home</Link>
                 <span aria-hidden="true">/</span>
                 <span>{eyebrow}</span>
               </nav>
@@ -119,7 +119,7 @@ export function InstitutionalPage({
               <div className={styles.documentMark} aria-hidden="true">G</div>
               <div className={styles.documentMeta}>
                 <span><i className={styles.liveDot} /> {statusLabel}</span>
-                {updated && <span>Cập nhật {updated}</span>}
+                {updated && <span>Updated {updated}</span>}
               </div>
             </div>
           </div>
@@ -128,10 +128,10 @@ export function InstitutionalPage({
         <div className={styles.contentGrid}>
           <article className={styles.content}>{children}</article>
 
-          <aside className={styles.aside} aria-label="Mục lục trang">
+          <aside className={styles.aside} aria-label="On this page">
             <div className={styles.asideInner}>
               <div className={styles.indexCard}>
-                <p className={styles.asideEyebrow}>Trong trang này</p>
+                <p className={styles.asideEyebrow}>On this page</p>
                 <nav>
                   {navItems.map((item, index) => (
                     <a href={`#${item.id}`} key={item.id}>
@@ -151,7 +151,7 @@ export function InstitutionalPage({
                 <p>{asideTitle}</p>
                 <span>{asideCopy}</span>
                 <Link href="/contact">
-                  Liên hệ GoodPick <ArrowRight aria-hidden="true" />
+                  Contact GoodPick <ArrowRight aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -160,17 +160,17 @@ export function InstitutionalPage({
 
         <section className={styles.closingCta} data-motion="rise">
           <div>
-            <p>GOODPICK / TRUNG TÂM MINH BẠCH</p>
-            <h2>Tiêu chuẩn rõ ràng. Quyết định tốt hơn.</h2>
+            <p>GOODPICK / TRUST CENTRE</p>
+            <h2>Clear standards. Better decisions.</h2>
           </div>
           <div className={styles.closingLinks}>
-            <Link href="/affiliate-disclosure">Cách chúng tôi tạo doanh thu</Link>
-            <Link href="/about">Cách chúng tôi làm việc <ArrowRight aria-hidden="true" /></Link>
+            <Link href="/affiliate-disclosure">How we earn</Link>
+            <Link href="/about">How we work <ArrowRight aria-hidden="true" /></Link>
           </div>
         </section>
       </main>
 
-      <EditorialFooter />
+      <StorefrontFooter />
     </div>
   );
 }
