@@ -10,17 +10,17 @@ export async function GET() {
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
         site_title: 'GoodPick',
-        metaDescription: 'Discover top AI tool categories, real-world AI use-case case studies, high-paying affiliate programs, and revenue automation strategies.',
-        focusKeywords: 'ai use-cases, ai case studies, ai affiliate programs, ai content copywriting, ai coding tools',
-        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn',
-        hreflang: 'en-US',
-        geoTarget: 'GLOBAL',
-        primary_color: '#0f172a',
-        accent_color: '#3b82f6',
-        theme_mode: 'dark',
+        metaDescription: 'Independent product reviews, clear price comparisons and practical buying guides for shoppers across Europe.',
+        focusKeywords: 'product reviews Europe, price comparison, buying guides, home products, technology deals',
+        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://goodpick.eu',
+        hreflang: 'en-GB',
+        geoTarget: 'EUROPE',
+        primary_color: '#173f35',
+        accent_color: '#ec6b43',
+        theme_mode: 'light',
         font_family: 'Inter',
-        banner_text: '🔥 HOT: Explore Top High-Paying AI Affiliate Programs & Up To 30% Recurring Commissions!',
-        footer_text: `© ${new Date().getFullYear()} GoodPick. Independent product picks, checked deals, and practical buying guides.`,
+        banner_text: 'Independent picks · Clear comparisons · Prices shown in EUR',
+        footer_text: `© ${new Date().getFullYear()} GoodPick. Independent product picks, checked offers and practical buying guides.`,
       });
     }
 
@@ -58,7 +58,7 @@ export async function GET() {
         updatedAt: doc.updated_at,
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ status: 'error', message: 'Failed to fetch public settings' }, { status: 500 });
   }
 }

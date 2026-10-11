@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-export const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn';
+export const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://goodpick.eu';
 export const DEFAULT_SITE_NAME = 'GoodPick';
 export const DEFAULT_DESCRIPTION =
-  'Đánh giá độc lập, so sánh giá và hướng dẫn chọn mua đồ công nghệ, gia dụng, làm vườn và sản phẩm thiết thực.';
+  'Human-checked coupon codes, current store deals and honest saving guides for shoppers across Europe.';
 export const DEFAULT_OG_IMAGE =
   'https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1200&auto=format&fit=crop';
 
@@ -22,7 +22,7 @@ export function normalizeSiteUrl(value?: string | null) {
 }
 
 export function normalizeLocale(value?: string | null) {
-  return (value?.trim() || 'vi-VN').replace('-', '_');
+  return (value?.trim() || 'en-GB').replace('-', '_');
 }
 
 export function normalizeHttpUrl(value: string | null | undefined, fallback: string) {

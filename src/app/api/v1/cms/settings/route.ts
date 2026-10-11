@@ -17,11 +17,11 @@ export async function GET(req: Request) {
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
         site_title: 'GoodPick',
-        metaDescription: 'Nền tảng phân tích tài chính & crypto chuyên sâu. Cung cấp tín hiệu đầu tư và đánh giá sàn giao dịch khách quan nhất.',
-        focusKeywords: 'crypto, tài chính, đầu tư, đánh giá sàn',
-        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cecana.com.vn',
-        hreflang: 'en-US',
-        geoTarget: 'GLOBAL',
+        metaDescription: 'Independent product reviews, clear price comparisons and practical buying guides for shoppers across Europe.',
+        focusKeywords: 'product reviews Europe, price comparison, buying guides, home products, technology deals',
+        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://goodpick.eu',
+        hreflang: 'en-GB',
+        geoTarget: 'EUROPE',
       });
     }
 
@@ -73,7 +73,7 @@ export async function GET(req: Request) {
         updatedAt: doc.updated_at,
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ status: 'error', message: 'Lỗi lấy cấu hình hệ thống' }, { status: 500 });
   }
 }

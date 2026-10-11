@@ -224,11 +224,11 @@ const SubscriberSchema = new Schema<ISubscriber>(
 // 9. Setting Schema
 const SettingSchema = new Schema<ISetting>(
   {
-    siteTitle: { type: String, default: 'AIDEALSUK' },
+    siteTitle: { type: String, default: 'GoodPick' },
     metaDescription: { type: String },
     focusKeywords: { type: String },
     canonicalUrl: { type: String },
-    hreflang: { type: String, default: 'en-US' },
+    hreflang: { type: String, default: 'en-GB' },
     geoTarget: { type: String, default: 'GLOBAL' },
     businessName: { type: String },
     businessAddress: { type: String },
@@ -247,8 +247,8 @@ const SettingSchema = new Schema<ISetting>(
     customCss: { type: String },
     geoLatitude: { type: Number, default: 40.7128 },
     geoLongitude: { type: Number, default: -74.0060 },
-    geoRegionName: { type: String, default: 'US-NY' },
-    geoPlacename: { type: String, default: 'New York' },
+    geoRegionName: { type: String, default: 'EU' },
+    geoPlacename: { type: String, default: 'Europe' },
     updatedAt: { type: Date, default: Date.now },
   },
   opts
