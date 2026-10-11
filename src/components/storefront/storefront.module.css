@@ -8,7 +8,14 @@
   --muted: #64716c;
   --signal: #cff6e5;
   --coral: #ff6b35;
-  background: var(--paper);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at -2% 23%, rgba(255,209,102,.34) 0 112px, transparent 113px),
+    radial-gradient(circle at 103% 42%, rgba(201,184,255,.3) 0 164px, transparent 165px),
+    radial-gradient(circle at 3% 72%, rgba(255,107,53,.16) 0 124px, transparent 125px),
+    radial-gradient(circle, rgba(13,118,110,.1) 0 1px, transparent 1.5px);
+  background-position: center, center, center, 0 0;
+  background-size: auto, auto, auto, 32px 32px;
   color: var(--ink);
   min-height: 100vh;
   overflow-x: clip;
@@ -118,7 +125,7 @@
 .sectionHeading h2 { font-size: clamp(29px, 3.4vw, 46px); letter-spacing: -.055em; line-height: 1.08; margin: 9px 0 0; max-width: 19ch; }
 .sectionLead { color: var(--muted); font-size: 12px; line-height: 1.65; margin: 11px 0 0; max-width: 62ch; }
 .sectionHeading > a { align-items: center; color: var(--forest-2); display: flex; flex: 0 0 auto; font-size: 11px; font-weight: 850; gap: 5px; text-decoration: none; }
-.categorySection { isolation: isolate; position: relative; }
+.categorySection { background: rgba(255,255,255,.72); border: 1px solid rgba(23,33,31,.18); border-radius: 30px; isolation: isolate; margin-bottom: 56px; padding: 58px 32px 48px; position: relative; }
 .categorySection::before, .categorySection::after { content: ''; pointer-events: none; position: absolute; z-index: -1; }
 .categorySection::before { background: #ffd166; border: 1px solid var(--ink); height: 82px; right: -46px; top: 39px; transform: rotate(8deg); width: 82px; }
 .categorySection::after { background: #c9b8ff; border: 1px solid var(--ink); border-radius: 50%; bottom: 32px; height: 58px; left: -28px; width: 58px; }
@@ -146,6 +153,10 @@
 .featuredSection .productCard:nth-child(2) { border-top-color: #ff6b35; }
 .featuredSection .productCard:nth-child(3) { border-top-color: #3d5afe; }
 .featuredSection .productCard:nth-child(4) { border-top-color: #2f6b4f; }
+
+.productSection { background-color: #eaf6f0; background-image: linear-gradient(132deg, transparent 0 72%, rgba(201,184,255,.36) 72% 82%, transparent 82%); border: 1px solid rgba(23,33,31,.17); border-radius: 30px; isolation: isolate; margin-bottom: 64px; margin-top: 64px; overflow: hidden; padding: 62px 32px; position: relative; }
+.productSection::before { border: 35px solid #ffd166; border-radius: 50%; content: ''; height: 132px; position: absolute; right: -72px; top: -72px; width: 132px; z-index: -1; }
+.productSection::after { background: repeating-conic-gradient(#ff6b35 0 25%, transparent 0 50%) 0 0 / 22px 22px; bottom: -28px; content: ''; height: 96px; left: -22px; opacity: .58; position: absolute; transform: rotate(7deg); width: 122px; z-index: -1; }
 
 .productGrid { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .productCard { background: #fff; border: 1px solid var(--line); border-radius: 18px; min-width: 0; overflow: hidden; transition: box-shadow .22s, transform .22s; }
@@ -190,7 +201,7 @@
 .methodStep strong { display: block; font-size: 13px; margin-bottom: 7px; }
 .methodStep p { color: #adc1b9; font-size: 10px; line-height: 1.6; margin: 0; }
 
-.proofSection { background: #ece4d4; display: grid; gap: 45px; grid-template-columns: minmax(250px,.7fr) minmax(0,1.3fr); margin: 20px auto 60px; max-width: 1256px; overflow: hidden; padding: 48px; position: relative; }
+.proofSection { background-color: #ece4d4; background-image: radial-gradient(circle at 88% 8%, rgba(255,107,53,.24) 0 70px, transparent 71px), radial-gradient(circle, rgba(23,33,31,.1) 0 1px, transparent 1.5px); background-size: auto, 24px 24px; border: 1px solid rgba(23,33,31,.2); box-shadow: 10px 10px 0 #c9b8ff; display: grid; gap: 45px; grid-template-columns: minmax(250px,.7fr) minmax(0,1.3fr); margin: 20px auto 68px; max-width: 1256px; overflow: hidden; padding: 48px; position: relative; }
 .proofIntro h2 { font-size: clamp(31px,3vw,44px); letter-spacing: -.055em; line-height: 1.08; margin: 12px 0; }
 .proofIntro > p:last-child { color: #66716c; font-size: 11px; line-height: 1.7; max-width: 43ch; }
 .proofGrid { display: grid; gap: 12px; grid-template-columns: repeat(3,1fr); }
@@ -209,6 +220,10 @@
 .guideCard > span { color: var(--forest-2); display: block; font-size: 9px; font-weight: 850; letter-spacing: .1em; margin-top: 15px; text-transform: uppercase; }
 .guideCard h3 { font-size: 17px; line-height: 1.38; margin: 7px 0; }
 .guideCard p { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 0; }
+.guideSection { background-color: #f7efff; background-image: linear-gradient(115deg, rgba(255,209,102,.28) 0 16%, transparent 16% 84%, rgba(255,107,53,.14) 84%), radial-gradient(circle at 80% 20%, rgba(61,90,254,.13) 0 2px, transparent 2.5px); background-size: 100% 100%, 30px 30px; }
+.guideSection .guideCard { background: rgba(255,255,255,.78); border: 1px solid rgba(23,33,31,.16); border-radius: 18px; overflow: hidden; padding-bottom: 18px; }
+.guideSection .guideCard > :not(.guideImage) { margin-left: 18px; margin-right: 18px; }
+.guideSection .guideImage { border-radius: 0; }
 
 .newsletter { align-items: center; background: var(--signal); border: 2px solid var(--ink); border-radius: 22px; box-shadow: 8px 8px 0 var(--ink); display: grid; gap: 32px; grid-template-columns: 1fr 1fr; margin: 40px auto 86px; max-width: 1256px; padding: 38px 42px; }
 .newsletterKicker { align-items: center; display: flex; font-size: 9px !important; font-weight: 850; gap: 6px; letter-spacing: .1em; margin: 0 0 7px !important; text-transform: uppercase; }
@@ -296,6 +311,7 @@
   .trustItem { padding: 10px; }
   .trustItem span { display: none; }
   .section, .sectionInner { margin: 0; padding: 50px 16px; }
+  .categorySection, .productSection { border-left: 0; border-radius: 0; border-right: 0; }
   .sectionHeading { align-items: flex-start; flex-direction: column; }
   .categoryGrid { grid-template-columns: repeat(2,1fr); }
   .categoryCard { min-height: 224px; }
@@ -307,7 +323,7 @@
   .method { border-radius: 0; margin: 0 -16px; padding: 38px 20px; }
   .methodSteps { grid-template-columns: 1fr; }
   .methodStep span { margin-bottom: 14px; }
-  .proofSection { margin: 18px 16px 48px; padding: 33px 20px; }
+  .proofSection { box-shadow: 6px 6px 0 #c9b8ff; margin: 18px 16px 48px; padding: 33px 20px; }
   .proofGrid { grid-template-columns: 1fr; }
   .newsletter { border-radius: 0; box-shadow: none; grid-template-columns: 1fr; margin: 15px 0 0; padding: 31px 20px; }
   .newsletter form { border-radius: 13px; }

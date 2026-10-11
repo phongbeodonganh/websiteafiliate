@@ -224,7 +224,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </section>
       )}
 
-      <section className={styles.section} id="products">
+      <section className={`${styles.section} ${styles.productSection}`} id="products">
         <div className={styles.sectionHeading} data-motion="fade">
           <div>
             <p className={styles.eyebrow}>{query ? "Search results" : category ? "Filtered collection" : "Recently checked"}</p>
@@ -274,7 +274,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           )}
 
           {guides.length > 0 && (
-            <section className={styles.sectionAlt} id="guides">
+            <section className={`${styles.sectionAlt} ${styles.guideSection}`} id="guides">
               <div className={`${styles.section} ${styles.sectionInner}`}>
                 <div className={styles.sectionHeading} data-motion="fade"><div><p className={styles.eyebrow}>Know before you buy</p><h2>Practical buying guides.</h2></div><Link href="/latest">Read every guide <ArrowRight size={15} /></Link></div>
                 <div className={styles.guideGrid}>
