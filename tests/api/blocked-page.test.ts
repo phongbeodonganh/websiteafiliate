@@ -193,7 +193,7 @@ describe('/blocked state matrix (UI-SPEC Interaction & Security Contract)', () =
 
     const html = await renderBlockedPage({ ref: clickLog._id.toString() });
 
-    expect(html).toContain('Flagged by the AIDEALSUK safety review');
+    expect(html).toContain('Flagged by the GoodPick safety review');
     expect(html).not.toContain('seed-reason-to-be-cleared');
     // Empty country list → the whole row is omitted (no empty "Blocked countries" row).
     expect(html).not.toContain('Blocked countries');
@@ -214,7 +214,7 @@ describe('/blocked state matrix (UI-SPEC Interaction & Security Contract)', () =
       expect(html).toContain('blocked as a precaution');
       // Fail-closed receipt: Project row shows Unavailable + default reason.
       expect(html).toContain('Unavailable');
-      expect(html).toContain('Flagged by the AIDEALSUK safety review');
+      expect(html).toContain('Flagged by the GoodPick safety review');
       // No internal data leaks through the failure path.
       expect(html).not.toContain('Scam Signals Pro');
     } finally {

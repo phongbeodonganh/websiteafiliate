@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ShieldAlert } from 'lucide-react';
 import { connectToDatabase } from '@/lib/db/mongodb';
@@ -19,7 +20,7 @@ export const dynamic = 'force-dynamic';
 // public site content is English). Blacklist-supplied data values themselves
 // always render verbatim — this fallback only applies when the DB reason is empty.
 const DEFAULT_BLOCK_REASON =
-  'Flagged by the AIDEALSUK safety review — fraud or unpaid commissions.';
+  'Flagged by the GoodPick safety review — the destination may be unsafe or commercially unreliable.';
 
 type BlockedPageProps = {
   searchParams: Promise<{ ref?: string | string[] }>;
@@ -111,14 +112,14 @@ export default async function BlockedPage({ searchParams }: BlockedPageProps) {
       >
         {/* Masthead */}
         <header className="flex items-center justify-between gap-4 border-b border-[var(--editorial-divider)] p-6">
-          <a
+          <Link
             href="/"
             aria-label={`${BRAND_NAME} home`}
             className="text-lg font-extrabold tracking-[-0.04em] text-[var(--editorial-ink)] no-underline focus-visible:[outline:3px_solid_#B91C1C] focus-visible:[outline-offset:3px]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {BRAND_NAME}
-          </a>
+          </Link>
           <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-[var(--editorial-muted)]">
             Security Notice
           </span>
@@ -187,12 +188,12 @@ export default async function BlockedPage({ searchParams }: BlockedPageProps) {
 
           {/* Primary CTA — hover-lift per site convention, disabled under
               prefers-reduced-motion; focus ring in accent red */}
-          <a
+          <Link
             href="/"
             className="mt-12 inline-flex min-h-[48px] w-full items-center justify-center gap-2 bg-[var(--editorial-ink)] px-8 text-xs font-extrabold uppercase tracking-[0.08em] text-white no-underline transition-transform duration-200 hover:-translate-y-0.5 focus-visible:[outline:3px_solid_#B91C1C] focus-visible:[outline-offset:3px] motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
           >
             Return to the safe homepage
-          </a>
+          </Link>
         </div>
 
         {/* Footer strip */}
