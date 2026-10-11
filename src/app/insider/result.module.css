@@ -1,6 +1,6 @@
 .page {
-  --result-accent: #0d766e;
-  --result-accent-soft: rgba(13, 118, 110, 0.12);
+  --result-accent: #1947d1;
+  --result-accent-soft: rgba(25, 71, 209, 0.12);
   position: relative;
   isolation: isolate;
   display: grid;
@@ -8,8 +8,8 @@
   place-items: center;
   overflow: hidden;
   padding: 32px;
-  background: #f4f5f2;
-  color: #111418;
+  background: #f6f7fb;
+  color: #101828;
 }
 
 .failed {
@@ -30,9 +30,9 @@
 
 .shell {
   width: min(100%, 960px);
-  border: 1px solid #cfd2cc;
+  border: 1px solid #d9dfec;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 18px 18px 0 rgba(17, 20, 24, 0.07);
+  box-shadow: 18px 18px 0 rgba(25, 71, 209, 0.08);
 }
 
 .masthead,
@@ -46,7 +46,7 @@
 }
 
 .brand {
-  color: #111418;
+  color: #101828;
   font-family: var(--font-heading), sans-serif;
   font-size: 18px;
   font-weight: 800;
@@ -105,7 +105,7 @@
 .copy h1 {
   max-width: 680px;
   margin: 0;
-  color: #111418;
+  color: #101828;
   font-size: clamp(34px, 5.4vw, 66px);
   line-height: 0.98;
   letter-spacing: -0.055em;
@@ -185,7 +185,7 @@
 }
 
 .primary {
-  background: #111418;
+  background: #101828;
   color: #fff;
 }
 
@@ -196,7 +196,7 @@
 
 .secondary {
   background: transparent;
-  color: #111418;
+  color: #101828;
 }
 
 .footer {

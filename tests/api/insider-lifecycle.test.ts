@@ -95,7 +95,26 @@ describe('Insider confirmation and unsubscribe APIs', () => {
 
     expect(confirmResponse.status).toBe(200);
     expect(confirmPayload.alreadyActive).toBe(true);
-    expect(confirmPayload.message).toContain('already an AIDEALSUK Insider');
+    expect(confirmPayload.message).toContain('already subscribed to the GoodPick Edit');
+  });
+
+  it('keeps a new subscriber pending when confirmation delivery is temporarily unavailable', async () => {
+    emailMocks.sendEmail.mockRejectedValueOnce(new Error('temporary provider failure'));
+    const request = new Request('http://localhost/api/v1/public/insider', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'delivery-delayed@example.com' }),
+    });
+
+    const response = await createHandler(request);
+    const payload = await response.json();
+    expect(response.status).toBe(202);
+    expect(payload.status).toBe('success');
+    expect(payload.message).toContain('email is saved');
+
+    const subscriber = await SubscriberModel.findOne({ email: 'delivery-delayed@example.com' }).lean();
+    expect(subscriber?.status).toBe('pending');
+    expect(subscriber?.email_status).toBe('failed');
   });
 
   it('confirms a pending subscriber', async () => {
@@ -132,7 +151,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://cecana.com.vn/insider/success?status=confirmed');
+    expect(response.headers.get('location')).toBe('https://goodpick.eu/insider/success?status=confirmed');
   });
 
   it('redirects an invalid confirmation link to the failed page', async () => {
@@ -141,7 +160,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://cecana.com.vn/insider/failed');
+    expect(response.headers.get('location')).toBe('https://goodpick.eu/insider/failed');
   });
 
   it('unsubscribes an active subscriber idempotently', async () => {
@@ -178,6 +197,6 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://cecana.com.vn/insider/success?status=unsubscribed');
+    expect(response.headers.get('location')).toBe('https://goodpick.eu/insider/success?status=unsubscribed');
   });
 });

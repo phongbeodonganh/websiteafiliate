@@ -71,7 +71,7 @@ function renderArticle(article: InsiderDigestArticle, siteUrl: string, badge?: s
           <a href="${url}" style="color:#111827;text-decoration:none">${safeTitle}</a>
         </h3>
         <p style="margin:0 0 12px;font-size:14px;line-height:1.65;color:#52525b">${safeSummary}</p>
-        <a href="${url}" style="font-size:12px;font-weight:700;color:#0d766e;text-decoration:none">Read article →</a>
+        <a href="${url}" style="font-size:12px;font-weight:700;color:#173f35;text-decoration:none">Read guide →</a>
       </td>
     </tr>
   `;
@@ -114,12 +114,12 @@ export function buildInsiderDigestEmail(input: {
   )).join('\n\n');
 
   return {
-    subject: `${input.siteName} Daily Brief — ${input.dayKey}`,
+    subject: `${input.siteName} Product Edit — ${input.dayKey}`,
     text: [
-      `${input.siteName} Insider — ${input.dayKey}`,
+      `${input.siteName} Product Edit — ${input.dayKey}`,
       '',
-      ...(latestText ? ['LATEST', latestText, ''] : []),
-      ...(hottestText ? ['HOTTEST', hottestText, ''] : []),
+      ...(latestText ? ['LATEST GUIDES', latestText, ''] : []),
+      ...(hottestText ? ['MOST READ', hottestText, ''] : []),
       `Visit ${input.siteName}: ${input.siteUrl}`,
       '',
       `Unsubscribe: ${input.unsubscribeUrl}`,
@@ -129,22 +129,22 @@ export function buildInsiderDigestEmail(input: {
       <html lang="en">
         <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
         <body style="margin:0;background:#f4f4f5;color:#111827;font-family:Arial,sans-serif">
-          <div style="display:none;max-height:0;overflow:hidden">Your latest and hottest stories for ${escapeHtml(input.dayKey)}.</div>
+          <div style="display:none;max-height:0;overflow:hidden">Your latest GoodPick product guides for ${escapeHtml(input.dayKey)}.</div>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f5;padding:32px 16px">
             <tr><td align="center">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-top:4px solid #0d766e">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-top:4px solid #173f35">
                 <tr><td style="padding:36px 32px 8px">
-                  <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#0d766e">${safeSiteName} Insider · ${escapeHtml(input.dayKey)}</p>
-                  <h1 style="margin:0 0 14px;font-size:30px;line-height:1.15;color:#111827">Your daily AI briefing</h1>
-                  <p style="margin:0;font-size:15px;line-height:1.7;color:#52525b">A concise summary of the latest stories from ${escapeHtml(input.periodDescription || 'the previous GMT+12 day')}, plus the hottest reads on ${safeSiteName}.</p>
+                  <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#173f35">${safeSiteName} Product Edit · ${escapeHtml(input.dayKey)}</p>
+                  <h1 style="margin:0 0 14px;font-size:30px;line-height:1.15;color:#111827">Products worth a closer look</h1>
+                  <p style="margin:0;font-size:15px;line-height:1.7;color:#52525b">A concise edit of new buying guides from ${escapeHtml(input.periodDescription || 'the latest edition')}, plus the most-read product advice on ${safeSiteName}.</p>
                 </td></tr>
-                ${renderSection('Latest', input.latest, input.siteUrl)}
-                ${renderSection('Hottest', input.hottest, input.siteUrl, (_article, index) => `#${index + 1} hottest`)}
+                ${renderSection('Latest guides', input.latest, input.siteUrl)}
+                ${renderSection('Most read', input.hottest, input.siteUrl, (_article, index) => `#${index + 1} most read`)}
                 <tr><td align="center" style="padding:34px 32px">
                   <a href="${safeSiteUrl}" style="display:inline-block;background:#111111;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:14px 22px">Visit ${safeSiteName}</a>
                 </td></tr>
                 <tr><td style="padding:22px 32px 30px;background:#fafafa;border-top:1px solid #e4e4e7">
-                  <p style="margin:0;font-size:11px;line-height:1.6;color:#71717a">You received this daily briefing because you confirmed your ${safeSiteName} Insider subscription. <a href="${safeUnsubscribeUrl}" style="color:#52525b">Unsubscribe</a>.</p>
+                  <p style="margin:0;font-size:11px;line-height:1.6;color:#71717a">You received this product edit because you confirmed your ${safeSiteName} email subscription. <a href="${safeUnsubscribeUrl}" style="color:#52525b">Unsubscribe</a>.</p>
                 </td></tr>
               </table>
             </td></tr>

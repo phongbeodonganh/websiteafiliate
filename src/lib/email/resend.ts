@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
-const DEFAULT_EMAIL_FROM = 'GoodPick <insider@cecana.com.vn>';
-const DEFAULT_EMAIL_REPLY_TO = 'hello@cecana.com.vn';
+const DEFAULT_EMAIL_FROM = 'GoodPick <hello@goodpick.eu>';
+const DEFAULT_EMAIL_REPLY_TO = 'hello@goodpick.eu';
 
 export interface SendEmailInput {
   to: string;

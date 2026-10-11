@@ -27,10 +27,10 @@ export default function InsiderResult({
       <div className={styles.grid} aria-hidden="true" />
       <section className={styles.shell} aria-labelledby="insider-result-title">
         <header className={styles.masthead}>
-          <Link className={styles.brand} href="/" aria-label="AIDEALSUK home">
-            AIDEALSUK
+          <Link className={styles.brand} href="/" aria-label="GoodPick home">
+            GOODPICK
           </Link>
-          <span className={styles.edition}>Insider Dispatch</span>
+          <span className={styles.edition}>The GoodPick Edit</span>
         </header>
 
         <div className={styles.content}>
@@ -57,7 +57,7 @@ export default function InsiderResult({
             <span>Status</span>
             <strong>{isSuccess ? 'Verified' : 'Action required'}</strong>
             <span>Delivery</span>
-            <strong>{isSuccess ? 'Daily · 00:00 GMT+12' : 'Not scheduled'}</strong>
+            <strong>{isSuccess ? 'Next scheduled edit' : 'Not scheduled'}</strong>
             <span>Note</span>
             <strong>{detail}</strong>
           </div>
@@ -68,13 +68,13 @@ export default function InsiderResult({
               <span aria-hidden="true">→</span>
             </Link>
             <Link className={`${styles.button} ${styles.secondary}`} href="/">
-              Back to AIDEALSUK
+              Back to GoodPick
             </Link>
           </div>
         </div>
 
         <footer className={styles.footer}>
-          <span>AIDEALSUK / INSIDER</span>
+          <span>GOODPICK / THE EDIT</span>
           <span>{isSuccess ? 'ACCESS CONFIRMED' : 'LINK NOT CONFIRMED'}</span>
         </footer>
       </section>
