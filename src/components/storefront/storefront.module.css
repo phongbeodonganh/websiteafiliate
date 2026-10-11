@@ -10,12 +10,9 @@
   --coral: #ff6b35;
   background-color: var(--paper);
   background-image:
-    radial-gradient(circle at -2% 23%, rgba(255,209,102,.34) 0 112px, transparent 113px),
-    radial-gradient(circle at 103% 42%, rgba(201,184,255,.3) 0 164px, transparent 165px),
-    radial-gradient(circle at 3% 72%, rgba(255,107,53,.16) 0 124px, transparent 125px),
-    radial-gradient(circle, rgba(13,118,110,.1) 0 1px, transparent 1.5px);
-  background-position: center, center, center, 0 0;
-  background-size: auto, auto, auto, 32px 32px;
+    radial-gradient(ellipse 180px 250px at -2% 23%, #ffd166 0 99%, transparent 100%),
+    radial-gradient(ellipse 220px 300px at 103% 43%, #c9b8ff 0 99%, transparent 100%),
+    radial-gradient(ellipse 180px 240px at 2% 73%, #ffc1ad 0 99%, transparent 100%);
   color: var(--ink);
   min-height: 100vh;
   overflow-x: clip;
@@ -55,11 +52,11 @@
 .heroStage::before { background: radial-gradient(circle, rgba(255,255,255,.1) 0 1px, transparent 1.5px); background-size: 18px 18px; content: ''; inset: 0 52% 0 0; opacity: .45; position: absolute; }
 .heroStage::after { border: 44px solid rgba(255,209,102,.88); border-radius: 50%; content: ''; height: 155px; left: 43%; position: absolute; top: -116px; width: 155px; z-index: 0; }
 .heroCollage { inset: 0; pointer-events: none; position: absolute; z-index: 1; }
-.collagePhoto { background: #fff; border: 3px solid #fff; box-shadow: 7px 7px 0 rgba(23,33,31,.75); display: block; overflow: hidden; position: absolute; }
+.collagePhoto { background: #fff; border: 2px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 rgba(23,33,31,.85); display: block; overflow: hidden; position: absolute; }
 .collagePhoto img { display: block; height: 100%; object-fit: cover; width: 100%; }
-.collagePhotoOne { height: 86px; left: 42%; top: 26px; transform: rotate(8deg); width: 116px; }
-.collagePhotoTwo { bottom: 39px; height: 102px; left: -45px; transform: rotate(-8deg); width: 142px; }
-.collagePhotoThree { bottom: -38px; height: 104px; left: 45%; transform: rotate(6deg); width: 136px; }
+.collagePhotoOne { height: 100px; left: 41%; top: 23px; transform: rotate(8deg); width: 136px; }
+.collagePhotoTwo { bottom: 35px; height: 112px; left: -45px; transform: rotate(-8deg); width: 154px; }
+.collagePhotoThree { bottom: -38px; height: 114px; left: 44%; transform: rotate(6deg); width: 148px; }
 .collageSun { background: var(--coral); border: 2px solid var(--ink); border-radius: 50%; height: 35px; left: 49%; position: absolute; top: 137px; width: 35px; }
 .collageFlower { align-items: center; animation: collageFloat 4s ease-in-out infinite; background: #c9b8ff; border: 2px solid var(--ink); border-radius: 50% 50% 10% 50%; color: var(--ink); display: flex; font-size: 24px; height: 52px; justify-content: center; left: 40%; position: absolute; top: 210px; transform: rotate(-13deg); width: 52px; }
 @keyframes collageFloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -8px; } }
@@ -125,12 +122,12 @@
 .sectionHeading h2 { font-size: clamp(29px, 3.4vw, 46px); letter-spacing: -.055em; line-height: 1.08; margin: 9px 0 0; max-width: 19ch; }
 .sectionLead { color: var(--muted); font-size: 12px; line-height: 1.65; margin: 11px 0 0; max-width: 62ch; }
 .sectionHeading > a { align-items: center; color: var(--forest-2); display: flex; flex: 0 0 auto; font-size: 11px; font-weight: 850; gap: 5px; text-decoration: none; }
-.categorySection { background: rgba(255,255,255,.72); border: 1px solid rgba(23,33,31,.18); border-radius: 30px; isolation: isolate; margin-bottom: 56px; padding: 58px 32px 48px; position: relative; }
+.categorySection { background: #ffd978; border: 2px solid var(--ink); border-radius: 38px; box-shadow: 10px 10px 0 #ffb7a5; isolation: isolate; margin-bottom: 86px; padding: 58px 32px 48px; position: relative; }
 .categorySection::before, .categorySection::after { content: ''; pointer-events: none; position: absolute; z-index: -1; }
 .categorySection::before { background: #ffd166; border: 1px solid var(--ink); height: 82px; right: -46px; top: 39px; transform: rotate(8deg); width: 82px; }
 .categorySection::after { background: #c9b8ff; border: 1px solid var(--ink); border-radius: 50%; bottom: 32px; height: 58px; left: -28px; width: 58px; }
 .categoryGrid { display: grid; gap: 12px; grid-template-columns: repeat(6, 1fr); }
-.categoryCard { --category-bg: #ffd166; --category-text: var(--ink); background: var(--category-bg); border: 1px solid var(--ink); border-radius: 17px; color: var(--category-text); display: flex; flex-direction: column; min-height: 264px; overflow: hidden; text-decoration: none; transition: transform .22s, box-shadow .22s; }
+.categoryCard { --category-bg: #ffd166; --category-text: var(--ink); background: var(--category-bg); border: 2px solid var(--ink); border-radius: 17px; color: var(--category-text); display: flex; flex-direction: column; min-height: 264px; overflow: hidden; text-decoration: none; transition: transform .22s, box-shadow .22s; }
 .categoryCard[data-category="fashion"] { --category-bg: #c9b8ff; }
 .categoryCard[data-category="tech"] { --category-bg: #3d5afe; --category-text: #fff; }
 .categoryCard[data-category="mobility"] { --category-bg: #ff6b35; }
@@ -148,15 +145,19 @@
 .categoryCard strong { display: block; font-size: 13px; }
 .categoryCopy > span { align-items: center; color: currentColor; display: flex; font-size: 9px; gap: 4px; line-height: 1.4; margin-top: 6px; opacity: .76; }
 
-.featuredSection { background-color: #fff7df; background-image: radial-gradient(circle at 14px 14px, rgba(61,90,254,.14) 0 2px, transparent 2.5px), linear-gradient(120deg, transparent 0 72%, rgba(255,107,53,.09) 72% 82%, transparent 82%); background-size: 28px 28px, 100% 100%; }
-.featuredSection .productCard { border-top-color: var(--ink); border-top-width: 4px; }
+.featuredSection { background: #ffb9aa; border-bottom: 2px solid var(--ink); border-top: 2px solid var(--ink); isolation: isolate; margin: 72px 0; position: relative; }
+.featuredSection::before, .featuredSection::after { background: #ffb9aa; content: ''; left: -2%; pointer-events: none; position: absolute; width: 104%; z-index: -1; }
+.featuredSection::before { border-radius: 50% 50% 0 0 / 100% 100% 0 0; border-top: 2px solid var(--ink); height: 72px; top: -48px; }
+.featuredSection::after { border-bottom: 2px solid var(--ink); border-radius: 0 0 50% 50% / 0 0 100% 100%; bottom: -48px; height: 72px; }
+.featuredSection .sectionInner { position: relative; z-index: 1; }
+.featuredSection .productCard { border: 2px solid var(--ink); border-top-color: var(--ink); border-top-width: 5px; }
 .featuredSection .productCard:nth-child(2) { border-top-color: #ff6b35; }
 .featuredSection .productCard:nth-child(3) { border-top-color: #3d5afe; }
 .featuredSection .productCard:nth-child(4) { border-top-color: #2f6b4f; }
 
-.productSection { background-color: #eaf6f0; background-image: linear-gradient(132deg, transparent 0 72%, rgba(201,184,255,.36) 72% 82%, transparent 82%); border: 1px solid rgba(23,33,31,.17); border-radius: 30px; isolation: isolate; margin-bottom: 64px; margin-top: 64px; overflow: hidden; padding: 62px 32px; position: relative; }
+.productSection { background: #cdf3e5; border: 2px solid var(--ink); border-radius: 30px; box-shadow: 10px 10px 0 #3d5afe; isolation: isolate; margin-bottom: 76px; margin-top: 86px; overflow: hidden; padding: 62px 32px; position: relative; }
 .productSection::before { border: 35px solid #ffd166; border-radius: 50%; content: ''; height: 132px; position: absolute; right: -72px; top: -72px; width: 132px; z-index: -1; }
-.productSection::after { background: repeating-conic-gradient(#ff6b35 0 25%, transparent 0 50%) 0 0 / 22px 22px; bottom: -28px; content: ''; height: 96px; left: -22px; opacity: .58; position: absolute; transform: rotate(7deg); width: 122px; z-index: -1; }
+.productSection::after { background: #ff6b35; border: 2px solid var(--ink); border-radius: 50%; bottom: -54px; content: ''; height: 112px; left: -42px; position: absolute; width: 112px; z-index: -1; }
 
 .productGrid { display: grid; gap: 18px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .productCard { background: #fff; border: 1px solid var(--line); border-radius: 18px; min-width: 0; overflow: hidden; transition: box-shadow .22s, transform .22s; }
@@ -201,11 +202,11 @@
 .methodStep strong { display: block; font-size: 13px; margin-bottom: 7px; }
 .methodStep p { color: #adc1b9; font-size: 10px; line-height: 1.6; margin: 0; }
 
-.proofSection { background-color: #ece4d4; background-image: radial-gradient(circle at 88% 8%, rgba(255,107,53,.24) 0 70px, transparent 71px), radial-gradient(circle, rgba(23,33,31,.1) 0 1px, transparent 1.5px); background-size: auto, 24px 24px; border: 1px solid rgba(23,33,31,.2); box-shadow: 10px 10px 0 #c9b8ff; display: grid; gap: 45px; grid-template-columns: minmax(250px,.7fr) minmax(0,1.3fr); margin: 20px auto 68px; max-width: 1256px; overflow: hidden; padding: 48px; position: relative; }
+.proofSection { background: #ffd978; border: 2px solid var(--ink); border-radius: 28px; box-shadow: 10px 10px 0 #c9b8ff; display: grid; gap: 45px; grid-template-columns: minmax(250px,.7fr) minmax(0,1.3fr); margin: 20px auto 76px; max-width: 1256px; overflow: hidden; padding: 48px; position: relative; }
 .proofIntro h2 { font-size: clamp(31px,3vw,44px); letter-spacing: -.055em; line-height: 1.08; margin: 12px 0; }
 .proofIntro > p:last-child { color: #66716c; font-size: 11px; line-height: 1.7; max-width: 43ch; }
 .proofGrid { display: grid; gap: 12px; grid-template-columns: repeat(3,1fr); }
-.proofCard { background: rgba(255,255,255,.68); border: 1px solid rgba(23,33,29,.12); border-radius: 16px; color: var(--ink); display: flex; flex-direction: column; min-height: 210px; padding: 20px; text-decoration: none; transition: background .2s, transform .2s; }
+.proofCard { background: #fff; border: 2px solid var(--ink); border-radius: 16px; color: var(--ink); display: flex; flex-direction: column; min-height: 210px; padding: 20px; text-decoration: none; transition: background .2s, transform .2s; }
 .proofCard:hover { background: #fff; transform: translateY(-4px); }
 .proofStars { align-items: center; color: #cc8509; display: flex; font-size: 13px; font-weight: 850; gap: 6px; }
 .proofCard > strong { font-family: 'Manrope', sans-serif; font-size: 14px; line-height: 1.4; margin-top: 17px; }
@@ -220,8 +221,8 @@
 .guideCard > span { color: var(--forest-2); display: block; font-size: 9px; font-weight: 850; letter-spacing: .1em; margin-top: 15px; text-transform: uppercase; }
 .guideCard h3 { font-size: 17px; line-height: 1.38; margin: 7px 0; }
 .guideCard p { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 0; }
-.guideSection { background-color: #f7efff; background-image: linear-gradient(115deg, rgba(255,209,102,.28) 0 16%, transparent 16% 84%, rgba(255,107,53,.14) 84%), radial-gradient(circle at 80% 20%, rgba(61,90,254,.13) 0 2px, transparent 2.5px); background-size: 100% 100%, 30px 30px; }
-.guideSection .guideCard { background: rgba(255,255,255,.78); border: 1px solid rgba(23,33,31,.16); border-radius: 18px; overflow: hidden; padding-bottom: 18px; }
+.guideSection { background: #c9b8ff; border-bottom: 2px solid var(--ink); border-top: 2px solid var(--ink); }
+.guideSection .guideCard { background: #fff; border: 2px solid var(--ink); border-radius: 18px; overflow: hidden; padding-bottom: 18px; }
 .guideSection .guideCard > :not(.guideImage) { margin-left: 18px; margin-right: 18px; }
 .guideSection .guideImage { border-radius: 0; }
 
