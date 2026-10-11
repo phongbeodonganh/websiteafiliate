@@ -70,7 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
         description: DEFAULT_DESCRIPTION,
         url: "/",
         siteName: DEFAULT_SITE_NAME,
-        locale: "vi_VN",
+        locale: "en_GB",
         type: "website",
         images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: DEFAULT_SITE_NAME }],
       },
@@ -107,10 +107,10 @@ export default async function RootLayout({
     sysSettings = await SettingModel.findOne();
   } catch { }
 
-  const geoRegion = sysSettings?.geo_region_name || "US-NY";
-  const geoPlace = sysSettings?.geo_placename || "New York";
-  const lat = sysSettings?.geo_latitude ?? 40.7128;
-  const lng = sysSettings?.geo_longitude ?? -74.0060;
+  const geoRegion = sysSettings?.geo_region_name || "EU";
+  const geoPlace = sysSettings?.geo_placename || "Europe";
+  const lat = sysSettings?.geo_latitude ?? 50.8503;
+  const lng = sysSettings?.geo_longitude ?? 4.3517;
   // SEC-03 / CONCERNS #11 (plan 06 Task 4): route the stored admin color
   // reads through sanitizeCssColor before the <style> interpolation below.
   // A dirty stored value (one written before this phase's validator, or a
@@ -129,11 +129,11 @@ export default async function RootLayout({
   const gscVerification = sysSettings?.googleSiteVerification || "";
 
   return (
-    <html lang={sysSettings?.hreflang || "vi"} className="h-full antialiased">
+    <html lang={sysSettings?.hreflang || "en-GB"} className="h-full antialiased">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
         <meta name="geo.region" content={geoRegion} />
         <meta name="geo.placename" content={geoPlace} />
         <meta name="geo.position" content={`${lat};${lng}`} />
@@ -147,7 +147,7 @@ export default async function RootLayout({
               --primary-color: ${primaryColor};
               --accent-color: ${accentColor};
               --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-              --font-heading: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+              --font-heading: 'Manrope', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
             }
             ${customCss}
           `
