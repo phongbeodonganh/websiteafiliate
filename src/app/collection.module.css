@@ -241,3 +241,41 @@
   .page *, .page *::before, .page *::after { animation: none !important; transition: none !important; }
   .storyLink:hover .media img, .storyLink:focus-visible .media img, .storyLink:hover .readStory svg, .dealCta:hover svg { transform: none; }
 }
+
+/* Flat-poster route system */
+.page {
+  --canvas: #f5f7f4;
+  --surface: #fffdf7;
+  --ink: #17211f;
+  --muted: #697972;
+  --accent: #0d766e;
+  --line: #cbd6d0;
+  background-color: var(--canvas);
+  background-image:
+    radial-gradient(ellipse 190px 260px at -3% 20%, #ffd978 0 99%, transparent 100%),
+    radial-gradient(ellipse 210px 290px at 103% 55%, #c9b8ff 0 99%, transparent 100%);
+}
+.hero { background: #ffd978; border: 2px solid var(--ink); border-radius: 32px; box-shadow: 10px 10px 0 #ffb9aa; margin-top: 26px; padding: 48px; }
+.hero h1 > span { color: #ff6b35; }
+.heroNote { background: #fffdf7; border: 2px solid var(--ink); border-radius: 16px; box-shadow: 5px 5px 0 var(--ink); margin-bottom: 0; padding: 22px; transform: rotate(1.2deg); }
+.collectionNav { background: #fffdf7; border: 2px solid var(--ink); border-radius: 18px; gap: 28px; margin-top: 32px; padding: 0 22px; }
+.search, .sort { border: 2px solid var(--ink); border-radius: 10px; }
+.lead { border: 2px solid var(--ink); border-radius: 18px; box-shadow: 8px 8px 0 #ffb9aa; }
+.media { border: 2px solid var(--ink); border-radius: 14px; }
+.lead .media { border: 0; border-bottom: 2px solid var(--ink); }
+.featureLabel { background: #ff6b35; border: 2px solid var(--ink); border-radius: 999px; color: #fff; }
+.desk { background: #17211f; border: 2px solid #17211f; border-radius: 18px; box-shadow: 8px 8px 0 #ffd978; }
+.deal { border: 2px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 #c9b8ff; }
+.deal[data-featured] { background: #ffefe9; border-color: var(--ink); }
+.dealCta { background: #cff6e5; border: 1px solid var(--ink); border-radius: 999px; color: #075a54; }
+.empty { background: #fffdf7; border: 2px dashed var(--ink); border-radius: 22px; }
+
+@media (max-width: 850px) {
+  .hero { padding: 34px 28px; }
+  .heroNote { display: none; }
+}
+@media (max-width: 600px) {
+  .hero { border-radius: 22px; box-shadow: 6px 6px 0 #ffb9aa; margin-top: 18px; padding: 30px 20px; }
+  .collectionNav { border-left: 0; border-radius: 0; border-right: 0; margin-left: -18px; margin-right: -18px; overflow-x: auto; padding: 0 18px; }
+  .lead, .deal { box-shadow: 5px 5px 0 #c9b8ff; }
+}

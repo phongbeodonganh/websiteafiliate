@@ -2,22 +2,26 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --editorial-canvas: #f6f7fb;
-  --editorial-surface: #ffffff;
-  --editorial-ink: #101828;
-  --editorial-copy: #475467;
-  --editorial-muted: #667085;
-  --editorial-divider: #d9dfec;
-  --ed-verdict: #1947d1;
-  --ed-cta-hover: #1239ad;
-  --ed-accent-glow: rgba(25, 71, 209, 0.22);
-  --editorial-accent: #1947d1;
-  --editorial-accent-soft: #eaf0ff;
-  --editorial-dark: #101828;
-  --editorial-dark-copy: #d7deec;
-  --editorial-signal: #bff4dd;
-  --editorial-alert: #ff6338;
-  --editorial-shadow: 0 16px 42px rgba(29, 53, 107, 0.09);
+  --editorial-canvas: #f5f7f4;
+  --editorial-surface: #fffdf7;
+  --editorial-ink: #17211f;
+  --editorial-copy: #485a54;
+  --editorial-muted: #697972;
+  --editorial-divider: #cbd6d0;
+  --ed-verdict: #0d766e;
+  --ed-cta-hover: #075a54;
+  --ed-accent-glow: rgba(13, 118, 110, 0.22);
+  --editorial-accent: #0d766e;
+  --editorial-accent-soft: #cff6e5;
+  --editorial-dark: #17211f;
+  --editorial-dark-copy: #d8e4df;
+  --editorial-signal: #cff6e5;
+  --editorial-alert: #ff6b35;
+  --editorial-yellow: #ffd978;
+  --editorial-pink: #ffb9aa;
+  --editorial-lilac: #c9b8ff;
+  --editorial-cobalt: #3d5afe;
+  --editorial-shadow: 8px 8px 0 rgba(23, 33, 31, 0.14);
   --public-frame: 1272px;
   --public-gutter: clamp(16px, 3vw, 32px);
 }
@@ -39,6 +43,20 @@ body {
 ::selection {
   background: var(--editorial-accent-soft);
   color: var(--editorial-accent);
+}
+
+/* The CMS keeps its dense dark work surface, with the public poster palette at
+   the route boundary so admin and login still belong to the GoodPick system. */
+.admin-poster-theme {
+  min-height: 100vh;
+  background: #17211f;
+}
+
+.admin-poster-theme > .min-h-screen {
+  background-color: #17211f !important;
+  background-image:
+    radial-gradient(circle at 4% 12%, rgba(255, 217, 120, .22) 0 130px, transparent 131px),
+    radial-gradient(circle at 96% 86%, rgba(201, 184, 255, .2) 0 170px, transparent 171px) !important;
 }
 
 .marketplace-home { max-width: 100%; }

@@ -145,3 +145,20 @@
 @media (prefers-reduced-motion: reduce) {
   .primaryOffer > a { transition: none; }
 }
+
+/* Flat-poster route system */
+.page { --forest: #0d766e; --signal: #cff6e5; --cta: #ff6b35; --mist: #f5f7f4; --ink: #17211f; --line: #cbd6d0; --muted: #697972; background-color: var(--mist); background-image: radial-gradient(ellipse 180px 250px at -3% 26%, #ffd978 0 99%, transparent 100%), radial-gradient(ellipse 210px 280px at 103% 58%, #c9b8ff 0 99%, transparent 100%); }
+.mainImage { border: 2px solid var(--ink); box-shadow: 9px 9px 0 #c9b8ff; }
+.buyBox { background: #ffd978; border: 2px solid var(--ink); border-radius: 24px; box-shadow: 9px 9px 0 #ffb9aa; padding: 32px; }
+.primaryOffer { border: 2px solid var(--ink); border-radius: 16px; }
+.primaryOffer > a { border: 2px solid var(--ink); border-radius: 999px; box-shadow: 4px 4px 0 var(--ink); }
+.painPanel { background: #ffddd3; border: 2px solid var(--ink); box-shadow: 6px 6px 0 #ffb9aa; }
+.solutionPanel { background: #cff6e5; border: 2px solid var(--ink); box-shadow: 6px 6px 0 #c9b8ff; }
+.benefitGrid > div { border: 2px solid var(--ink); border-radius: 14px; }
+.socialProof { background: #17211f; border: 2px solid var(--ink); border-radius: 22px; box-shadow: 9px 9px 0 #ffd978; }
+.pros, .cons, .offerRow, .disclosure { border: 2px solid var(--ink); border-radius: 14px; }
+.sideNote { background: #cff6e5; border: 2px solid var(--ink); border-radius: 18px; box-shadow: 6px 6px 0 #c9b8ff; }
+@media (max-width: 680px) {
+  .mainImage, .buyBox, .painPanel, .solutionPanel, .socialProof, .sideNote { box-shadow: 5px 5px 0 #c9b8ff; }
+  .buyBox { padding: 26px 20px; }
+}

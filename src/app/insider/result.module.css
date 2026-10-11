@@ -259,3 +259,15 @@
     transform: none;
   }
 }
+
+/* Flat-poster route system */
+.page { --result-accent: #0d766e; --result-accent-soft: #cff6e5; background: #ffd978; color: #17211f; }
+.failed { --result-accent: #b54422; --result-accent-soft: #ffddd3; }
+.grid { background-image: radial-gradient(circle at 8% 18%, #ffb9aa 0 110px, transparent 111px), radial-gradient(circle at 92% 82%, #c9b8ff 0 150px, transparent 151px); mask-image: none; }
+.shell { background: #fffdf7; border: 2px solid #17211f; border-radius: 24px; box-shadow: 12px 12px 0 #c9b8ff; overflow: hidden; }
+.statusMark { border: 2px solid #17211f; border-radius: 18px; box-shadow: 5px 5px 0 #17211f; }
+.button { border: 2px solid #17211f; border-radius: 999px; box-shadow: 4px 4px 0 #17211f; }
+@media (max-width: 640px) {
+  .page { padding: 18px; }
+  .shell { box-shadow: 6px 6px 0 #c9b8ff; }
+}
