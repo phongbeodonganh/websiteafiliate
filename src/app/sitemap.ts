@@ -2,7 +2,8 @@ import type { MetadataRoute } from 'next';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, CategoryModel, ProductModel, SettingModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
-import { COUPON_GUIDES, DEAL_CATEGORIES, MARKETPLACE_STORES } from '@/lib/marketplace';
+import { COUPON_GUIDES, DEAL_CATEGORIES } from '@/lib/marketplace';
+import { getPublishedStores } from '@/lib/stores/public';
 
 // D-08: ISR with 3600s revalidation — one Atlas query per hour max; crawlers
 // get cached sitemap between revalidations. CMS writes bust the cache via
@@ -105,7 +106,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: entry.priority,
   }));
   const marketplaceEntries: MetadataRoute.Sitemap = [
-    ...MARKETPLACE_STORES.map((store) => ({ url: `${baseUrl}/store/${store.slug}`, lastModified: trustPagesUpdated, changeFrequency: 'daily' as const, priority: 0.85 })),
+    ...(await getPublishedStores()).map((store) => ({ url: `${baseUrl}/store/${store.slug}`, lastModified: store.updatedAt ? new Date(store.updatedAt) : trustPagesUpdated, changeFrequency: 'daily' as const, priority: 0.85 })),
     ...DEAL_CATEGORIES.map((category) => ({ url: `${baseUrl}/category/${category.slug}`, lastModified: trustPagesUpdated, changeFrequency: 'daily' as const, priority: 0.8 })),
     ...COUPON_GUIDES.map((guide) => ({ url: `${baseUrl}/guide/${guide.slug}`, lastModified: trustPagesUpdated, changeFrequency: 'weekly' as const, priority: 0.7 })),
   ];

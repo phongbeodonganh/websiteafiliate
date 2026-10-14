@@ -17,6 +17,7 @@ export default function StorefrontFooter() {
         <div>
           <strong>Explore</strong>
           <Link href="/#products">All good picks</Link>
+          <Link href="/stores">Stores & coupons</Link>
           <Link href="/?category=home-kitchen#products">Home &amp; Kitchen</Link>
           <Link href="/?category=tech#products">Technology</Link>
           <Link href="/?category=mobility#products">Mobility</Link>

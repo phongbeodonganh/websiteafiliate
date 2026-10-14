@@ -26,5 +26,8 @@
 .verified span { align-items:center; display:flex; gap:5px; }
 .verified svg { color:#1947d1; height:12px; width:12px; }
 .compact .body>p { min-height:42px; }
+.terms { color: #667085; font-size: 12px; line-height: 1.6; margin-bottom: 16px; }
+.terms summary { cursor: pointer; font-weight: 700; }
+.terms p { margin-top: 8px; white-space: pre-line; }
 @media(max-width:520px){.storeLine{grid-template-columns:auto 1fr}.storeLine>strong{grid-column:1/-1;width:max-content}.codeRow{grid-template-columns:1fr}.verified{align-items:flex-start;flex-direction:column;gap:5px}}
 @media(prefers-reduced-motion:reduce){.card,.action,.dealImage img{transition:none}.card:hover,.action:hover,.card:hover .dealImage img{transform:none}}

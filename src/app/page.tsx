@@ -21,6 +21,9 @@ import ProductCard from "@/components/storefront/ProductCard";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/components/storefront/StorefrontHeader";
 import StorefrontNewsletter from "@/components/storefront/StorefrontNewsletter";
+import StoreCard from "@/components/storefront/StoreCard";
+import storeStyles from "@/components/storefront/stores.module.css";
+import { getPublishedStores } from "@/lib/stores/public";
 import { getHomepageArticles, type HomepageArticle } from "@/lib/homepage-articles";
 import { getStorefrontProducts } from "@/lib/products/public";
 import { getStorefrontCategories } from "@/lib/storefront-categories";
@@ -30,6 +33,8 @@ import styles from "@/components/storefront/storefront.module.css";
 interface HomePageProps {
   searchParams: Promise<{ q?: string | string[]; category?: string | string[] }>;
 }
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
   const params = await searchParams;
@@ -94,6 +99,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   const filteredCategory = storefrontCategories.find((item) => item.slug === category);
+  const homepageStores = !query && !category
+    ? (await getPublishedStores()).filter((store) => store.showOnHomepage).slice(0, 6)
+    : [];
 
   return (
     <div className={styles.page}>
@@ -203,6 +211,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               </Link>
             ))}
           </div>
+        </section>
+      )}
+
+      {homepageStores.length > 0 && (
+        <section className={styles.section} id="stores" aria-labelledby="stores-title">
+          <div className={styles.sectionHeading} data-motion="fade">
+            <div><p className={styles.eyebrow}>Shop by store</p><h2 id="stores-title">Your stores. Their latest offers.</h2><p className={styles.sectionLead}>Find store details, coupons and promo codes before you checkout.</p></div>
+            <Link href="/stores">Browse all stores <ArrowRight size={15} /></Link>
+          </div>
+          <div className={storeStyles.grid}>{homepageStores.map((store) => <StoreCard key={store.slug} store={store} />)}</div>
         </section>
       )}
 

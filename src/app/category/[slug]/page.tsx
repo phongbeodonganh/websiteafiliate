@@ -5,7 +5,8 @@ import CollectionClient from "../../collection-client";
 import StorefrontHeader from "@/components/storefront/StorefrontHeader";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter";
 import CouponDealCard from "@/components/marketplace/CouponDealCard";
-import { COUPON_GUIDES, MARKETPLACE_STORES, getCategory, getDealsForCategory } from "@/lib/marketplace";
+import { COUPON_GUIDES, getCategory } from "@/lib/marketplace";
+import { getStoreCatalogue } from "@/lib/stores/public";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { CategoryModel } from "@/lib/db/models";
 import { createPageMetadata } from "@/lib/seo";
@@ -29,13 +30,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   const category = getCategory(slug);
   if (category) {
-    const deals = getDealsForCategory(slug);
-    const stores = MARKETPLACE_STORES.filter((store) => store.categorySlug === slug);
+    const catalogue = await getStoreCatalogue();
+    const deals = catalogue.deals.filter((deal) => deal.categorySlug === slug);
+    const stores = catalogue.stores.filter((store) => store.categorySlug === slug);
     const guides = COUPON_GUIDES.filter((guide) => guide.categorySlug === slug);
     return <div className={styles.page}><StorefrontHeader /><main className={styles.main}>
       <nav className={styles.breadcrumb}><Link href="/">Home</Link><span>/</span><Link href="/stores">Categories</Link><span>/</span><span>{category.name}</span></nav>
-      <header className={styles.hero}><div><p className={styles.eyebrow}>Deal category</p><h1>{category.name} deals worth checking.</h1><p>{category.description} Every listed offer includes a visible published or re-test date.</p></div><div className={styles.heroStat}><strong>{deals.length}</strong><span>recently checked {category.shortName.toLowerCase()} offers</span></div></header>
-      <section className={styles.section}><div className={styles.sectionHead}><h2>Current deals</h2><p>We keep expired codes out of the active list and explain automatic discounts clearly.</p></div>{deals.length?<div className={styles.dealGrid}>{deals.map((deal)=><CouponDealCard key={deal.id} deal={deal}/>)}</div>:<div className={styles.empty}><h2>No active offers right now.</h2><p>We are checking this category again. Browse the stores below in the meantime.</p></div>}</section>
+      <header className={styles.hero}><div><p className={styles.eyebrow}>Deal category</p><h1>{category.name} deals worth checking.</h1><p>{category.description} Check individual offer conditions before checkout.</p></div><div className={styles.heroStat}><strong>{deals.length}</strong><span>active {category.shortName.toLowerCase()} offers</span></div></header>
+      <section className={styles.section}><div className={styles.sectionHead}><h2>Current deals</h2><p>We keep expired codes out of the active list and explain automatic discounts clearly.</p></div>{deals.length?<div className={styles.dealGrid}>{deals.map((deal)=><CouponDealCard key={deal.id} deal={deal} store={stores.find((store)=>store.slug===deal.storeSlug)}/>)}</div>:<div className={styles.empty}><h2>No active offers right now.</h2><p>We are checking this category again. Browse the stores below in the meantime.</p></div>}</section>
       {stores.length>0&&<section className={styles.section}><div className={styles.sectionHead}><h2>Stores in {category.name}</h2></div><div className={styles.storeGrid}>{stores.map((store)=><Link href={`/store/${store.slug}`} className={styles.storeCard} key={store.slug}><span className={styles.storeMark} style={{"--store-accent":store.accent} as React.CSSProperties}>{store.initials}</span><div><h2>{store.name}</h2><p>{store.description}</p><small>{store.offerCount} current offers</small></div></Link>)}</div></section>}
       {guides.length>0&&<section className={styles.section}><div className={styles.sectionHead}><h2>Related coupon guides</h2></div><div className={styles.guideGrid}>{guides.map((guide)=><Link href={`/guide/${guide.slug}`} className={styles.guideCard} key={guide.slug}><small>Updated {guide.updatedAt} · {guide.readTime}</small><h3>{guide.title}</h3><p>{guide.excerpt}</p></Link>)}</div></section>}
     </main><StorefrontFooter /></div>;

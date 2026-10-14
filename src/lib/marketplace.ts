@@ -14,6 +14,7 @@ export type MarketplaceStore = {
   offerCount: number;
   accent: string;
   destination: string;
+  managed?: boolean;
 };
 
 export type MarketplaceDeal = {
@@ -32,6 +33,9 @@ export type MarketplaceDeal = {
   publishedAt: string;
   retestedAt?: string;
   featured?: boolean;
+  destination?: string;
+  terms?: string;
+  expiresAt?: string;
 };
 
 export type CouponGuide = {
