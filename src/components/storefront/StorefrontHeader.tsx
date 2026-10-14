@@ -33,6 +33,7 @@ export default async function StorefrontHeader({ query = "" }: { query?: string 
               <summary aria-label="Open product menu"><Menu size={22} /></summary>
               <nav aria-label="Mobile product navigation">
                 <Link href="/#products">All good picks</Link>
+                <Link href="/stores">Stores & coupons</Link>
                 {categoryLinks}
                 <Link href="/#guides">Buying guides</Link>
                 <Link href="/#how-we-pick">How we choose</Link>
@@ -43,6 +44,7 @@ export default async function StorefrontHeader({ query = "" }: { query?: string 
         <nav className={styles.categoryNav} aria-label="Product navigation">
           <Link href="/#products">All picks</Link>
           {categoryLinks}
+          <Link href="/stores">Stores & coupons</Link>
           <Link href="/#guides" className={styles.navMethod}>Buying guides</Link>
         </nav>
       </header>

@@ -8,6 +8,7 @@ import { generateObjectId } from '@/lib/utils';
 import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import ProductManager from '@/components/admin/ProductManager';
+import StoreManager from '@/components/admin/StoreManager';
 import AffiliateDashboard from '@/components/admin/AffiliateDashboard';
 import {
   LayoutDashboard,
@@ -69,7 +70,7 @@ import {
 // fallback for a non-admin that reaches one via URL) and as the single source of
 // truth for which tabs only an admin may see. Every backing route keeps its 403 —
 // this set is a UI contract, not the access control.
-const ADMIN_ONLY_TABS = new Set(['insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
+const ADMIN_ONLY_TABS = new Set(['stores', 'insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
 const roleLabel = (role: string) => role === 'admin' ? 'Quản trị viên' : role === 'editor' ? 'Biên tập viên' : 'Tác giả';
 
 // Reusable Luxury Button Component
@@ -4164,6 +4165,7 @@ export default function AdminDashboardPage() {
 
     if (activeTab === 'dashboard') return <DashboardView />;
     if (activeTab === 'products') return <ProductManager categories={categoriesList} />;
+    if (activeTab === 'stores' && currentUser.role === 'admin') return <StoreManager />;
     if (activeTab === 'insights' && currentUser.role === 'admin') return <InsightsView />;
     if (activeTab === 'articles') return <ArticlesView />;
     if (activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
@@ -4242,6 +4244,7 @@ export default function AdminDashboardPage() {
               <NavItem id="dashboard" icon={LayoutDashboard} label="Tổng quan kinh doanh" />
               <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Nội dung bán hàng</div>
               <NavItem id="products" icon={Package} label="Sản phẩm & ưu đãi" />
+              <NavItem id="stores" icon={Tag} label="Store & coupon" requiredRole="admin" />
               <NavItem id="articles" icon={FileText} label="Bài viết tư vấn" />
 
               {currentUser.role === 'admin' && (

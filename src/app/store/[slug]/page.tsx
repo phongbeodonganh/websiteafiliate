@@ -5,16 +5,22 @@ import { notFound } from "next/navigation";
 import StorefrontHeader from "@/components/storefront/StorefrontHeader";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter";
 import CouponDealCard from "@/components/marketplace/CouponDealCard";
-import { MARKETPLACE_STORES, getCategory, getDealsForStore, getStore } from "@/lib/marketplace";
+import { getCategory, getDealsForStore, getStore } from "@/lib/marketplace";
+import { getPublishedStores } from "@/lib/stores/public";
+import ManagedStorePage from "@/components/storefront/ManagedStorePage";
 import { createPageMetadata } from "@/lib/seo";
 import styles from "../../marketplace-pages.module.css";
 
 interface StorePageProps { params: Promise<{ slug: string }>; }
-export function generateStaticParams(){ return MARKETPLACE_STORES.map((store)=>({slug:store.slug})); }
-export async function generateMetadata({params}:StorePageProps):Promise<Metadata>{const {slug}=await params;const store=getStore(slug);if(!store)return{title:"Store Not Found",robots:{index:false,follow:false}};return createPageMetadata({title:`${store.name} coupon codes`,description:`Human-checked ${store.name} coupon codes, deal notes and verification dates.`,path:`/store/${slug}`});}
+export const dynamic = "force-dynamic";
+export async function generateMetadata({params}:StorePageProps):Promise<Metadata>{const {slug}=await params;const store=(await getPublishedStores()).find((item)=>item.slug===slug);if(!store)return{title:"Store Not Found",robots:{index:false,follow:false}};return createPageMetadata({title:`${store.name} coupons & promo codes`,description:store.description || `Browse ${store.name} coupons, promo codes and store information.`,path:`/store/${slug}`});}
 
 export default async function StorePage({params}:StorePageProps){
-  const {slug}=await params; const store=getStore(slug); if(!store)notFound(); const deals=getDealsForStore(slug); const category=getCategory(store.categorySlug); const lastTest=deals[0]?.retestedAt||deals[0]?.publishedAt;
+  const {slug}=await params;
+  const record=(await getPublishedStores()).find((item)=>item.slug===slug);
+  if(!record)notFound();
+  if(record.id)return <ManagedStorePage store={record}/>;
+  const store=getStore(slug); if(!store)notFound(); const deals=getDealsForStore(slug); const category=getCategory(store.categorySlug); const lastTest=deals[0]?.retestedAt||deals[0]?.publishedAt;
   const isFinance=slug==="xm"; const isBeaver=slug==="beavercraft";
   return <div className={styles.page}><StorefrontHeader/><main className={styles.main}>
     <nav className={styles.breadcrumb}><Link href="/">Home</Link><span>/</span><Link href="/stores">Stores</Link><span>/</span><span>{store.name}</span></nav>
