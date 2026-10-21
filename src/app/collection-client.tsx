@@ -71,10 +71,10 @@ function Story({ article, rank, variant = 'card', label }: { article: Article; r
   </article>;
 }
 
-export default function CollectionClient({ kind, categorySlug, categoryName, header }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; header: ReactNode }) {
-  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} header={header} />;
+export default function CollectionClient({ kind, categorySlug, categoryName, header, catalog }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; header: ReactNode; catalog?: ReactNode }) {
+  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} header={header} catalog={catalog} />;
 }
-function CollectionView({ kind, categorySlug, categoryName, header }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; header: ReactNode }) {
+function CollectionView({ kind, categorySlug, categoryName, header, catalog }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; header: ReactNode; catalog?: ReactNode }) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 9, totalPages: 0, hasMore: false });
@@ -145,6 +145,7 @@ function CollectionView({ kind, categorySlug, categoryName, header }: { kind: Co
         <div><p className={styles.eyebrow}><Icon size={14} aria-hidden="true" />{details.eyebrow}</p><h1>{title}<span aria-hidden="true">.</span></h1><p className={styles.description}>{details.description}</p></div>
         <div className={styles.heroNote}><span>THE GOODPICK BUYING DESK</span><p>{isDeals ? 'Clear relationships. No hidden influence.' : kind === 'hottest' ? 'See what shoppers are reading.' : kind === 'editorial' ? 'Less noise. Better choices.' : 'Your next considered purchase starts here.'}</p><ArrowDown size={24} aria-hidden="true" /></div>
       </header>
+      {catalog}
       <nav className={styles.collectionNav} aria-label="Article collections">{collections.map(item => <Link key={item.kind} href={item.href} aria-current={kind === item.kind ? 'page' : undefined}><item.icon size={15} aria-hidden="true" />{item.label}<ArrowUpRight size={14} aria-hidden="true" /></Link>)}</nav>
       {isDeals && <div className={styles.disclosure}><Tag size={18} aria-hidden="true" /><p>Some links are affiliate links. We may earn a commission when you use them. <Link href="/affiliate-disclosure">How affiliate links work <ArrowUpRight size={12} aria-hidden="true" /></Link></p></div>}
       <div className={styles.toolbar}>

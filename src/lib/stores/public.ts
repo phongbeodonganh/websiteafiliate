@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { StoreModel } from "@/lib/db/store-models";
+import { StoreModel, StoreMetricsModel } from "@/lib/db/store-models";
 import { MARKETPLACE_STORES, getDealsForStore, getStore, type MarketplaceStore, type MarketplaceDeal } from "@/lib/marketplace";
 import { isOfferActive, type StoreRecord } from "./types";
 
@@ -47,6 +47,19 @@ export async function getPublishedStores() {
     return [];
   }
 }
+
+export const getDiscoverableStores = cache(async (): Promise<StoreRecord[]> => {
+  const stores = await getPublishedStores();
+  if (!stores.length) return stores;
+  try {
+    const metrics = await StoreMetricsModel.find({ slug: { $in: stores.map((store) => store.slug) } }).lean();
+    const bySlug = new Map(metrics.map((metric) => [metric.slug, metric]));
+    return stores.map((store) => ({ ...store, clickCount: bySlug.get(store.slug)?.clickCount || 0, viewCount: bySlug.get(store.slug)?.viewCount || 0 }));
+  } catch {
+    // A metrics outage should not hide the actual store catalogue.
+    return stores;
+  }
+});
 
 // Existing coupon search/category surfaces use the same publication and expiry
 // rules as store pages, while retaining their original card presentation.

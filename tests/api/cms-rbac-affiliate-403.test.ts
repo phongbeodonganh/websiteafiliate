@@ -210,9 +210,9 @@ describe('D-13 — admin shell source contract (hidden tabs + permission fallbac
   const adminPagePath = join(process.cwd(), 'src/app/admin/page.tsx');
   const source = readFileSync(adminPagePath, 'utf8');
 
-  it('renders the Vietnamese permission-denied copy with a link back to Articles', () => {
+  it('renders the Vietnamese permission-denied copy with a link back to Products', () => {
     expect(source).toContain('Tài khoản của bạn không được phép mở khu vực này.');
-    expect(source).toContain('Quay lại bài viết');
+    expect(source).toContain('Quay lại sản phẩm');
     expect(source).toContain('ADMIN_ONLY_TABS');
   });
 

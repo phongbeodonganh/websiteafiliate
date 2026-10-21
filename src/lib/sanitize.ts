@@ -25,11 +25,12 @@ const ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions['allowedAttributes'] = {
 // Content is authored as HTML by CMS users (including lower-trust editor/author roles)
 // and rendered with dangerouslySetInnerHTML on the public site, so it must never contain
 // executable script or event-handler attributes.
-export function sanitizeArticleContent(html: string): string {
+export function sanitizeArticleContent(html: string, transformAnchor?: (attributes: Record<string, string>) => Record<string, string>): string {
   if (!html) return '';
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
+    transformTags: transformAnchor ? { a: (tagName, attributes) => ({ tagName, attribs: transformAnchor(attributes) }) } : undefined,
     allowedSchemes: ['http', 'https', 'mailto'],
     allowedSchemesByTag: {
       img: ['http', 'https'],

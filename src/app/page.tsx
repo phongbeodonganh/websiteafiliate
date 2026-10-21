@@ -21,9 +21,11 @@ import ProductCard from "@/components/storefront/ProductCard";
 import StorefrontFooter from "@/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/components/storefront/StorefrontHeader";
 import StorefrontNewsletter from "@/components/storefront/StorefrontNewsletter";
+import StoreCarousel from "@/components/storefront/StoreCarousel";
 import StoreCard from "@/components/storefront/StoreCard";
 import storeStyles from "@/components/storefront/stores.module.css";
-import { getPublishedStores } from "@/lib/stores/public";
+import { getDiscoverableStores } from "@/lib/stores/public";
+import { filterStoreDirectory } from "@/lib/stores/discovery";
 import { getHomepageArticles, type HomepageArticle } from "@/lib/homepage-articles";
 import { getStorefrontProducts } from "@/lib/products/public";
 import { getStorefrontCategories } from "@/lib/storefront-categories";
@@ -99,13 +101,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   const filteredCategory = storefrontCategories.find((item) => item.slug === category);
-  const homepageStores = !query && !category
-    ? (await getPublishedStores()).filter((store) => store.showOnHomepage).slice(0, 6)
-    : [];
+  const publicStores = await getDiscoverableStores();
+  const homepageStores = filterStoreDirectory(publicStores, { q: query, category })
+    .filter((store) => category || query || store.showOnHomepage)
+    .slice(0, category || query ? 60 : 15);
+  const storeListJsonLd = {
+    "@context": "https://schema.org", "@type": "ItemList", name: "GoodPick stores, coupons and promo codes",
+    itemListElement: homepageStores.map((store, index) => ({ "@type": "ListItem", position: index + 1, name: store.name, url: `${normalizeSiteUrl()}/store/${store.slug}` })),
+  };
 
   return (
     <div className={styles.page}>
       <StorefrontHeader query={query} />
+      <main id="main-content">
+      {(query || category || !featured) && <h1 className={styles.visuallyHidden}>{query ? `Products and stores matching ${query}` : category ? `${filteredCategory?.name || category} products and stores` : "GoodPick products, stores and savings"}</h1>}
       {!query && !category && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(itemListJsonLd) }} />
       )}
@@ -136,9 +145,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <p>From cutlery to computers, GoodPick turns crowded product listings into a short, practical decision.</p>
               <form action="/" className={styles.heroSearch} role="search">
                 <Search size={19} aria-hidden="true" />
-                <input name="q" aria-label="Search products and buying guides" placeholder="What do you need today?" />
+                <input name="q" aria-label="Search products and stores" placeholder="What do you need today?" />
                 <button type="submit">Find a good pick</button>
               </form>
+              <div className={styles.heroButtons}>
+                <Link href="#products" className={styles.primaryButton}>Explore products <ArrowRight size={17} aria-hidden="true" /></Link>
+                <Link href="/stores" className={styles.secondaryButton}>Browse stores <ArrowRight size={17} aria-hidden="true" /></Link>
+              </div>
               <div className={styles.heroMicrocopy}>
                 <span><CheckCircle2 size={14} /> Clear trade-offs</span>
                 <span><RefreshCw size={14} /> Recently checked</span>
@@ -190,6 +203,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className={styles.trustItem}><ShieldCheck size={21} /><div><strong>Affiliate transparency</strong><span>You never pay extra for our commission</span></div></div>
       </section>
 
+      {homepageStores.length > 0 && (
+        <section className={storeStyles.spotlight} id="stores" aria-labelledby="stores-title" aria-roledescription="carousel">
+          <div className={storeStyles.spotlightHeading}>
+            <div>
+              <p className={storeStyles.spotlightEyebrow}><Sparkles size={14} aria-hidden="true" /> The store spotlight</p>
+              <h2 id="stores-title">{category ? `Stores in ${filteredCategory?.name || category}` : query ? "Stores that match your search." : <>Great stores.<span className={storeStyles.spotlightSubtitle}> More ways to save.</span></>}</h2>
+              <p>Discover your next favourite store. Explore active coupons and promo codes before you shop.</p>
+            </div>
+            <Link href="/stores" className={storeStyles.allStoresButton}>Browse all {publicStores.length} stores <ArrowRight size={18} aria-hidden="true" /></Link>
+          </div>
+          <StoreCarousel count={homepageStores.length}>
+            {homepageStores.map((store) => <li key={store.slug}><StoreCard store={store} compact /></li>)}
+          </StoreCarousel>
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(storeListJsonLd) }} />
+        </section>
+      )}
+
       {!query && !category && (
         <section className={`${styles.section} ${styles.categorySection}`} aria-labelledby="categories-title">
           <div className={styles.sectionHeading} data-motion="fade">
@@ -211,16 +241,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               </Link>
             ))}
           </div>
-        </section>
-      )}
-
-      {homepageStores.length > 0 && (
-        <section className={styles.section} id="stores" aria-labelledby="stores-title">
-          <div className={styles.sectionHeading} data-motion="fade">
-            <div><p className={styles.eyebrow}>Shop by store</p><h2 id="stores-title">Your stores. Their latest offers.</h2><p className={styles.sectionLead}>Find store details, coupons and promo codes before you checkout.</p></div>
-            <Link href="/stores">Browse all stores <ArrowRight size={15} /></Link>
-          </div>
-          <div className={storeStyles.grid}>{homepageStores.map((store) => <StoreCard key={store.slug} store={store} />)}</div>
         </section>
       )}
 
@@ -308,6 +328,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </>
       )}
 
+      </main>
       <StorefrontFooter />
     </div>
   );

@@ -21,6 +21,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import RichTextEditor from "./RichTextEditor";
 import { cmsFetch } from "@/lib/cms-fetch";
 import { MARKETPLACE_KEYS, getMarketplaceMeta } from "@/lib/marketplaces";
 
@@ -259,7 +260,7 @@ export default function ProductManager({ categories = [] }: { categories?: Categ
           </div>}
 
           {step === 3 && <div className="space-y-5">
-            <Field label="Mô tả chi tiết"><textarea rows={6} className={inputClass} value={form.description} onChange={(event) => update("description", event.target.value)} placeholder="Giải thích sản phẩm bằng ngôn ngữ dễ hiểu, đối tượng phù hợp và điều cần lưu ý." /></Field>
+            <div><p className={labelClass}>Mô tả chi tiết & liên kết affiliate</p><p className="mb-3 text-xs text-slate-400">Dùng Chèn Affiliate để thêm liên kết hoặc nút mua hàng ở vị trí con trỏ trong bài mô tả.</p><RichTextEditor value={form.description} onChange={(html) => update("description", html)} affiliateLinks={[]} allowDirectLinks /></div>
             <div className="grid gap-4 md:grid-cols-2"><Field label="Ưu điểm — mỗi dòng một ý"><textarea rows={5} className={inputClass} value={form.pros} onChange={(event) => update("pros", event.target.value)} /></Field><Field label="Nhược điểm — mỗi dòng một ý"><textarea rows={5} className={inputClass} value={form.cons} onChange={(event) => update("cons", event.target.value)} /></Field></div>
             <Field label="Thông số — Tên: Giá trị, mỗi dòng một mục"><textarea rows={5} className={inputClass} value={form.specs} onChange={(event) => update("specs", event.target.value)} placeholder={'Dung lượng: 20.000mAh\nCông suất tối đa: 65W\nTrọng lượng: 420g'} /></Field>
             <div className="grid gap-4 md:grid-cols-3"><Field label="Chất liệu"><input className={inputClass} value={form.material} onChange={(event) => update("material", event.target.value)} /></Field><Field label="Xuất xứ"><input className={inputClass} value={form.originCountry} onChange={(event) => update("originCountry", event.target.value)} /></Field><Field label="Bảo hành (tháng)"><input type="number" className={inputClass} value={form.warrantyMonths} onChange={(event) => update("warrantyMonths", event.target.value)} /></Field></div>

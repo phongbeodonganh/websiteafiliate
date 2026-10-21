@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { StoreModel } from "@/lib/db/store-models";
-import { UserModel } from "@/lib/db/models";
+import { UserModel, CategoryModel } from "@/lib/db/models";
 import { signToken } from "@/lib/auth";
 import { GET, POST } from "@/app/api/v1/cms/stores/route";
 import { PUT, DELETE } from "@/app/api/v1/cms/stores/[id]/route";
@@ -12,6 +12,8 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 async function token(role: "admin" | "editor" | "author" = "admin") {
   await connectToDatabase();
+  // Wait for the unique slug index before testing duplicate/tombstone writes.
+  await StoreModel.init();
   const user = await UserModel.create({ username: `${role}-${Math.random()}`, password_hash: "test", role, status: "active" });
   return signToken({ userId: user._id.toString(), username: user.username, role });
 }
@@ -26,6 +28,32 @@ const offer = (data: Record<string, unknown> = {}) => ({ id: "offer-one", kind: 
 const store = (data: Record<string, unknown> = {}) => ({ name: "Test Store", slug: "test-store", destination: "https://store.example.com/", status: "published", showOnHomepage: true, offers: [offer()], ...data });
 
 describe("Admin stores and public coupon lifecycle", () => {
+  it("archives and deletes built-in stores directly without allowing them to reappear", async () => {
+    const auth = await token();
+    expect((await DELETE(request("DELETE", auth), context("legacy-beavercraft"))).status).toBe(200);
+    const archived = await StoreModel.findOne({ slug: "beavercraft" });
+    expect(archived?.status).toBe("archived");
+    expect((await getPublishedStores()).some((item) => item.slug === "beavercraft")).toBe(false);
+    expect((await DELETE(new Request("http://localhost/api/v1/cms/stores/legacy-beavercraft?action=delete", { method: "DELETE", headers: { Authorization: `Bearer ${auth}` } }), context("legacy-beavercraft"))).status).toBe(200);
+    const listed = (await (await GET(request("GET", auth))).json()).data;
+    expect(listed.some((item: { slug: string }) => item.slug === "beavercraft")).toBe(false);
+    expect((await getPublishedStores()).some((item) => item.slug === "beavercraft")).toBe(false);
+    expect((await PUT(request("PUT", auth, store({ slug: "beavercraft" })), context(archived!._id.toString()))).status).toBe(404);
+    expect((await POST(request("POST", auth, store({ slug: "beavercraft" })))).status).toBe(400);
+  });
+
+  it("uses product categories for stores and preserves affiliate URLs in descriptions", async () => {
+    const auth = await token();
+    await CategoryModel.create({ name: "AI", slug: "ai", show_on_homepage: true });
+    const body = store({ categorySlug: "ai", content: '<p>Review <a href="https://partner.example.com/?ref=abc&amp;offer=1" target="_blank" rel="nofollow sponsored noopener noreferrer">Buy now</a></p>' });
+    expect((await POST(request("POST", auth, body))).status).toBe(201);
+    const saved = (await getPublishedStores()).find((item) => item.slug === body.slug);
+    expect(saved?.categorySlug).toBe("ai");
+    expect(saved?.content).toContain('rel="nofollow sponsored noopener noreferrer"');
+    expect(saved?.content).toContain("ref=abc&amp;offer=1");
+    expect((await POST(request("POST", auth, store({ slug: "invalid-category", categorySlug: "missing-category" })))).status).toBe(400);
+  });
+
   it("requires authentication and denies every CMS method to editor and author", async () => {
     expect((await GET(request("GET"))).status).toBe(401);
     expect((await POST(request("POST", "", store()))).status).toBe(401);

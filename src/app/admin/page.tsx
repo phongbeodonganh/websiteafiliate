@@ -3,16 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { sanitizeArticleContent } from '@/lib/sanitize';
-import { generateObjectId } from '@/lib/utils';
 import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
-import RichTextEditor from '@/components/admin/RichTextEditor';
 import ProductManager from '@/components/admin/ProductManager';
 import StoreManager from '@/components/admin/StoreManager';
 import AffiliateDashboard from '@/components/admin/AffiliateDashboard';
 import {
   LayoutDashboard,
-  FileText,
   Link as LinkIcon,
   Settings,
   User,
@@ -21,29 +17,19 @@ import {
   Edit,
   Trash2,
   Eye,
-  BarChart3,
   TrendingUp,
   MousePointerClick,
   CheckCircle2,
-  CircleDashed,
   Globe,
   Search,
-  ChevronRight,
-  Image as ImageIcon,
   Users,
-  Trophy,
   Activity,
-  ArrowUpRight,
-  DollarSign,
   Clock,
   Shield,
   MapPin,
-  Share2,
-  Code,
   X,
   Sparkles,
   Tag,
-  Star,
   FolderTree,
   Palette,
   Layers,
@@ -262,9 +248,6 @@ export default function AdminDashboardPage() {
 
   // System States
   const [dashboardData, setDashboardData] = useState<any>(null);
-  const [articlesList, setArticlesList] = useState<any[]>([]);
-  const [editingArticle, setEditingArticle] = useState<any>(null);
-  const [previewArticle, setPreviewArticle] = useState<any>(null);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [affiliateLinksList, setAffiliateLinksList] = useState<any[]>([]);
   const [categoriesList, setCategoriesList] = useState<any[]>([]);
@@ -365,16 +348,6 @@ export default function AdminDashboardPage() {
   const [newAffCookie, setNewAffCookie] = useState('30 Days');
   const [affUrlBlacklistError, setAffUrlBlacklistError] = useState<any>(null);
 
-  // AI Auto Article Generator States
-  const [showAiGenerateModal, setShowAiGenerateModal] = useState(false);
-  const [aiModalCampaign, setAiModalCampaign] = useState<any>(null);
-  const [aiModalTopic, setAiModalTopic] = useState('');
-  const [aiModalBaseUrl, setAiModalBaseUrl] = useState('');
-  const [aiModalProductUrl, setAiModalProductUrl] = useState('');
-  const [aiModalLanguage, setAiModalLanguage] = useState<'vi-VN' | 'en-US'>('vi-VN');
-  const [aiModalApiKey, setAiModalApiKey] = useState('');
-  const [isGeneratingAiArticle, setIsGeneratingAiArticle] = useState(false);
-
   // Blacklist Center States
   const [blacklistList, setBlacklistList] = useState<any[]>([]);
   const [showAddBlacklistModal, setShowAddBlacklistModal] = useState(false);
@@ -396,75 +369,32 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // FE-01: Đồng bộ state điều hướng (tab / bài đang sửa / bài đang preview) vào
-  // query string, để nút Back/Forward trình duyệt lùi lại đúng từng bước UI thay
-  // vì thoát hẳn khỏi /admin.
-  const buildAdminUrl = (tab: string, editId?: string, previewId?: string) => {
+  // Preserve browser Back/Forward navigation between sales management tabs.
+  const buildAdminUrl = (tab: string) => {
     const params = new URLSearchParams();
     if (tab !== 'dashboard') params.set('tab', tab);
-    if (editId) params.set('edit', editId);
-    if (previewId) params.set('preview', previewId);
     const qs = params.toString();
     return qs ? `/admin?${qs}` : '/admin';
   };
 
-  const navigate = (
-    next: { tab?: string; editingArticle?: any; previewArticle?: any },
-    options: { replace?: boolean } = {}
-  ) => {
+  const navigate = (next: { tab?: string }, options: { replace?: boolean } = {}) => {
     const tab = next.tab ?? activeTab;
-    const nextEditing = 'editingArticle' in next ? next.editingArticle : null;
-    const nextPreview = 'previewArticle' in next ? next.previewArticle : null;
-
     setActiveTab(tab);
-    setEditingArticle(nextEditing);
-    setPreviewArticle(nextPreview);
-
-    const url = buildAdminUrl(
-      tab,
-      nextEditing ? nextEditing.id || 'new' : undefined,
-      nextPreview?.id
-    );
+    const url = buildAdminUrl(tab);
     if (options.replace) router.replace(url, { scroll: false });
     else router.push(url, { scroll: false });
   };
 
-  // Khôi phục state từ URL khi bấm Back/Forward (hoặc khi mở thẳng link có sẵn
-  // query string). Chạy sau mọi navigate() ở trên cũng vô hại vì lúc đó state
-  // local đã khớp URL sẵn rồi (early-return bên dưới).
   useEffect(() => {
     const urlTab = searchParams.get('tab') || 'dashboard';
-    const urlEditId = searchParams.get('edit');
-    const urlPreviewId = searchParams.get('preview');
-
-    const currentEditId = editingArticle ? editingArticle.id || 'new' : null;
-    const currentPreviewId = previewArticle?.id || null;
-
-    if (urlTab === activeTab && urlEditId === currentEditId && urlPreviewId === currentPreviewId) {
+    // Old bookmarks must not open the removed article editor or preview.
+    if (urlTab === 'articles' || searchParams.has('edit') || searchParams.has('preview')) {
+      setActiveTab('products');
+      router.replace('/admin?tab=products', { scroll: false });
       return;
     }
-
     setActiveTab(urlTab);
-
-    if (urlEditId === 'new') {
-      setEditingArticle({});
-    } else if (urlEditId) {
-      const found = articlesList.find((a) => a.id === urlEditId);
-      if (found) setEditingArticle(found);
-      // Chưa tìm thấy (articlesList chưa load xong) — giữ nguyên, effect sẽ chạy
-      // lại khi articlesList cập nhật (đã có trong dependency array).
-    } else {
-      setEditingArticle(null);
-    }
-
-    if (urlPreviewId) {
-      const found = articlesList.find((a) => a.id === urlPreviewId);
-      if (found) setPreviewArticle(found);
-    } else {
-      setPreviewArticle(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, articlesList]);
+  }, [searchParams, router]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -496,10 +426,6 @@ export default function AdminDashboardPage() {
     fetch('/api/v1/cms/dashboard', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((d) => d.status === 'success' && setDashboardData(d.data));
-
-    fetch('/api/v1/cms/articles', { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
-      .then((d) => d.status === 'success' && setArticlesList(d.data));
 
     fetch('/api/v1/cms/affiliate-links', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
@@ -931,96 +857,6 @@ export default function AdminDashboardPage() {
       loadUsersData();
     } finally {
       setSavingEditUser(false);
-    }
-  };
-
-  const handleOpenAiModal = (campaign?: any) => {
-    if (campaign) {
-      setAiModalCampaign(campaign);
-      setAiModalTopic(`Đánh Giá Chi Tiết ${campaign.name} - Tính Năng & Bảng Giá Mới Nhất 2026`);
-      setAiModalBaseUrl(campaign.baseUrl || campaign.base_url || '');
-      setAiModalProductUrl(campaign.productUrl || campaign.product_url || campaign.baseUrl || campaign.base_url || '');
-    } else {
-      setAiModalCampaign(null);
-      setAiModalTopic('');
-      setAiModalBaseUrl('');
-      setAiModalProductUrl('');
-    }
-    setShowAiGenerateModal(true);
-  };
-
-  const handleSelectCampaignForAiModal = (campaignIdStr: string) => {
-    if (!campaignIdStr) {
-      setAiModalCampaign(null);
-      setAiModalBaseUrl('');
-      setAiModalProductUrl('');
-      return;
-    }
-    const found = affiliateLinksList.find((c) => c.id === campaignIdStr || c._id === campaignIdStr);
-    if (found) {
-      setAiModalCampaign(found);
-      setAiModalTopic(`Đánh Giá Chi Tiết ${found.name} - Tính Năng & Bảng Giá Mới Nhất 2026`);
-      setAiModalBaseUrl(found.baseUrl || found.base_url || '');
-      setAiModalProductUrl(found.productUrl || found.product_url || found.baseUrl || found.base_url || '');
-    }
-  };
-
-  const handleGenerateAiArticle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGeneratingAiArticle(true);
-    const token = localStorage.getItem('token');
-    try {
-      const finalBaseUrl = aiModalBaseUrl || aiModalCampaign?.baseUrl || aiModalCampaign?.base_url;
-      const finalProductUrl = aiModalProductUrl || aiModalCampaign?.productUrl || aiModalCampaign?.product_url || finalBaseUrl;
-
-      const res = await fetch('/api/v1/cms/ai/generate-article', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          campaignId: aiModalCampaign?.id,
-          customTopic: aiModalTopic,
-          customProductUrl: finalProductUrl,
-          customBaseUrl: finalBaseUrl,
-          customName: aiModalCampaign?.name,
-          language: aiModalLanguage,
-          userApiKey: aiModalApiKey,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.status === 'success') {
-        alert(`✨ TẠO BÀI VIẾT THÀNH CÔNG!\n\nTiêu đề: "${data.data.title}"\nTrạng thái: Lưu Nháp (Draft)\nĐã cào dữ liệu bằng Jina AI & Lọc link an toàn.`);
-        setShowAiGenerateModal(false);
-        loadAllData();
-        // Switch to Articles tab and open edit mode
-        navigate({
-          tab: 'articles',
-          editingArticle: {
-            id: data.data.articleId,
-            title: data.data.title,
-            slug: data.data.slug,
-            content: data.data.content,
-            excerpt: data.data.excerpt,
-            metaTitle: data.data.seo_meta?.meta_title || '',
-            metaDescription: data.data.seo_meta?.meta_description || '',
-            focusKeyword: data.data.seo_meta?.focus_keywords?.[0] || '',
-            keyTakeaways: Array.isArray(data.data.geo_data?.key_takeaways)
-              ? data.data.geo_data.key_takeaways.join('\n')
-              : data.data.geo_data?.key_takeaways || '',
-            entities: Array.isArray(data.data.geo_data?.entities)
-              ? data.data.geo_data.entities.join(', ')
-              : data.data.geo_data?.entities || '',
-            faqSchema: data.data.faqSchema || data.data.geo_data?.faq_list || [],
-            faqSchemaJsonld: data.data.geo_data?.faq_schema_jsonld || '',
-            status: 'draft',
-          },
-        });
-      } else {
-        alert(`Lỗi sinh bài viết AI: ${data.message}`);
-      }
-    } catch {
-      alert('Không thể kết nối API AI Generator');
-    } finally {
-      setIsGeneratingAiArticle(false);
     }
   };
 
@@ -1699,1033 +1535,6 @@ export default function AdminDashboardPage() {
     </div>
   );
 
-  // Articles View & Editor Form
-  const ArticlesView = () => (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Bài viết tư vấn & vị trí affiliate</h2>
-          <p className="text-slate-400 text-sm">Soạn bài, gắn danh mục và đặt liên kết tiếp thị tại nhiều vị trí trong nội dung.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => handleOpenAiModal()}
-            className="px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
-          >
-            <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
-          </button>
-          <LuxuryButton onClick={() => navigate({ editingArticle: {} })}>
-            <Plus size={18} /> Tạo bài viết mới
-          </LuxuryButton>
-        </div>
-      </div>
-
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden backdrop-blur-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-950/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
-              <th className="p-4 font-medium">Tiêu đề & danh mục</th>
-              {currentUser.role === 'admin' && <th className="p-4 font-medium">Tác giả</th>}
-              <th className="p-4 font-medium">Trạng thái & nổi bật</th>
-              <th className="p-4 font-medium">Hiệu quả</th>
-              <th className="p-4 font-medium text-right">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="text-sm">
-            {articlesList.map((art) => (
-              <tr key={art.id} className="border-b border-slate-800 hover:bg-white/[0.02] transition-colors">
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-white truncate max-w-[250px] lg:max-w-[350px]">{art.title}</p>
-                    {art.isFeatured && (
-                      <span className="bg-amber-500/10 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/20 flex items-center gap-0.5">
-                        <Star size={10} /> HOT
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                    <span>/{art.slug}</span>
-                    {art.categoryName && <span className="text-amber-400 font-semibold">• {art.categoryName}</span>}
-                  </div>
-                </td>
-                {currentUser.role === 'admin' && (
-                  <td className="p-4 text-slate-400 text-xs">
-                    <span className="bg-slate-800 px-2 py-1 rounded text-amber-300">{art.authorName || `User #${art.authorId}`}</span>
-                  </td>
-                )}
-                <td className="p-4">
-                  <span
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 w-max uppercase tracking-wider ${art.status === 'published'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
-                      }`}
-                  >
-                    {art.status === 'published' ? <CheckCircle2 size={12} /> : <CircleDashed size={12} />}
-                    {art.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-slate-300 font-medium text-xs flex items-center gap-2">
-                      <Eye size={12} className="text-slate-500" /> {art.viewCount?.toLocaleString()} lượt xem
-                    </span>
-                    <span className="text-amber-400 font-medium text-xs flex items-center gap-2">
-                      <DollarSign size={12} className="text-amber-500" /> ${art.revenue || 0}
-                    </span>
-                  </div>
-                </td>
-                <td className="p-4 text-right flex justify-end gap-2">
-                  <button
-                    onClick={() => navigate({ previewArticle: art })}
-                    className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-colors"
-                    title="Xem trước bài viết"
-                  >
-                    <Globe size={16} />
-                  </button>
-                  <button
-                    onClick={() => navigate({ editingArticle: art })}
-                    className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                    title="Sửa bài viết"
-                  >
-                    <Edit size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  // Article Editor Form V5.1 (SEO & GEO Studio)
-  const ArticleEditorForm = () => {
-    // ID sinh trước ở client cho bài mới (chưa có editingArticle.id), dùng để
-    // gắn link/nút affiliate có theo dõi ngay cả khi chưa bấm Save. Nếu bài
-    // được lưu, id này được gửi kèm để MongoDB dùng làm _id thật; nếu không
-    // bao giờ lưu thì id chỉ tồn tại tạm trong state và tự mất khi rời trang.
-    const [pendingId] = useState(() => editingArticle?.id || generateObjectId());
-    const [title, setTitle] = useState(editingArticle?.title || '');
-    const [slug, setSlug] = useState(editingArticle?.slug || '');
-    const [excerpt, setExcerpt] = useState(editingArticle?.excerpt || '');
-    const [content, setContent] = useState(editingArticle?.content || '');
-
-    // Autosave nháp vào localStorage — chống mất bài khi crash/đóng nhầm tab.
-    // Bài đang sửa dùng đúng id thật (ổn định qua nhiều phiên); bài mới tạo dùng
-    // 1 slot cố định "new" (không dùng pendingId vì mỗi lần "Create New" sinh ra
-    // 1 id ngẫu nhiên khác nhau — nếu dùng pendingId sẽ không bao giờ tìm lại
-    // được nháp cũ ở phiên sau).
-    const draftKey = editingArticle?.id ? `admin_article_draft_${editingArticle.id}` : 'admin_article_draft_new';
-    const [draftBanner, setDraftBanner] = useState<{ savedAt: number } | null>(null);
-
-    useEffect(() => {
-      try {
-        const raw = localStorage.getItem(draftKey);
-        if (!raw) return;
-        const draft = JSON.parse(raw);
-        const isDifferent = draft.title !== (editingArticle?.title || '') || draft.content !== (editingArticle?.content || '');
-        if (isDifferent && typeof draft.savedAt === 'number') {
-          setDraftBanner({ savedAt: draft.savedAt });
-        }
-      } catch {
-        // ignore malformed draft
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    useEffect(() => {
-      if (!title && !content) return;
-      const timer = setTimeout(() => {
-        try {
-          localStorage.setItem(draftKey, JSON.stringify({ title, excerpt, content, savedAt: Date.now() }));
-        } catch {
-          // localStorage đầy/bị chặn — bỏ qua autosave, không chặn viết bài
-        }
-      }, 2000);
-      return () => clearTimeout(timer);
-    }, [title, excerpt, content, draftKey]);
-
-    const restoreDraft = () => {
-      try {
-        const raw = localStorage.getItem(draftKey);
-        if (raw) {
-          const draft = JSON.parse(raw);
-          setTitle(draft.title || '');
-          setExcerpt(draft.excerpt || '');
-          setContent(draft.content || '');
-        }
-      } catch {
-        // ignore
-      }
-      setDraftBanner(null);
-    };
-
-    const dismissDraft = () => {
-      try {
-        localStorage.removeItem(draftKey);
-      } catch {
-        // ignore
-      }
-      setDraftBanner(null);
-    };
-    const [status, setStatus] = useState(editingArticle?.status || 'published');
-    const [isFeatured, setIsFeatured] = useState(editingArticle?.isFeatured || editingArticle?.is_featured || false);
-    const [categoryId, setCategoryId] = useState(editingArticle?.categoryId || editingArticle?.category_id?._id || editingArticle?.category_id || '');
-    const [subCategoryId, setSubCategoryId] = useState(editingArticle?.subCategoryId || editingArticle?.sub_category_id?._id || editingArticle?.sub_category_id || '');
-    const [thumbnailUrl, setThumbnailUrl] = useState(editingArticle?.thumbnailUrl || editingArticle?.thumbnail_url || '');
-    const [metaTitle, setMetaTitle] = useState(editingArticle?.metaTitle || editingArticle?.meta_title || '');
-    const [metaDescription, setMetaDescription] = useState(editingArticle?.metaDescription || editingArticle?.meta_description || '');
-
-    // GEO States
-    const [focusKeyword, setFocusKeyword] = useState(editingArticle?.focusKeyword || editingArticle?.focus_keyword || '');
-    const [keyTakeawaysText, setKeyTakeawaysText] = useState<string>(
-      typeof editingArticle?.keyTakeaways === 'string'
-        ? editingArticle.keyTakeaways
-        : Array.isArray(editingArticle?.keyTakeaways || editingArticle?.key_takeaways)
-          ? (editingArticle?.keyTakeaways || editingArticle?.key_takeaways).join('\n')
-          : ''
-    );
-    const [entitiesText, setEntitiesText] = useState<string>(
-      typeof editingArticle?.entities === 'string'
-        ? editingArticle.entities
-        : Array.isArray(editingArticle?.entities)
-          ? editingArticle.entities.join(', ')
-          : ''
-    );
-    const [faqRows, setFaqRows] = useState<Array<{ question: string; answer: string }>>(
-      Array.isArray(editingArticle?.faqSchema || editingArticle?.faq_schema) && (editingArticle?.faqSchema || editingArticle?.faq_schema).length > 0
-        ? (editingArticle?.faqSchema || editingArticle?.faq_schema)
-        : Array.isArray(editingArticle?.faq_list) && editingArticle.faq_list.length > 0
-          ? editingArticle.faq_list
-          : [{ question: '', answer: '' }]
-    );
-    // D-12: inline validation for the required Level-1 category. Set on a blocked
-    // save, cleared the moment a category is chosen. GEO fields are never part of
-    // this guard (D-09).
-    const [categoryError, setCategoryError] = useState<string | null>(null);
-    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
-    // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
-    // này, KHÔNG dùng chung previewArticle/navigate() của trang ngoài, vì
-    // navigate() sẽ set editingArticle = null làm unmount hẳn ArticleEditorForm
-    // (state title/content sống trong chính component này, không phải ở parent)
-    // — mất hết nội dung đang gõ dở khi bấm quay lại từ preview.
-    const [showLivePreview, setShowLivePreview] = useState(false);
-    const [affiliatePlacements, setAffiliatePlacements] = useState<Array<{ affiliate_link_id: string; position_label: string }>>(
-      (() => {
-        const raw = editingArticle?.affiliatePlacements || editingArticle?.affiliate_placements || [];
-        return raw.map((p: any) => ({
-          affiliate_link_id: p.affiliate_link_id?._id || p.affiliate_link_id,
-          position_label: p.position_label,
-        }));
-      })()
-    );
-
-    // D-03/D-04: load-failure guard. Re-loading the requested article through the
-    // shared helper (which always attaches Authorization) doubles as the
-    // authoritative fetch and the 404/403/401 detector — a failed load renders
-    // the inline error panel, never a blank form a user could overwrite.
-    const [loadError, setLoadError] = useState<string | null>(null);
-    const [isLoadingArticle, setIsLoadingArticle] = useState(false);
-    const didLoadRef = React.useRef(false);
-
-    useEffect(() => {
-      if (didLoadRef.current) return;
-      const articleId = editingArticle?.id;
-      if (!articleId) return;
-      didLoadRef.current = true;
-
-      let cancelled = false;
-      setIsLoadingArticle(true);
-      cmsFetch<Record<string, unknown>>(`/api/v1/cms/articles/${articleId}`, {
-        token: localStorage.getItem('token'),
-      }).then((result) => {
-        if (cancelled) return;
-        setIsLoadingArticle(false);
-        if (!result.ok) {
-          setLoadError(result.message);
-          handleCmsFailure(result.status, result.message);
-          return;
-        }
-        const doc = result.data as {
-          title?: string;
-          slug?: string;
-          excerpt?: string;
-          content?: string;
-          status?: string;
-          isFeatured?: boolean;
-          categoryId?: string;
-          subCategoryId?: string;
-          thumbnailUrl?: string;
-          metaTitle?: string;
-          metaDescription?: string;
-          focusKeyword?: string;
-          keyTakeaways?: string[];
-          entities?: string[];
-          faqSchema?: { question: string; answer: string }[];
-          affiliatePlacements?: { affiliate_link_id?: unknown; position_label: string }[];
-        };
-        if (!doc) return;
-        // Re-hydrate from the authoritative server copy.
-        setTitle(doc.title || '');
-        setSlug(doc.slug || '');
-        setExcerpt(doc.excerpt || '');
-        setContent(doc.content || '');
-        if (doc.status) setStatus(doc.status);
-        setIsFeatured(Boolean(doc.isFeatured));
-        setCategoryId(doc.categoryId || '');
-        setSubCategoryId(doc.subCategoryId || '');
-        setThumbnailUrl(doc.thumbnailUrl || '');
-        setMetaTitle(doc.metaTitle || '');
-        setMetaDescription(doc.metaDescription || '');
-        setFocusKeyword(doc.focusKeyword || '');
-        setKeyTakeawaysText(Array.isArray(doc.keyTakeaways) ? doc.keyTakeaways.join('\n') : '');
-        setEntitiesText(Array.isArray(doc.entities) ? doc.entities.join(', ') : '');
-        setFaqRows(
-          Array.isArray(doc.faqSchema) && doc.faqSchema.length > 0
-            ? doc.faqSchema
-            : [{ question: '', answer: '' }]
-        );
-        setAffiliatePlacements(
-          (Array.isArray(doc.affiliatePlacements) ? doc.affiliatePlacements : []).map((p) => {
-            const link = p.affiliate_link_id;
-            const id =
-              link && typeof link === 'object'
-                ? ((link as { _id?: string })._id ?? '')
-                : ((link as string | undefined) ?? '');
-            return { affiliate_link_id: id, position_label: p.position_label };
-          })
-        );
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, []);
-
-    const selectedCategoryObj = categoriesList.find((c) => c.id === Number(categoryId) || c.id === categoryId);
-
-    const handleTitleChange = (val: string) => {
-      setTitle(val);
-      if (!slug) {
-        const generated = val
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[đĐ]/g, 'd')
-          .replace(/[^a-z0-9\s-]/g, '')
-          .trim()
-          .replace(/\s+/g, '-');
-        setSlug(generated);
-      }
-    };
-
-    const handleAiTakeawaysGenerate = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/v1/cms/ai/generate-takeaways', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ title, content }),
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.status === 'success' && json.data) {
-            setKeyTakeawaysText(json.data.keyTakeaways.join('\n'));
-            if (!entitiesText) {
-              setEntitiesText(json.data.entities.join(', '));
-            }
-            alert('Đã sinh Key Takeaways & Entities chuẩn GEO!');
-            return;
-          }
-        }
-      } catch { }
-      setKeyTakeawaysText(
-        `- Phân tích giải pháp cho bài viết "${title || 'AI Insights'}".\n- Tích hợp mô hình Generative Engine mới nhất.\n- Tối ưu hóa quy trình tự động hóa.`
-      );
-      alert('Đã sinh Key Takeaways mẫu!');
-    };
-
-    const addFaqRow = () => {
-      setFaqRows([...faqRows, { question: '', answer: '' }]);
-    };
-
-    const removeFaqRow = (index: number) => {
-      setFaqRows(faqRows.filter((_, i) => i !== index));
-    };
-
-    const updateFaqRow = (index: number, field: 'question' | 'answer', val: string) => {
-      // Clone-then-set (immutable) so React sees a new array AND new row object —
-      // a shallow copy would still alias the row, mutating state in place.
-      setFaqRows(
-        faqRows.map((row, i) => (i === index ? { ...row, [field]: val } : row))
-      );
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
-      e.preventDefault();
-
-      // D-12: a top-level category is required. Only title/slug/content/category
-      // are required and `status` must be set; no GEO field participates (D-09).
-      const isContentEmpty = !content || content.replace(/<[^>]*>/g, '').trim().length === 0;
-      if (isContentEmpty) {
-        showCmsToast('error', 'Hãy nhập tiêu đề, đường dẫn và nội dung trước khi lưu.');
-        return;
-      }
-
-      if (!categoryId) {
-        setCategoryError('Hãy chọn danh mục chính.');
-        showCmsToast('error', 'Hãy chọn danh mục chính.');
-        return;
-      }
-      setCategoryError(null);
-
-      const token = localStorage.getItem('token');
-
-      const takeawaysList = keyTakeawaysText
-        .split('\n')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      const entitiesList = entitiesText
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      const validFaq = faqRows.filter((f) => f.question.trim() && f.answer.trim());
-
-      const payload = {
-        ...(editingArticle?.id ? {} : { id: pendingId }),
-        title,
-        slug,
-        excerpt,
-        content,
-        status,
-        isFeatured,
-        categoryId: categoryId || undefined,
-        subCategoryId: subCategoryId || undefined,
-        thumbnailUrl,
-        focusKeyword,
-        metaTitle: metaTitle || title,
-        metaDescription: metaDescription || excerpt,
-        keyTakeaways: takeawaysList,
-        entities: entitiesList,
-        faqSchema: validFaq,
-        affiliatePlacements,
-      };
-
-      // D-03: every editor save goes through the shared auth-fetch helper — it
-      // attaches the bearer token and normalizes the response, so a non-2xx can
-      // never be mistaken for a success.
-      const result = editingArticle?.id
-        ? await cmsFetch(`/api/v1/cms/articles/${editingArticle.id}`, {
-            method: 'PUT',
-            token,
-            body: payload,
-          })
-        : await cmsFetch('/api/v1/cms/articles', { method: 'POST', token, body: payload });
-
-      if (result.ok) {
-        showCmsToast('success', 'Đã lưu bài viết cùng dữ liệu SEO và GEO.');
-        try {
-          localStorage.removeItem(draftKey);
-        } catch {
-          // ignore
-        }
-        navigate({ tab: 'articles', editingArticle: null }, { replace: true });
-        loadAllData();
-        return;
-      }
-
-      handleCmsFailure(result.status, result.message);
-    };
-
-    const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      setIsUploadingThumbnail(true);
-      try {
-        const token = localStorage.getItem('token');
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const result = await cmsFetch<{ url: string }>('/api/v1/cms/upload', {
-          method: 'POST',
-          token,
-          body: formData,
-        });
-
-        if (result.ok) {
-          setThumbnailUrl(result.data.url);
-        } else {
-          handleCmsFailure(result.status, result.message);
-        }
-      } finally {
-        setIsUploadingThumbnail(false);
-        e.target.value = '';
-      }
-    };
-
-    const togglePlacement = (affiliateLinkId: string, positionLabel: string) => {
-      const exists = affiliatePlacements.some(
-        (p) => p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel
-      );
-      if (exists) {
-        setAffiliatePlacements(
-          affiliatePlacements.filter(
-            (p) => !(p.affiliate_link_id === affiliateLinkId && p.position_label === positionLabel)
-          )
-        );
-      } else {
-        setAffiliatePlacements([...affiliatePlacements, { affiliate_link_id: affiliateLinkId, position_label: positionLabel }]);
-      }
-    };
-
-    // D-03/D-04: a failed article load must never render an empty editor form a
-    // user could mistake for a blank article. Render the documented inline error
-    // panel (or a loading panel while the authoritative copy is in flight) in
-    // place of the form.
-    if (loadError) {
-      return (
-        <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in duration-300">
-          <div className="flex items-center gap-4 text-slate-400">
-            <button
-              onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
-              className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
-            >
-              ← Quay lại danh sách bài viết
-            </button>
-          </div>
-          <div className="bg-rose-500/[0.07] border border-rose-500/30 rounded-2xl p-8 text-center space-y-2">
-            <AlertCircle size={28} className="mx-auto text-rose-400" />
-            <p className="text-white font-bold text-sm">Không thể tải bài viết này.</p>
-            <p className="text-slate-400 text-xs">{loadError}</p>
-            <p className="text-slate-500 text-xs">Hãy tải lại trang hoặc quay về danh sách bài viết.</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (isLoadingArticle && editingArticle?.id) {
-      return (
-        <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in duration-300">
-          <div className="flex items-center gap-4 text-slate-400">
-            <button
-              onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
-              className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
-            >
-              ← Quay lại danh sách bài viết
-            </button>
-          </div>
-          <div className="flex items-center justify-center h-64 text-slate-500 text-sm gap-2">
-            <Loader2 size={16} className="animate-spin" /> Đang tải bài viết…
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6 max-w-6xl mx-auto pb-20 animate-in fade-in zoom-in-95 duration-300">
-        <div className="flex items-center gap-4 text-slate-400">
-          <button
-            onClick={() => navigate({ tab: 'articles', editingArticle: null }, { replace: true })}
-            className="hover:text-white flex items-center gap-1 transition-colors text-xs font-semibold"
-          >
-            ← Quay lại danh sách bài viết
-          </button>
-          <ChevronRight size={14} />
-          <span className="text-amber-400 font-bold text-xs">
-            {editingArticle?.id ? 'Chỉnh sửa bài viết (SEO & GEO)' : 'Tạo bài viết (SEO & GEO)'}
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowLivePreview(true)}
-            disabled={!title.trim() && !content.trim()}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <Globe size={13} /> Xem trước
-          </button>
-        </div>
-
-        {draftBanner && (
-          <div className="flex items-center justify-between gap-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl px-4 py-2.5 text-xs">
-            <span className="text-cyan-300">
-              Phát hiện bản nháp tự động lưu lúc {new Date(draftBanner.savedAt).toLocaleTimeString('vi-VN')} — khôi phục?
-            </span>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={restoreDraft}
-                className="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-bold hover:bg-cyan-500/30"
-              >
-                Khôi phục
-              </button>
-              <button type="button" onClick={dismissDraft} className="px-3 py-1 rounded-lg text-slate-400 hover:text-white">
-                Bỏ qua
-              </button>
-            </div>
-          </div>
-        )}
-
-        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Column (Span 2) */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Core Info */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                  <FileText size={16} className="text-amber-400" /> Thông tin cơ bản & nội dung chính
-                </h3>
-                <span className="text-[10px] bg-amber-500/10 text-amber-400 px-2.5 py-0.5 rounded font-bold border border-amber-500/20">
-                  Tự tạo đường dẫn
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Tiêu đề bài viết (H1) *</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 text-base shadow-inner font-bold"
-                  placeholder="Nhập tiêu đề bài viết..."
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Mô tả ngắn hiển thị trên trang chủ</label>
-                <textarea
-                  rows={2}
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300 text-xs focus:outline-none focus:border-amber-500 shadow-inner resize-none"
-                  placeholder="Viết phần giới thiệu ngắn cho thẻ bài viết..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Ảnh đại diện</label>
-                <div className="flex items-center gap-3 mb-2">
-                  {thumbnailUrl && (
-                    <img
-                      src={thumbnailUrl}
-                      alt="Xem trước ảnh đại diện"
-                      className="w-14 h-14 rounded-lg object-cover border border-slate-800 shrink-0"
-                    />
-                  )}
-                  <label className="flex-1 cursor-pointer">
-                    <span className="w-full inline-flex items-center justify-center gap-2 bg-slate-950 border border-dashed border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-400 hover:bg-slate-900 hover:border-amber-500 transition">
-                      {isUploadingThumbnail ? 'Đang tải ảnh lên...' : 'Chọn ảnh từ máy (JPEG/PNG/WEBP/GIF, tối đa 5MB)'}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={handleThumbnailUpload}
-                      disabled={isUploadingThumbnail}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-                <input
-                  type="url"
-                  value={thumbnailUrl}
-                  onChange={(e) => setThumbnailUrl(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
-                  placeholder="...hoặc dán URL ảnh thủ công"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-300 mb-2 block">Nội dung bài viết *</label>
-                <RichTextEditor
-                  value={content}
-                  onChange={setContent}
-                  articleId={pendingId}
-                  affiliateLinks={affiliateLinksList}
-                />
-              </div>
-            </div>
-
-            {/* GEO Hub Card */}
-            <div className="bg-slate-900/60 border-l-4 border-l-purple-500 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-purple-400" />
-                  <h3 className="text-white font-bold text-sm">Tối ưu hiển thị trên công cụ AI (GEO)</h3>
-                </div>
-                <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded font-bold border border-purple-500/30">
-                  Sẵn sàng cho AI
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-purple-300">
-                    <span>Ý chính cho AI tóm tắt</span>
-                    <button
-                      type="button"
-                      onClick={handleAiTakeawaysGenerate}
-                      className="text-[10px] text-cyan-400 hover:underline font-semibold"
-                    >
-                      ⚡ AI Gợi ý
-                    </button>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={keyTakeawaysText}
-                    onChange={(e) => setKeyTakeawaysText(e.target.value)}
-                    placeholder="- Điểm chính 1&#10;- Điểm chính 2"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-
-                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                  <span className="text-xs font-bold text-purple-300 block">Thực thể & nguồn tham chiếu</span>
-                  <textarea
-                    rows={4}
-                    value={entitiesText}
-                    onChange={(e) => setEntitiesText(e.target.value)}
-                    placeholder="Phân cách bằng dấu phẩy: OpenAI, GPT-4o, NVIDIA..."
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-              </div>
-
-              {/* FAQ Schema Row Builder */}
-              <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300">Trình tạo FAQ Schema JSON-LD</span>
-                  <button
-                    type="button"
-                    onClick={addFaqRow}
-                    className="text-[10px] bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 px-2.5 py-1 rounded font-bold border border-purple-500/30"
-                  >
-                    + Add question
-                  </button>
-                </div>
-                {faqRows.length === 0 ? (
-                  <p className="text-xs text-slate-500">
-                    No FAQ pairs yet. Add a question to embed FAQPage structured data on the public article.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {faqRows.map((row, idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <input
-                          type="text"
-                          value={row.question}
-                          onChange={(e) => updateFaqRow(idx, 'question', e.target.value)}
-                          placeholder="Question…"
-                          aria-label={`FAQ question ${idx + 1}`}
-                          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                        />
-                        <input
-                          type="text"
-                          value={row.answer}
-                          onChange={(e) => updateFaqRow(idx, 'answer', e.target.value)}
-                          placeholder="Answer…"
-                          aria-label={`FAQ answer ${idx + 1}`}
-                          className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeFaqRow(idx)}
-                          title="Remove this question"
-                          aria-label={`Remove FAQ row ${idx + 1}`}
-                          className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="text-[10px] text-slate-500">
-                  Rows with an empty question or answer are ignored when saving.
-                </p>
-              </div>
-            </div>
-
-            {/* SEO Metadata */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                  <Search size={16} className="text-emerald-400" /> Traditional SEO Metadata
-                </h3>
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2.5 py-0.5 rounded font-bold border border-emerald-500/20">
-                  SEO Score: 95/100
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Từ khóa trọng tâm *</label>
-                  <input
-                    type="text"
-                    value={focusKeyword}
-                    onChange={(e) => setFocusKeyword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    placeholder="công nghệ AI 2026..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Đường dẫn URL *</label>
-                  <input
-                    type="text"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Tiêu đề SEO</label>
-                <input
-                  type="text"
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Mô tả SEO</label>
-                <textarea
-                  rows={2}
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column (Span 1) */}
-          <div className="space-y-6">
-            {/* Category & Status */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4">
-              <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-                <Tag size={16} className="text-amber-400" /> Multi-Level Category Assignment
-              </h3>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Danh mục chính *</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => {
-                    setCategoryId(e.target.value);
-                    setSubCategoryId('');
-                    if (e.target.value) setCategoryError(null);
-                  }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
-                >
-                  <option value="">-- Chọn danh mục --</option>
-                  {categoriesList.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                {categoryError && (
-                  <p className="mt-1 text-xs text-rose-400">{categoryError}</p>
-                )}
-              </div>
-
-              {selectedCategoryObj && selectedCategoryObj.subCategories?.length > 0 && (
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Danh mục phụ (không bắt buộc)</label>
-                  <select
-                    value={subCategoryId}
-                    onChange={(e) => setSubCategoryId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none font-medium"
-                  >
-                    <option value="">-- Chọn danh mục phụ --</option>
-                    {selectedCategoryObj.subCategories.map((sub: any) => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-slate-800 space-y-3">
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Trạng thái xuất bản</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs"
-                  >
-                    <option value="published">Đã xuất bản</option>
-                    <option value="draft">Bản nháp</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isFeatured"
-                    checked={isFeatured}
-                    onChange={(e) => setIsFeatured(e.target.checked)}
-                    className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-amber-400 cursor-pointer"
-                  />
-                  <label
-                    htmlFor="isFeatured"
-                    className="text-xs font-bold text-amber-400 cursor-pointer flex items-center gap-1"
-                  >
-                    <Star size={14} /> Đánh dấu “Nổi bật tuần”
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Multi-Affiliate Link Placement */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 to-yellow-600"></div>
-              <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
-                <LinkIcon size={16} className="text-amber-400" /> Vị trí đặt liên kết affiliate
-              </h3>
-
-              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-                {affiliateLinksList.map((link) => {
-                  const topActive = affiliatePlacements.some(
-                    (p) => p.affiliate_link_id === link.id && p.position_label === 'top_cta'
-                  );
-                  const middleActive = affiliatePlacements.some(
-                    (p) => p.affiliate_link_id === link.id && p.position_label === 'middle_comparison'
-                  );
-                  const footerActive = affiliatePlacements.some(
-                    (p) => p.affiliate_link_id === link.id && p.position_label === 'footer_banner'
-                  );
-
-                  return (
-                    <div key={link.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl space-y-2">
-                      <p className="text-xs font-bold text-white truncate">{link.name}</p>
-                      <div className="flex gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => togglePlacement(link.id, 'top_cta')}
-                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${topActive
-                            ? 'bg-amber-500/30 text-amber-300 border-amber-400'
-                            : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
-                            }`}
-                        >
-                          + Đầu bài
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => togglePlacement(link.id, 'middle_comparison')}
-                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${middleActive
-                            ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400'
-                            : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-                            }`}
-                        >
-                          + Giữa bài
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => togglePlacement(link.id, 'footer_banner')}
-                          className={`flex-1 border text-[10px] font-semibold py-1 rounded ${footerActive
-                            ? 'bg-purple-500/30 text-purple-300 border-purple-400'
-                            : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/30'
-                            }`}
-                        >
-                          + Cuối bài
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <LuxuryButton type="submit" className="w-full py-3 text-sm">
-              Lưu bài viết & trạng thái xuất bản
-            </LuxuryButton>
-          </div>
-        </form>
-
-        {showLivePreview && (
-          <PublicArticlePreview
-            article={{
-              title: title || 'Chưa có tiêu đề',
-              content,
-              thumbnailUrl,
-              authorName: currentUser?.name || currentUser?.username,
-            }}
-            onBack={() => setShowLivePreview(false)}
-          />
-        )}
-      </div>
-    );
-  };
-
-  // Preview Modal — toggle overlay: bấm ra ngoài vùng nội dung (backdrop) cũng
-  // đóng lại, giống hành vi modal chuẩn thay vì chiếm nguyên màn hình trước đây.
-  const PublicArticlePreview = ({ article, onBack }: any) => {
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') onBack();
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onBack]);
-
-    return (
-      <div
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200 flex justify-center p-4 md:p-8"
-        onClick={onBack}
-      >
-        <div
-          className="w-full max-w-4xl h-fit bg-[#0c0c0e] rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 font-sans"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <nav className="border-b border-white/10 bg-black/60 backdrop-blur-md sticky top-0 z-10">
-            <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-              <div className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                GOOD<span className="text-emerald-400 font-light">PICK</span>
-              </div>
-              <button
-                onClick={onBack}
-                className="text-sm text-slate-400 hover:text-white flex items-center gap-1 border border-slate-700 px-4 py-2 rounded-full hover:bg-slate-800 transition-colors"
-              >
-                Đóng xem trước
-              </button>
-            </div>
-          </nav>
-
-          <article className="max-w-3xl mx-auto px-6 py-16">
-            <div className="mb-10 text-center">
-              <div className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">Bài tư vấn chuyên sâu</div>
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{article.title}</h1>
-              <div className="flex items-center justify-center gap-4 text-sm text-slate-400">
-                <span>Biên soạn bởi <strong>{article.authorName || 'Đội ngũ GoodPick'}</strong></span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <Eye size={14} /> {article.viewCount?.toLocaleString() || 0} lượt xem
-                </span>
-              </div>
-            </div>
-
-            {article.thumbnailUrl && (
-              <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-slate-800 mb-10">
-                <img src={article.thumbnailUrl} alt={article.title} className="w-full h-full object-cover" />
-              </div>
-            )}
-
-            <div
-              className="prose prose-invert prose-lg max-w-none text-slate-300 leading-relaxed font-serif"
-              dangerouslySetInnerHTML={{ __html: sanitizeArticleContent(article.content) }}
-            />
-          </article>
-        </div>
-      </div>
-    );
-  };
-
   // Affiliate Links Management
   const LinksView = () => (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -2734,13 +1543,6 @@ export default function AdminDashboardPage() {
           <h2 className="text-2xl font-bold text-white mb-1">Chiến dịch affiliate cũ</h2>
           <p className="text-slate-400 text-sm">Quản lý liên kết theo dõi, trang đích, hoa hồng và thời hạn cookie của các chiến dịch trước đây.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => handleOpenAiModal()}
-          className="px-4 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer"
-        >
-          <Sparkles size={16} /> ✨ Tạo Bài Viết AI Ngay
-        </button>
       </div>
 
       <form onSubmit={handleAddAffiliateLink} className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl space-y-4 backdrop-blur-sm">
@@ -2878,14 +1680,6 @@ export default function AdminDashboardPage() {
                   </code>
                 </td>
                 <td className="p-4 text-right flex justify-end gap-2 items-center">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenAiModal(link)}
-                    className="px-2.5 py-1.5 text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 font-bold rounded-lg shadow hover:opacity-90 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-                    title="Sinh bài viết tự động bằng Gemini AI & Jina Scraper"
-                  >
-                    <Sparkles size={14} /> ✨ Tạo Bài AI
-                  </button>
                   <button
                     onClick={() => handleQuickBlacklist(link.id, link.name)}
                     className="p-1.5 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg flex items-center gap-1 font-semibold transition-colors"
@@ -4160,14 +2954,11 @@ export default function AdminDashboardPage() {
   };
 
   const renderContent = () => {
-    if (previewArticle) return <PublicArticlePreview article={previewArticle} onBack={() => navigate({ previewArticle: null }, { replace: true })} />;
-    if (editingArticle !== null) return <ArticleEditorForm />;
 
     if (activeTab === 'dashboard') return <DashboardView />;
     if (activeTab === 'products') return <ProductManager categories={categoriesList} />;
-    if (activeTab === 'stores' && currentUser.role === 'admin') return <StoreManager />;
+    if (activeTab === 'stores' && currentUser.role === 'admin') return <StoreManager categories={categoriesList} />;
     if (activeTab === 'insights' && currentUser.role === 'admin') return <InsightsView />;
-    if (activeTab === 'articles') return <ArticlesView />;
     if (activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
     // CategoriesView is declared inside this dashboard and reads the parent's form
     // state. Calling it as a render helper keeps the modal inputs mounted while a
@@ -4192,10 +2983,10 @@ export default function AdminDashboardPage() {
           </div>
           <p className="text-slate-400 text-sm">Tài khoản của bạn không được phép mở khu vực này.</p>
           <button
-            onClick={() => navigate({ tab: 'articles' })}
+            onClick={() => navigate({ tab: 'products' })}
             className="text-xs font-bold text-rose-400 hover:text-rose-300 underline underline-offset-4"
           >
-            Quay lại bài viết
+            Quay lại sản phẩm
           </button>
         </div>
       );
@@ -4206,7 +2997,7 @@ export default function AdminDashboardPage() {
 
   const NavItem = ({ id, icon: Icon, label, requiredRole }: any) => {
     if (requiredRole && currentUser.role !== requiredRole) return null;
-    const isActive = activeTab === id && !editingArticle && !previewArticle;
+    const isActive = activeTab === id;
     return (
       <button
         onClick={() => navigate({ tab: id })}
@@ -4227,7 +3018,6 @@ export default function AdminDashboardPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-amber-900/10 blur-[120px]"></div>
       </div>
 
-      {previewArticle === null && (
         <div className="relative z-10 flex h-screen overflow-hidden">
           {/* Sidebar */}
           <aside className="w-64 bg-[#0a0a0c]/80 backdrop-blur-xl border-r border-slate-800/60 flex flex-col shadow-2xl">
@@ -4245,7 +3035,6 @@ export default function AdminDashboardPage() {
               <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Nội dung bán hàng</div>
               <NavItem id="products" icon={Package} label="Sản phẩm & ưu đãi" />
               <NavItem id="stores" icon={Tag} label="Store & coupon" requiredRole="admin" />
-              <NavItem id="articles" icon={FileText} label="Bài viết tư vấn" />
 
               {currentUser.role === 'admin' && (
                 <>
@@ -4282,7 +3071,7 @@ export default function AdminDashboardPage() {
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input
                     type="text"
-                    placeholder="Tìm sản phẩm, bài viết hoặc thành viên..."
+                    placeholder="Tìm sản phẩm, store hoặc thành viên..."
                     className="w-full bg-slate-900/50 border border-slate-700/50 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
                   />
                 </div>
@@ -4304,7 +3093,6 @@ export default function AdminDashboardPage() {
             </div>
           </main>
         </div>
-      )}
 
       {/* D-03: shared auth-fetch toast. Error toasts persist until dismissed
           (rose border); success auto-dismisses (~3s). A 401 clears the token
@@ -4346,141 +3134,6 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Modal Sinh Bài Viết Tự Động Bằng Gemini AI & Jina Scraper */}
-      {showAiGenerateModal && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-xl shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Sparkles size={20} className="text-cyan-400" /> Tự Động Sinh Bài Viết SEO & GEO V5.3 (Gemini 2.5 Flash)
-              </h3>
-              <button onClick={() => setShowAiGenerateModal(false)} className="text-slate-400 hover:text-white">
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleGenerateAiArticle} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Chọn Chiến Dịch Affiliate (Hoặc Nhập URL)</label>
-                <select
-                  value={aiModalCampaign?.id || ''}
-                  onChange={(e) => handleSelectCampaignForAiModal(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
-                >
-                  <option value="">-- Tự Nhập URL / Tên Bài Viết Thủ Công --</option>
-                  {affiliateLinksList.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.baseUrl})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Chủ Đề / Tên Bài Viết Cần Sinh *</label>
-                <input
-                  type="text"
-                  value={aiModalTopic}
-                  onChange={(e) => setAiModalTopic(e.target.value)}
-                  placeholder="e.g. Đánh Giá Scalenut AI 2026 - Công Cụ SEO AI Tốt Nhất?"
-                  required
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-cyan-500 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Liên kết theo dõi affiliate *</label>
-                  <input
-                    type="url"
-                    value={aiModalBaseUrl}
-                    onChange={(e) => setAiModalBaseUrl(e.target.value)}
-                    placeholder="https://refersion.com/register?ref=123"
-                    required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">URL trang sản phẩm (dùng lấy dữ liệu)</label>
-                  <input
-                    type="url"
-                    value={aiModalProductUrl}
-                    onChange={(e) => setAiModalProductUrl(e.target.value)}
-                    placeholder="https://refersion.com"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-cyan-300 font-mono focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Ngôn Ngữ Bài Viết</label>
-                  <select
-                    value={aiModalLanguage}
-                    onChange={(e: any) => setAiModalLanguage(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
-                  >
-                    <option value="vi-VN">Tiếng Việt (vi-VN)</option>
-                    <option value="en-US">Tiếng Anh (en-US)</option>
-                  </select>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-semibold text-slate-300">Gemini API Key (Chính thức)</label>
-                    <a
-                      href="https://aistudio.google.com/app/apikey"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 font-semibold"
-                    >
-                      👉 Lấy Key Miễn Phí (aistudio.google.com)
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    value={aiModalApiKey}
-                    onChange={(e) => setAiModalApiKey(e.target.value)}
-                    placeholder="Dán API Key dạng AIzaSy... vào đây"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-amber-300 font-mono focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
-                <p className="text-slate-200 font-bold flex items-center gap-1.5">
-                  ⚙️ Tiến trình xử lý 4 bước tự động:
-                </p>
-                <p>1. Kiểm tra danh sách chặn theo thời gian thực để bảo vệ URL.</p>
-                <p>2. Cào landing page bằng Jina AI Reader (<code className="text-cyan-300">r.jina.ai</code>).</p>
-                <p>3. Gemini 2.5 Flash tạo bài viết chuẩn SEO/GEO và dữ liệu JSON Schema.</p>
-                <p>4. Kiểm tra liên kết sau xử lý, tự động lọc và lưu bản nháp vào cơ sở dữ liệu.</p>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowAiGenerateModal(false)} className="px-4 py-2 text-xs text-slate-400 hover:text-white">
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  disabled={isGeneratingAiArticle}
-                  className="px-6 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-violet-600 text-slate-950 hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/20"
-                >
-                  {isGeneratingAiArticle ? (
-                    <>
-                      <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin"></div>
-                      <span>Đang Cào & Sinh Bài AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} /> Bắt Đầu Sinh Bài AI 1-Click
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

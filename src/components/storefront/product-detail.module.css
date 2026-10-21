@@ -162,3 +162,12 @@
   .mainImage, .buyBox, .painPanel, .solutionPanel, .socialProof, .sideNote { box-shadow: 5px 5px 0 #c9b8ff; }
   .buyBox { padding: 26px 20px; }
 }
+
+.richContent { overflow-wrap: anywhere; line-height: 1.8; white-space: pre-line; }
+.richContent a { color: #0d766e; text-decoration: underline; }
+.richContent p, .richContent ul, .richContent ol { margin: 0 0 1em; }
+.richContent img { max-width: 100%; height: auto; border-radius: 12px; }
+.richContent ul { list-style: disc inside; }
+.richContent ol { list-style: decimal inside; }
+.richContent table { display: block; max-width: 100%; overflow-x: auto; }
+.richContent td, .richContent th { border: 1px solid #d9e1dc; padding: 8px; }

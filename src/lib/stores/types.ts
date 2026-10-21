@@ -25,7 +25,9 @@ export type StoreRecord = {
   content: string;
   faqs: { question: string; answer: string }[];
   offers: StoreOffer[];
-  status: "draft" | "published" | "archived";
+  status: "draft" | "published" | "archived" | "deleted";
+  viewCount?: number;
+  clickCount?: number;
   showOnHomepage: boolean;
   sortOrder: number;
   updatedAt?: string;

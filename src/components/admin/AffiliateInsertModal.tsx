@@ -15,6 +15,7 @@ interface AffiliateInsertModalProps {
   onClose: () => void;
   affiliateLinks: AffiliateLinkOption[];
   articleId?: string;
+  allowDirectLinks?: boolean;
   onInsert: (html: string) => void;
 }
 
@@ -25,11 +26,14 @@ export default function AffiliateInsertModal({
   onClose,
   affiliateLinks,
   articleId,
+  allowDirectLinks = false,
   onInsert,
 }: AffiliateInsertModalProps) {
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string>('');
   const [template, setTemplate] = useState<Template>('inline');
+  const [directUrl, setDirectUrl] = useState('');
+  const [label, setLabel] = useState('');
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -40,10 +44,23 @@ export default function AffiliateInsertModal({
   if (!open) return null;
 
   const selectedLink = affiliateLinks.find((l) => l.id === selectedId);
-  const canInsert = Boolean(articleId && selectedLink);
+  let validUrl = '';
+  try {
+    const url = new URL(directUrl.trim());
+    if (['http:', 'https:'].includes(url.protocol) && !url.username && !url.password) validUrl = url.href;
+  } catch { }
+  const canInsert = allowDirectLinks ? Boolean(validUrl && label.trim()) : Boolean(articleId && selectedLink);
+  const escape = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
 
   const handleInsert = () => {
-    if (!canInsert || !selectedLink || !articleId) return;
+    if (!canInsert) return;
+    if (allowDirectLinks) {
+      const html = `<a href="${escape(validUrl)}" rel="nofollow sponsored noopener noreferrer" target="_blank"${template === 'cta' ? ' class="affiliate-btn"' : ''}>${escape(label.trim())}</a>`;
+      onInsert(template === 'cta' ? `<p>${html}</p>` : html);
+      setDirectUrl(''); setLabel(''); onClose();
+      return;
+    }
+    if (!selectedLink || !articleId) return;
 
     const href = `/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${selectedLink.id}`;
     const dataAttrs = `data-affiliate-id="${selectedLink.id}" data-article-id="${articleId}" rel="nofollow sponsored" target="_blank"`;
@@ -60,18 +77,27 @@ export default function AffiliateInsertModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" aria-labelledby="affiliate-insert-title" onKeyDown={(event) => {
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); }
+      if (event.key === 'Enter' && event.target instanceof HTMLInputElement) { event.preventDefault(); handleInsert(); }
+    }} className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-slate-800">
-          <h3 className="text-white font-bold text-sm flex items-center gap-2">
+          <h3 id="affiliate-insert-title" className="text-white font-bold text-sm flex items-center gap-2">
             <Link2 size={16} className="text-amber-400" /> Chèn liên kết affiliate
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button type="button" aria-label="Đóng cửa sổ chèn affiliate" onClick={onClose} className="text-slate-400 hover:text-white">
             <X size={18} />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
+          {allowDirectLinks ? <div className="space-y-3">
+            <label className="block text-xs text-slate-300">URL affiliate<input type="url" value={directUrl} onChange={(event) => setDirectUrl(event.target.value)} placeholder="https://store.example.com/?ref=..." className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" /></label>
+            <label className="block text-xs text-slate-300">Chữ hiển thị / tên nút<input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Xem ưu đãi tại cửa hàng" maxLength={200} className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" /></label>
+            {directUrl && !validUrl && <p role="alert" className="text-xs text-rose-300">Nhập URL http/https hợp lệ.</p>}
+            <p className="text-xs text-slate-400">Có thể chèn trước khi lưu. Lượt bấm được theo dõi sau khi xuất bản.</p>
+          </div> : <>
           {!articleId && (
             <div className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
               Lưu bài viết trước khi chèn liên kết affiliate có theo dõi.
@@ -111,7 +137,7 @@ export default function AffiliateInsertModal({
               </button>
             ))}
           </div>
-
+          </>}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">Kiểu chèn</label>
             <div className="grid grid-cols-2 gap-2">

@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { connectToDatabase } from "@/lib/db/mongodb";
+import { CategoryModel } from "@/lib/db/models";
 import { ProductModel, type IProduct } from "@/lib/db/product-models";
 import { escapeRegExp } from "@/lib/utils";
 import type { Marketplace } from "@/lib/marketplaces";
@@ -377,6 +378,10 @@ export async function getStorefrontProducts(options: { query?: string; category?
     if (query.trim()) {
       const regex = new RegExp(escapeRegExp(query.trim().slice(0, 100)), "i");
       filter.$or = [{ name: regex }, { short_description: regex }, { sku: regex }];
+    }
+    if (category) {
+      const categoryRecord = await CategoryModel.findOne({ slug: category }).select("_id").lean();
+      filter.category_id = categoryRecord?._id || null;
     }
     const docs = await ProductModel.find(filter)
       .populate("brand_id", "name slug")

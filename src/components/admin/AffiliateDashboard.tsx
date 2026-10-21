@@ -11,7 +11,6 @@ import {
   CircleGauge,
   ClipboardCheck,
   Eye,
-  FileText,
   MousePointerClick,
   PackagePlus,
   Percent,
@@ -45,7 +44,6 @@ type HotProduct = {
 type DashboardData = {
   totalViews?: number;
   totalClicks?: number;
-  topArticles?: { id: string; title: string; viewCount: number; clicks: number }[];
   products?: {
     total: number;
     published: number;
@@ -144,12 +142,10 @@ export default function AffiliateDashboard({ data, userName, onNavigate }: { dat
           <div className="mt-5 grid gap-3">
             <button onClick={() => onNavigate("products")} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-left hover:border-emerald-500/30"><span className="rounded-lg bg-emerald-400/10 p-2 text-emerald-400"><PackagePlus size={17} /></span><span className="flex-1"><strong className="block text-xs text-white">Đăng sản phẩm mới</strong><small className="text-[10px] text-slate-500">Thêm ảnh, giá, coupon và link affiliate</small></span><ChevronRight size={15} className="text-slate-600 group-hover:text-emerald-400" /></button>
             <button onClick={() => onNavigate("categories")} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-left hover:border-cyan-500/30"><span className="rounded-lg bg-cyan-400/10 p-2 text-cyan-300"><Boxes size={17} /></span><span className="flex-1"><strong className="block text-xs text-white">Sắp xếp danh mục</strong><small className="text-[10px] text-slate-500">Giúp khách tìm sản phẩm nhanh hơn</small></span><ChevronRight size={15} className="text-slate-600 group-hover:text-cyan-300" /></button>
-            <button onClick={() => onNavigate("articles")} className="group flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-left hover:border-violet-500/30"><span className="rounded-lg bg-violet-400/10 p-2 text-violet-300"><FileText size={17} /></span><span className="flex-1"><strong className="block text-xs text-white">Viết bài hướng dẫn mua</strong><small className="text-[10px] text-slate-500">Tạo nội dung hỗ trợ chuyển đổi</small></span><ChevronRight size={15} className="text-slate-600 group-hover:text-violet-300" /></button>
           </div>
         </div>
       </section>
 
-      {(data?.topArticles?.length || 0) > 0 && <section className="rounded-2xl border border-slate-800 bg-slate-900/45 p-5"><div className="mb-4 flex items-center justify-between"><div><h2 className="text-sm font-bold text-white">Nội dung đang hỗ trợ chuyển đổi</h2><p className="mt-1 text-[10px] text-slate-500">Bài viết có nhiều lượt đọc và click affiliate.</p></div><button onClick={() => onNavigate("articles")} className="text-[10px] font-bold text-slate-400 hover:text-white">Xem bài viết</button></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{data?.topArticles?.slice(0, 3).map((article) => <div key={article.id} className="rounded-xl border border-slate-800 bg-slate-950/35 p-4"><p className="line-clamp-2 text-xs font-bold text-slate-200">{article.title}</p><div className="mt-3 flex gap-4 text-[10px] text-slate-500"><span className="flex items-center gap-1"><Eye size={12} /> {number(article.viewCount)}</span><span className="flex items-center gap-1 text-emerald-400"><MousePointerClick size={12} /> {number(article.clicks)}</span></div></div>)}</div></section>}
     </div>
   );
 }

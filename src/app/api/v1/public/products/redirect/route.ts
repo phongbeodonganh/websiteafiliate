@@ -6,6 +6,7 @@ import { ClickLogModel, CLICK_PLACEMENTS, type ClickPlacement } from "@/lib/db/m
 import { checkUrlAgainstBlacklist } from "@/lib/blacklist";
 import { appendSubId, getClientIp } from "@/lib/utils";
 import { consumeDedupe, consumeRequest } from "@/lib/rateLimit";
+import { prepareAffiliateContent } from "@/lib/affiliate-content";
 
 export const dynamic = "force-dynamic";
 
@@ -13,29 +14,34 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const productId = url.searchParams.get("product_id") || "";
   const offerId = url.searchParams.get("offer_id") || "";
+  const inlineLink = url.searchParams.get("link");
   const rawPlacement = url.searchParams.get("placement") || "other";
   const placement: ClickPlacement = CLICK_PLACEMENTS.includes(rawPlacement as ClickPlacement) ? rawPlacement as ClickPlacement : "other";
   const fallback = new URL("/", req.url);
-  if (!isValidObjectId(productId) || !isValidObjectId(offerId)) return NextResponse.redirect(fallback, 302);
+  if (!isValidObjectId(productId) || (inlineLink === null ? !isValidObjectId(offerId) : !/^\d{1,4}$/.test(inlineLink))) return NextResponse.redirect(fallback, 302);
   try {
     await connectToDatabase();
-    const product = await ProductModel.findOne({ _id: productId, status: "published", "offers._id": offerId });
-    const offer = product?.offers.id(offerId);
-    if (!product || !offer || offer.status !== "active") return NextResponse.redirect(fallback, 302);
-    const blocked = await checkUrlAgainstBlacklist(offer.affiliate_url);
+    const product = await ProductModel.findOne({ _id: productId, status: "published", ...(inlineLink === null ? { "offers._id": offerId } : {}) });
+    if (!product) return NextResponse.redirect(fallback, 302);
+    const offer = inlineLink === null ? product.offers.id(offerId) : null;
+    if (inlineLink === null && (!offer || offer.status !== "active")) return NextResponse.redirect(fallback, 302);
+    const targetUrl = inlineLink !== null ? prepareAffiliateContent(product.description || "").links[Number(inlineLink)] : offer!.affiliate_url;
+    const target = new URL(targetUrl);
+    if (!["http:", "https:"].includes(target.protocol) || target.username || target.password) return NextResponse.redirect(fallback, 302);
+    const blocked = await checkUrlAgainstBlacklist(target.href);
     if (blocked.isBlacklisted) return NextResponse.redirect(new URL(`/products/${product.slug}`, req.url), 302);
 
     const ip = getClientIp(req);
     const allowed = consumeRequest(`product-redirect:${ip}`, 60, 60_000).allowed;
-    const duplicate = consumeDedupe(`${ip}:${offerId}`, 60_000);
+    const duplicate = consumeDedupe(`${ip}:${inlineLink !== null ? `${productId}:inline:${inlineLink}` : offerId}`, 60_000);
     if (allowed && !duplicate) {
       await Promise.all([
-        ClickLogModel.create({ product_id: product._id, offer_id: offer._id, marketplace: offer.marketplace, placement, device: /mobile/i.test(req.headers.get("user-agent") || "") ? "mobile" : "desktop", referrer: req.headers.get("referer") || undefined, ip_address: ip }),
-        ProductModel.updateOne({ _id: product._id, "offers._id": offer._id }, { $inc: { click_count: 1, "offers.$.click_count": 1 } }),
+        ClickLogModel.create({ product_id: product._id, ...(offer ? { offer_id: offer._id, marketplace: offer.marketplace } : {}), placement, device: /mobile/i.test(req.headers.get("user-agent") || "") ? "mobile" : "desktop", referrer: req.headers.get("referer") || undefined, ip_address: ip }),
+        ProductModel.updateOne({ _id: product._id, ...(offer ? { "offers._id": offer._id } : {}) }, { $inc: { click_count: 1, ...(offer ? { "offers.$.click_count": 1 } : {}) } }),
       ]);
     }
-    const destination = new URL(appendSubId(offer.affiliate_url, product.slug));
-    if (offer.subid_param) destination.searchParams.set(offer.subid_param, product.slug);
+    const destination = new URL(inlineLink !== null ? target.href : appendSubId(target.href, product.slug));
+    if (offer?.subid_param) destination.searchParams.set(offer.subid_param, product.slug);
     const response = NextResponse.redirect(destination, 302);
     response.headers.set("Cache-Control", "no-store");
     return response;

@@ -22,6 +22,7 @@ import {
   type ISpecGroup,
   type IVariantOption,
 } from '@/lib/db/product-models';
+import { sanitizeArticleContent } from '@/lib/sanitize';
 import { roundMoney } from './pricing';
 
 type Json = Record<string, unknown>;
@@ -299,7 +300,7 @@ export function normalizeProductInput(body: unknown, partial: boolean): ProductI
   }
 
   if (has('short_description')) data.short_description = str(body.short_description, 500);
-  if (has('description')) data.description = typeof body.description === 'string' ? body.description : undefined;
+  if (has('description')) data.description = typeof body.description === 'string' ? sanitizeArticleContent(body.description.slice(0, 200000)) : undefined;
   for (const key of ['highlights', 'pros', 'cons'] as const) {
     if (has(key)) data[key] = stringList(body[key]);
   }

@@ -745,3 +745,7 @@ input[type="submit"]:active {
 .footer-link:hover::after {
   width: 100%;
 }
+
+/* Affiliate CTAs authored in product and store descriptions. */
+a.affiliate-btn { display: inline-flex; align-items: center; border-radius: 999px; padding: 12px 24px; background: #0d766e; color: #fff; font-weight: 700; text-decoration: none; }
+a.affiliate-btn:focus-visible { outline: 3px solid #2fbda9; outline-offset: 3px; }

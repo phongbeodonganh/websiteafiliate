@@ -24,7 +24,7 @@ export default async function StorefrontHeader({ query = "" }: { query?: string 
           </Link>
           <form action="/" className={styles.searchForm} role="search">
             <Search size={18} aria-hidden="true" />
-            <input name="q" defaultValue={query} aria-label="Search products and buying guides" placeholder="Search a product, brand or daily need" />
+            <input name="q" defaultValue={query} aria-label="Search products and stores" placeholder="Search a product, brand or daily need" />
             <button type="submit">Find</button>
           </form>
           <div className={styles.headerActions}>
