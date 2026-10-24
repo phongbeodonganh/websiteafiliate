@@ -97,7 +97,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         link: { openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } },
       }),
       AlignableImage,
-      Placeholder.configure({ placeholder: 'Viết nội dung bài viết ở đây... (gõ "/" để chèn nhanh)' }),
+      Placeholder.configure({ placeholder: 'Write your article here... (type "/" to insert a block)' }),
       Table.configure({ resizable: false }),
       TableRow,
       TableHeader,
@@ -153,13 +153,13 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         });
         const json = await res.json();
         if (res.ok && json.status === 'success') {
-          const alt = window.prompt('Nhập alt text cho ảnh (tốt cho SEO & accessibility, có thể để trống):', '') || '';
+          const alt = window.prompt('Enter image alt text for accessibility and SEO (optional):', '') || '';
           editor?.chain().focus().setImage({ src: json.data.url, alt }).run();
         } else {
-          alert(`Lỗi upload: ${json.message || 'Không thể tải ảnh lên'}`);
+          alert(`Upload failed: ${json.message || 'Unable to upload the image.'}`);
         }
       } catch {
-        alert('Đã có lỗi xảy ra khi tải ảnh lên!');
+        alert('An error occurred while uploading the image.');
       } finally {
         setIsUploadingImage(false);
       }
@@ -186,7 +186,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
   const handleSetLink = () => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('Nhập URL:', previousUrl || 'https://');
+    const url = window.prompt('Enter a URL:', previousUrl || 'https://');
     if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
@@ -217,16 +217,16 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
   return (
     <div className="border border-slate-800 rounded-xl bg-slate-950 shadow-inner overflow-hidden">
       <div className="flex flex-wrap items-center gap-1 border-b border-slate-800 bg-slate-900/60 px-2 py-1.5">
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Đậm">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold">
           <Bold size={15} />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Nghiêng">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic">
           <Italic size={15} />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Gạch chân">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline">
           <UnderlineIcon size={15} />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Gạch ngang">
+        <ToolbarButton onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} title="Strikethrough">
           <Strikethrough size={15} />
         </ToolbarButton>
 
@@ -235,21 +235,21 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           active={editor.isActive('heading', { level: 2 })}
-          title="Tiêu đề H2"
+          title="Heading 2"
         >
           <Heading2 size={15} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           active={editor.isActive('heading', { level: 3 })}
-          title="Tiêu đề H3"
+          title="Heading 3"
         >
           <Heading3 size={15} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
           active={editor.isActive('heading', { level: 4 })}
-          title="Tiêu đề H4"
+          title="Heading 4"
         >
           <Heading4 size={15} />
         </ToolbarButton>
@@ -259,56 +259,56 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           active={editor.isActive('bulletList')}
-          title="Danh sách"
+          title="Bulleted List"
         >
           <List size={15} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           active={editor.isActive('orderedList')}
-          title="Danh sách số"
+          title="Numbered List"
         >
           <ListOrdered size={15} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           active={editor.isActive('blockquote')}
-          title="Trích dẫn"
+          title="Block Quote"
         >
           <Quote size={15} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           active={editor.isActive('codeBlock')}
-          title="Khối code"
+          title="Code Block"
         >
           <Code size={15} />
         </ToolbarButton>
 
         <div className="w-px h-5 bg-slate-800 mx-1" />
 
-        <ToolbarButton onClick={handleSetLink} active={editor.isActive('link')} title="Chèn link">
+        <ToolbarButton onClick={handleSetLink} active={editor.isActive('link')} title="Insert Link">
           <Link2 size={15} />
         </ToolbarButton>
-        <ToolbarButton onClick={handleImageButtonClick} disabled={isUploadingImage} title="Chèn ảnh">
+        <ToolbarButton onClick={handleImageButtonClick} disabled={isUploadingImage} title="Insert Image">
           <ImageIcon size={15} />
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-          title="Chèn bảng"
+          title="Insert Table"
         >
           <TableIcon size={15} />
         </ToolbarButton>
 
         {isInTable && (
           <>
-            <ToolbarButton onClick={() => editor.chain().focus().addColumnAfter().run()} title="Thêm cột">
+            <ToolbarButton onClick={() => editor.chain().focus().addColumnAfter().run()} title="Add Column">
               <Columns size={15} />
             </ToolbarButton>
-            <ToolbarButton onClick={() => editor.chain().focus().addRowAfter().run()} title="Thêm hàng">
+            <ToolbarButton onClick={() => editor.chain().focus().addRowAfter().run()} title="Add Row">
               <Rows size={15} />
             </ToolbarButton>
-            <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} title="Xóa bảng">
+            <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} title="Delete Table">
               <Trash2 size={15} />
             </ToolbarButton>
           </>
@@ -319,40 +319,40 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         <button
           type="button"
           onClick={() => setShowAffiliateModal(true)}
-          title="Chèn Affiliate"
+          title="Insert Affiliate Link"
           className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20"
         >
-          <Tag size={13} /> Chèn Affiliate
+          <Tag size={13} /> Insert Affiliate Link
         </button>
 
         <div className="w-px h-5 bg-slate-800 mx-1" />
 
-        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Hoàn tác">
+        <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo">
           <Undo size={15} />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Làm lại">
+        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Redo">
           <Redo size={15} />
         </ToolbarButton>
 
         <div className="w-px h-5 bg-slate-800 mx-1" />
 
-        <ToolbarButton onClick={() => setShowSearchPanel((v) => !v)} active={showSearchPanel} title="Tìm & Thay thế">
+        <ToolbarButton onClick={() => setShowSearchPanel((v) => !v)} active={showSearchPanel} title="Find and Replace">
           <Search size={15} />
         </ToolbarButton>
 
-        {isUploadingImage && <span className="text-[10px] text-slate-400 ml-2">Đang tải ảnh lên...</span>}
+        {isUploadingImage && <span className="text-[10px] text-slate-400 ml-2">Uploading image...</span>}
 
         <button
           type="button"
           onClick={() => setIsCodeView(!isCodeView)}
-          title="Chuyển sang xem/sửa HTML thô"
+          title="View or edit HTML source"
           className={`ml-auto flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold border transition-colors ${
             isCodeView
               ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
               : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
           }`}
         >
-          <Code2 size={13} /> {isCodeView ? 'WYSIWYG' : 'HTML thô'}
+          <Code2 size={13} /> {isCodeView ? 'Visual Editor' : 'HTML Source'}
         </button>
 
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileChange} className="hidden" />
@@ -365,16 +365,16 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           shouldShow={({ editor }) => !editor.isActive('image') && !editor.state.selection.empty}
           className="flex items-center gap-0.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1"
         >
-          <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Đậm">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold">
             <Bold size={14} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Nghiêng">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic">
             <Italic size={14} />
           </ToolbarButton>
-          <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Gạch chân">
+          <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline">
             <UnderlineIcon size={14} />
           </ToolbarButton>
-          <ToolbarButton onClick={handleSetLink} active={editor.isActive('link')} title="Chèn link">
+          <ToolbarButton onClick={handleSetLink} active={editor.isActive('link')} title="Insert Link">
             <Link2 size={14} />
           </ToolbarButton>
         </BubbleMenu>
@@ -387,7 +387,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           shouldShow={({ editor }) => editor.isActive('image')}
           className="flex items-center gap-0.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-1"
         >
-          <span className="text-[10px] text-slate-500 px-1.5">Cỡ:</span>
+          <span className="text-[10px] text-slate-500 px-1.5">Size:</span>
           {(['25%', '50%', '75%', '100%'] as const).map((size) => (
             <button
               key={size}
@@ -402,21 +402,21 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           <ToolbarButton
             onClick={() => editor.chain().focus().updateAttributes('image', { align: 'left' }).run()}
             active={editor.getAttributes('image').align === 'left'}
-            title="Căn trái"
+            title="Align Left"
           >
             <AlignLeft size={14} />
           </ToolbarButton>
           <ToolbarButton
             onClick={() => editor.chain().focus().updateAttributes('image', { align: 'center' }).run()}
             active={editor.getAttributes('image').align === 'center'}
-            title="Căn giữa"
+            title="Align Center"
           >
             <AlignCenter size={14} />
           </ToolbarButton>
           <ToolbarButton
             onClick={() => editor.chain().focus().updateAttributes('image', { align: 'right' }).run()}
             active={editor.getAttributes('image').align === 'right'}
-            title="Căn phải"
+            title="Align Right"
           >
             <AlignRight size={14} />
           </ToolbarButton>
@@ -433,7 +433,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           value={rawHtml}
           onChange={(e) => handleRawHtmlChange(e.target.value)}
           className="w-full bg-slate-950 p-4 text-xs text-amber-300 font-mono focus:outline-none leading-relaxed border-none shadow-inner resize-y"
-          placeholder="Nhập HTML thô..."
+          placeholder="Enter HTML source..."
         />
       ) : (
         <EditorContent editor={editor} />
@@ -441,9 +441,9 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
 
       {!isCodeView && (
         <div className="flex items-center justify-end gap-3 border-t border-slate-800 bg-slate-900/40 px-3 py-1.5 text-[10px] text-slate-500">
-          <span>{editor.storage.characterCount.words()} từ</span>
-          <span>{editor.storage.characterCount.characters()} ký tự</span>
-          <span>~{Math.max(1, Math.ceil(editor.storage.characterCount.words() / 200))} phút đọc</span>
+          <span>{editor.storage.characterCount.words()} {editor.storage.characterCount.words() === 1 ? 'word' : 'words'}</span>
+          <span>{editor.storage.characterCount.characters()} {editor.storage.characterCount.characters() === 1 ? 'character' : 'characters'}</span>
+          <span>~{Math.max(1, Math.ceil(editor.storage.characterCount.words() / 200))} min read</span>
         </div>
       )}
 

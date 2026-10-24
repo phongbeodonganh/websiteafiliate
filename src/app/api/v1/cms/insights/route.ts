@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   }
   if (user.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin xem được Insights' },
+      { status: 'error', message: 'Only administrators can view SEO insights.' },
       { status: 403 }
     );
   }
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Insights fetch error:', error);
     return NextResponse.json(
-      { status: 'error', message: 'Lỗi lấy dữ liệu Insights từ Google APIs' },
+      { status: 'error', message: 'Unable to load insights from Google Analytics and Search Console.' },
       { status: 500 }
     );
   }

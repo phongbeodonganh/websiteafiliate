@@ -64,7 +64,7 @@ export default function AffiliateInsertModal({
       <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl">
         <div className="flex items-center justify-between p-5 border-b border-slate-800">
           <h3 className="text-white font-bold text-sm flex items-center gap-2">
-            <Link2 size={16} className="text-amber-400" /> Chèn Affiliate
+            <Link2 size={16} className="text-amber-400" /> Insert Affiliate Link
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X size={18} />
@@ -74,7 +74,7 @@ export default function AffiliateInsertModal({
         <div className="p-5 space-y-4">
           {!articleId && (
             <div className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-              Lưu bài viết trước khi chèn liên kết affiliate có theo dõi.
+              Save the article before inserting tracked affiliate links.
             </div>
           )}
 
@@ -84,14 +84,14 @@ export default function AffiliateInsertModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm kiếm affiliate link theo tên..."
+              placeholder="Search affiliate links by name..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
             />
           </div>
 
           <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
             {filtered.length === 0 && (
-              <p className="text-xs text-slate-500 text-center py-4">Không tìm thấy affiliate link nào.</p>
+              <p className="text-xs text-slate-500 text-center py-4">No affiliate links found.</p>
             )}
             {filtered.map((link) => (
               <button
@@ -113,7 +113,7 @@ export default function AffiliateInsertModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Kiểu chèn</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Link Format</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -124,7 +124,7 @@ export default function AffiliateInsertModal({
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <Link2 size={13} /> Link chữ inline
+                <Link2 size={13} /> Inline Text Link
               </button>
               <button
                 type="button"
@@ -135,7 +135,7 @@ export default function AffiliateInsertModal({
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                 }`}
               >
-                <MousePointerClick size={13} /> Nút CTA
+                <MousePointerClick size={13} /> Call-to-Action Button
               </button>
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function AffiliateInsertModal({
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800"
           >
-            Hủy
+            Cancel
           </button>
           <button
             type="button"
@@ -155,7 +155,7 @@ export default function AffiliateInsertModal({
             disabled={!canInsert}
             className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-200 to-yellow-500 text-slate-950 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Chèn
+            Insert
           </button>
         </div>
       </div>

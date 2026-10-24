@@ -55,6 +55,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('Error fetching subscribers:', error);
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy danh sách subscriber' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load subscribers.' }, { status: 500 });
   }
 }

@@ -65,16 +65,16 @@ export default function SearchReplacePanel({ editor, onClose }: SearchReplacePan
           if (e.key === 'Enter') goNext();
           if (e.key === 'Escape') handleClose();
         }}
-        placeholder="Tìm..."
+        placeholder="Find..."
         className="bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-500 w-32"
       />
       <span className="text-[10px] text-slate-500 w-14 shrink-0">
         {matchCount > 0 ? `${currentIndex + 1}/${matchCount}` : '0/0'}
       </span>
-      <button type="button" onClick={goPrev} disabled={!matchCount} title="Kết quả trước" className="p-1 rounded text-slate-300 hover:bg-slate-800 disabled:opacity-30">
+      <button type="button" onClick={goPrev} disabled={!matchCount} title="Previous Match" className="p-1 rounded text-slate-300 hover:bg-slate-800 disabled:opacity-30">
         <ChevronUp size={14} />
       </button>
-      <button type="button" onClick={goNext} disabled={!matchCount} title="Kết quả sau" className="p-1 rounded text-slate-300 hover:bg-slate-800 disabled:opacity-30">
+      <button type="button" onClick={goNext} disabled={!matchCount} title="Next Match" className="p-1 rounded text-slate-300 hover:bg-slate-800 disabled:opacity-30">
         <ChevronDown size={14} />
       </button>
 
@@ -84,7 +84,7 @@ export default function SearchReplacePanel({ editor, onClose }: SearchReplacePan
         type="text"
         value={replaceTerm}
         onChange={(e) => setReplaceTerm(e.target.value)}
-        placeholder="Thay bằng..."
+        placeholder="Replace with..."
         className="bg-slate-950 border border-slate-800 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:border-amber-500 w-32"
       />
       <button
@@ -93,7 +93,7 @@ export default function SearchReplacePanel({ editor, onClose }: SearchReplacePan
         disabled={!matchCount}
         className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30"
       >
-        Thay
+        Replace
       </button>
       <button
         type="button"
@@ -101,10 +101,10 @@ export default function SearchReplacePanel({ editor, onClose }: SearchReplacePan
         disabled={!matchCount}
         className="px-2 py-1 rounded-md text-[10px] font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30"
       >
-        Thay tất cả
+        Replace All
       </button>
 
-      <button type="button" onClick={handleClose} title="Đóng" className="ml-auto p-1 rounded text-slate-400 hover:bg-slate-800 hover:text-white">
+      <button type="button" onClick={handleClose} title="Close" className="ml-auto p-1 rounded text-slate-400 hover:bg-slate-800 hover:text-white">
         <X size={14} />
       </button>
     </div>

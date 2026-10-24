@@ -47,7 +47,7 @@ export async function PUT(
       },
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi cập nhật thông tin user' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to update the team member.' }, { status: 500 });
   }
 }
 
@@ -65,7 +65,7 @@ export async function DELETE(
 
     if (id === currentUser.userId.toString()) {
       return NextResponse.json(
-        { status: 'error', message: 'Không thể xóa tài khoản của chính mình' },
+        { status: 'error', message: 'You cannot delete your own account.' },
         { status: 400 }
       );
     }
@@ -75,9 +75,9 @@ export async function DELETE(
 
     return NextResponse.json({
       status: 'success',
-      message: 'Xóa người dùng thành công',
+      message: 'Team member deleted successfully.',
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi xóa người dùng' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to delete the team member.' }, { status: 500 });
   }
 }

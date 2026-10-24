@@ -51,7 +51,7 @@ const SlashCommandList = forwardRef<SlashCommandListHandle, SlashCommandListProp
   if (items.length === 0) {
     return (
       <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-2 text-xs text-slate-500 w-56">
-        Không tìm thấy lệnh nào
+        No commands found
       </div>
     );
   }

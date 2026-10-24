@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const currentUser = await getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền xem danh sách nhân sự' },
+      { status: 'error', message: 'Only administrators can view team members.' },
       { status: 403 }
     );
   }
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
       data: dataWithArticleCounts,
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy danh sách nhân sự' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load team members.' }, { status: 500 });
   }
 }
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   const currentUser = await getAuthUser(req);
   if (!currentUser || currentUser.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền thêm nhân sự' },
+      { status: 'error', message: 'Only administrators can add team members.' },
       { status: 403 }
     );
   }
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { status: 'error', message: 'Username và Password là bắt buộc' },
+        { status: 'error', message: 'Username and password are required.' },
         { status: 400 }
       );
     }
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     const existing = await UserModel.findOne({ username });
     if (existing) {
       return NextResponse.json(
-        { status: 'error', message: 'Tên đăng nhập đã tồn tại trên hệ thống' },
+        { status: 'error', message: 'This username is already in use.' },
         { status: 400 }
       );
     }
@@ -98,6 +98,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi tạo nhân sự mới' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to create the team member.' }, { status: 500 });
   }
 }

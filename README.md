@@ -2,6 +2,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+To test the admin with an isolated local database, run `npm run dev:local` and
+open [http://localhost:3000/admin](http://localhost:3000/admin). The command prints
+the local admin credentials, stored in the ignored `.local/credentials.json`.
+Database contents persist in `.local/mongodb` between runs. The first run
+downloads a MongoDB binary; no separately installed MongoDB is needed.
+
+With that server running and Google Chrome installed, run
+`npm run test:admin-inputs` to check continuous typing, focus, and article state
+after validation. The browser checks leave form edits unsaved.
+
 First, run the development server: 
 
 ```bash

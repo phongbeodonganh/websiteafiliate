@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     if (categoryId !== undefined) {
       if (!Types.ObjectId.isValid(String(categoryId))) {
-        return NextResponse.json({ status: 'error', message: 'CategoryId không hợp lệ' }, { status: 400 });
+        return NextResponse.json({ status: 'error', message: 'Choose a valid parent category.' }, { status: 400 });
       }
       subCat.category_id = categoryId;
     }
@@ -51,7 +51,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi cập nhật danh mục con' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to update the subcategory.' }, { status: 500 });
   }
 }
 
@@ -66,8 +66,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     await connectToDatabase();
     await SubCategoryModel.findByIdAndDelete(id);
-    return NextResponse.json({ status: 'success', message: 'Đã xóa danh mục con' });
+    return NextResponse.json({ status: 'success', message: 'Subcategory deleted successfully.' });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi xóa danh mục con' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to delete the subcategory.' }, { status: 500 });
   }
 }

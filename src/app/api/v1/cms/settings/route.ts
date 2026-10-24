@@ -7,7 +7,7 @@ import { isValidCssColor } from '@/lib/sanitize';
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
   if (!user) {
-    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+    return NextResponse.json({ status: 'error', message: 'Authentication required. Please sign in.' }, { status: 401 });
   }
 
   try {
@@ -74,14 +74,14 @@ export async function GET(req: Request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy cấu hình hệ thống' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load settings.' }, { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
   const currentUser = await getAuthUser(req);
   if (!currentUser) {
-    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+    return NextResponse.json({ status: 'error', message: 'Authentication required. Please sign in.' }, { status: 401 });
   }
   if (currentUser.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
@@ -143,7 +143,7 @@ export async function PUT(req: Request) {
       const trimmed = String(googleAnalyticsId).trim();
       if (trimmed && !/^G-[A-Z0-9]{6,}$/.test(trimmed)) {
         return NextResponse.json(
-          { status: 'error', message: 'Google Analytics Measurement ID không hợp lệ (định dạng G-XXXXXXXXXX)' },
+          { status: 'error', message: 'Enter a valid Google Analytics measurement ID (G-XXXXXXXXXX).' },
           { status: 400 }
         );
       }
@@ -162,13 +162,13 @@ export async function PUT(req: Request) {
     // — no new rendering mechanism is added for it.
     if (primaryColor !== undefined && !isValidCssColor(primaryColor)) {
       return NextResponse.json(
-        { status: 'error', message: 'primaryColor không hợp lệ — phải là mã hex (#RRGGBB, #RGB, #RRGGBBAA hoặc #RGBA)' },
+        { status: 'error', message: 'Primary color must be a valid hex color (#RRGGBB, #RGB, #RRGGBBAA, or #RGBA).' },
         { status: 400 }
       );
     }
     if (accentColor !== undefined && !isValidCssColor(accentColor)) {
       return NextResponse.json(
-        { status: 'error', message: 'accentColor không hợp lệ — phải là mã hex (#RRGGBB, #RGB, #RRGGBBAA hoặc #RGBA)' },
+        { status: 'error', message: 'Accent color must be a valid hex color (#RRGGBB, #RGB, #RRGGBBAA, or #RGBA).' },
         { status: 400 }
       );
     }
@@ -242,6 +242,6 @@ export async function PUT(req: Request) {
     });
   } catch (error) {
     console.error('Settings save error:', error);
-    return NextResponse.json({ status: 'error', message: 'Lỗi lưu cấu hình hệ thống' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to save settings.' }, { status: 500 });
   }
 }

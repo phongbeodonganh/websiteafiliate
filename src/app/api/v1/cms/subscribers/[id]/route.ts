@@ -14,8 +14,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     await connectToDatabase();
     await SubscriberModel.findByIdAndDelete(id);
-    return NextResponse.json({ status: 'success', message: 'Đã xóa email thành công' });
+    return NextResponse.json({ status: 'success', message: 'Subscriber deleted successfully.' });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi xóa email subscriber' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to delete the subscriber.' }, { status: 500 });
   }
 }

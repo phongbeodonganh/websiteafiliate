@@ -5,7 +5,7 @@ export async function GET(req: Request) {
   const user = await getAuthUser(req);
   if (!user) {
     return NextResponse.json(
-      { status: 'error', message: 'Unauthorized - Token không hợp lệ hoặc đã hết hạn' },
+      { status: 'error', message: 'Your session is invalid or has expired. Please sign in again.' },
       { status: 401 }
     );
   }

@@ -12,7 +12,7 @@ export async function PUT(
   const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền quản lý Link Affiliate' },
+      { status: 'error', message: 'Only administrators can manage affiliate links.' },
       { status: 403 }
     );
   }
@@ -34,7 +34,7 @@ export async function PUT(
     // from the body the update proceeds unchanged (partial-update semantics).
     if (base_url !== undefined && !isHttpUrl(base_url)) {
       return NextResponse.json(
-        { status: 'error', message: 'base_url phải là URL http/https' },
+        { status: 'error', message: 'The tracking URL must use HTTP or HTTPS.' },
         { status: 400 }
       );
     }
@@ -71,7 +71,7 @@ export async function PUT(
       },
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi cập nhật affiliate link' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to update the affiliate link.' }, { status: 500 });
   }
 }
 
@@ -82,7 +82,7 @@ export async function DELETE(
   const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền quản lý Link Affiliate' },
+      { status: 'error', message: 'Only administrators can manage affiliate links.' },
       { status: 403 }
     );
   }
@@ -94,9 +94,9 @@ export async function DELETE(
 
     return NextResponse.json({
       status: 'success',
-      message: 'Xóa affiliate link thành công',
+      message: 'Affiliate link deleted successfully.',
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi xóa affiliate link' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to delete the affiliate link.' }, { status: 500 });
   }
 }
