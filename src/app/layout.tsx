@@ -35,6 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
         template: `%s | ${siteTitle}`,
       },
       description: desc,
+      keywords: sysSettings?.focusKeywords
+        ?.split(",")
+        .map((k: string) => k.trim())
+        .filter(Boolean),
       alternates: {
         canonical: "/",
       },
