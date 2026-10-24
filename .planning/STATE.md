@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: V5.2
 current_phase: 03
 current_phase_name: SEO/GEO & Performance Hardening
-status: planning
-stopped_at: Phase 02 complete
-last_updated: "2026-09-22T14:20:00.000Z"
-last_activity: 2026-09-22
-last_activity_desc: Phase 02 gap closure complete — 10/10 truths verified
-state_head: 87b35dc
+status: executing
+stopped_at: Plan 03-02 complete, Wave 1 done, proceeding to Wave 2
+last_updated: "2026-09-24T08:35:00.000Z"
+last_activity: 2026-09-24
+last_activity_desc: Plan 03-02 complete (crawl hygiene + list API perf)
+state_head: deb7f1f
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 18
-  completed_plans: 16
+  completed_phases: 0
+  total_plans: 20
+  completed_plans: 18
 ---
 
 # Project State
@@ -27,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 03 (SEO/GEO & Performance Hardening) — NOT STARTED
-Plan: 0 of ? 
-Status: Phase 02 complete, ready to plan Phase 03
-Last activity: 2026-09-22 — Phase 02 gap closure complete (10/10 truths verified)
+Phase: 03 (SEO/GEO & Performance Hardening) — EXECUTING
+Plan: 2 of 4 (03-01, 03-02 complete)
+Status: Executing Phase 03 — Wave 1 complete
+Last activity: 2026-09-24 — Plan 03-02 complete (crawl hygiene + list API perf)
 
-Progress: [████░░░░░░] 40%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 16
+- Total plans completed: 18
 - Average duration: —
 - Total execution time: —
 
@@ -73,7 +73,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02 P04 | 20min | 3 tasks | 8 files |
 | Phase 02 P07 | 33min | 2 tasks | 4 files |
 | Phase 02 P08 | 84min | 2 tasks | 5 files |
-| Phase 02 P09 | 5min | 2 tasks | 3 files |
+| Phase 03 P02 | 20min | 3 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -112,6 +112,9 @@ Recent decisions affecting current work:
 - [Phase 02 Gap]: 02-08: Edit-user modal moved into UsersView (co-located with its trigger, matching the Add-user modal pattern); a source-contract test pins the co-location by indexOf ordering so it cannot drift back into BlacklistView (CR-02)
 - [Phase 02 Gap]: 02-08: handleSaveSubCategory passes the ObjectId string through unchanged (String(subCatParentId) not Number()); sub-category routes validate Types.ObjectId.isValid → 400, never a CastError→500 (CR-04, WR-07, T-02-07/T-02-08)
 - [Phase 02 Gap]: 02-09: verdict selected by position (prefer middle_comparison) via pure selectVerdictPlacement/splitPlacementsByVerdict in placement-order.ts, not placements[0] array index — top_cta stays in remaining/offers area so it renders at the top, middle_comparison becomes the mid-article verdict (WR-02, CMS-03)
+- [Phase 03]: 03-01: view counting replaced read-modify-write article.save() with after() fire-and-forget + ArticleModel.updateOne $inc atomic increment + consumeDedupe 60s rolling window — five rapid views from same IP within window increment exactly 1; ObjectId guard prevents CastError into after handler (PERF-02, D-01/D-02/D-03)
+- [Phase 03]: 03-01: article page data wrapped in React.cache() (per-request dedup between generateMetadata and page body = one DB hit) + unstable_cache() (cross-request cache with per-slug tag article-slug, 60s revalidate); fallback try/catch for vitest without Next runtime (PERF-01, D-04/D-05/D-06/D-07)
+- [Phase 03]: 03-02: legacy /bai-viet/ switched to permanentRedirect (308); /?q= search URLs produce noindex metadata via conditional generateMetadata; sitemap/robots switched from force-dynamic to ISR revalidate=3600; list API responses strip content field with excerpt fallback from stripped HTML; Cache-Control: public s-maxage=60 on 3 public GET endpoints (SEO-01/SEO-03/PERF-01, D-08/D-10/D-11/D-12/D-13)
 
 ### Pending Todos
 
@@ -135,6 +138,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-22T14:20:00.000Z
-Stopped at: Phase 02 complete (9/9 plans, 10/10 truths verified)
-Resume file: None
+Last session: 2026-09-22T10:23:31.774Z
+Stopped at: Phase 03 context gathered
+Resume file: .planning/phases/03-seo-geo-performance-hardening/03-CONTEXT.md

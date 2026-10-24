@@ -16,7 +16,7 @@ export async function GET(req: Request) {
         const filter = { status: 'published' as const, category_id: category._id };
         const [articles, total] = await Promise.all([
           ArticleModel.find(filter)
-            .select('title slug excerpt content thumbnail_url view_count is_featured published_at created_at')
+            .select('-content')
             .sort({ published_at: -1, created_at: -1, _id: -1 })
             .limit(limit),
           ArticleModel.countDocuments(filter),
@@ -32,7 +32,6 @@ export async function GET(req: Request) {
             title: article.title,
             slug: article.slug,
             excerpt: article.excerpt || '',
-            content: article.content,
             thumbnailUrl: article.thumbnail_url || '',
             viewCount: article.view_count,
             isFeatured: article.is_featured,
@@ -51,7 +50,9 @@ export async function GET(req: Request) {
       }),
     );
 
-    return NextResponse.json({ status: 'success', data });
+    return NextResponse.json({ status: 'success', data }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+    });
   } catch (error) {
     console.error('Articles by category API error:', error);
     return NextResponse.json(

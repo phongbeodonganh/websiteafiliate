@@ -27,6 +27,8 @@ export async function GET() {
     return NextResponse.json({
       status: 'success',
       data: topPicks,
+    }, {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     });
   } catch (error) {
     return NextResponse.json({ status: 'error', message: 'Failed to fetch top picks' }, { status: 500 });

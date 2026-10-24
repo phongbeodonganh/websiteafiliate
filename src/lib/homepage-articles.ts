@@ -51,27 +51,30 @@ async function findArticles(limit: number, tab?: "popular" | "editorial", query?
     .limit(limit)
     .lean();
 
-  return articles.map((doc): HomepageArticle => ({
-    id: doc._id.toString(),
-    title: doc.title,
-    slug: doc.slug,
-    excerpt: doc.excerpt || "",
-    content: doc.content || "",
-    isFeatured: Boolean(doc.is_featured),
-    viewCount: Number(doc.view_count || 0),
-    thumbnailUrl: doc.thumbnail_url || "",
-    createdAt: doc.published_at
-      ? new Date(doc.published_at).toISOString()
-      : doc.created_at
-        ? new Date(doc.created_at).toISOString()
-        : "",
-    categoryName: populatedValue(doc.category_id, "name") || null,
-    authorName:
-      populatedValue(doc.author_id, "name") ||
-      populatedValue(doc.author_id, "username") ||
-      null,
-    authorAvatar: populatedValue(doc.author_id, "avatar") || null,
-  }));
+  return articles.map((doc): HomepageArticle => {
+    const strippedContent = (doc.content || '').replace(/<[^>]*>/g, '').trim();
+    const excerptFallback = strippedContent.substring(0, 150).trim() + (strippedContent.length > 150 ? '...' : '');
+    return {
+      id: doc._id.toString(),
+      title: doc.title,
+      slug: doc.slug,
+      excerpt: doc.excerpt || excerptFallback,
+      isFeatured: Boolean(doc.is_featured),
+      viewCount: Number(doc.view_count || 0),
+      thumbnailUrl: doc.thumbnail_url || "",
+      createdAt: doc.published_at
+        ? new Date(doc.published_at).toISOString()
+        : doc.created_at
+          ? new Date(doc.created_at).toISOString()
+          : "",
+      categoryName: populatedValue(doc.category_id, "name") || null,
+      authorName:
+        populatedValue(doc.author_id, "name") ||
+        populatedValue(doc.author_id, "username") ||
+        null,
+      authorAvatar: populatedValue(doc.author_id, "avatar") || null,
+    };
+  });
 }
 
 async function loadHomepageArticles(query?: string): Promise<HomepageArticleData> {

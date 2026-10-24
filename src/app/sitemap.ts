@@ -3,55 +3,65 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, CategoryModel, SettingModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
 
-// Buộc render động mỗi request thay vì cố static-generate lúc `next build` — route
-// này cần MONGODB_URI để đọc danh sách bài viết, mà môi trường build (CI) không có
-// (và không nên có) kết nối DB. Runtime thật (VPS) luôn có DB, nên bài mới publish
-// hiện ngay trong sitemap mà không cần đợi revalidate hay redeploy.
-export const dynamic = 'force-dynamic';
+// D-08: ISR with 3600s revalidation — one Atlas query per hour max; crawlers
+// get cached sitemap between revalidations. CMS writes bust the cache via
+// revalidateSitemap() (wired in 03-03).
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await connectToDatabase();
+  let baseUrl = normalizeSiteUrl();
+  let articleEntries: MetadataRoute.Sitemap = [];
+  let categoryEntries: MetadataRoute.Sitemap = [];
+  let newestContentDate: Date | undefined;
 
-  const settings = await SettingModel.findOne();
-  const baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+  try {
+    await connectToDatabase();
 
-  const [articles, categories] = await Promise.all([
-    ArticleModel.find({ status: 'published' })
-      .select('slug updated_at created_at')
-      .sort({ created_at: -1 })
-      .lean(),
-    CategoryModel.aggregate([
-      {
-        $lookup: {
-          from: ArticleModel.collection.name,
-          let: { categoryId: '$_id' },
-          pipeline: [
-            { $match: { $expr: { $and: [{ $eq: ['$category_id', '$$categoryId'] }, { $eq: ['$status', 'published'] }] } } },
-            { $limit: 1 },
-          ],
-          as: 'publishedArticles',
+    const settings = await SettingModel.findOne();
+    baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
+
+    const [articles, categories] = await Promise.all([
+      ArticleModel.find({ status: 'published' })
+        .select('slug updated_at created_at')
+        .sort({ created_at: -1 })
+        .lean(),
+      CategoryModel.aggregate([
+        {
+          $lookup: {
+            from: ArticleModel.collection.name,
+            let: { categoryId: '$_id' },
+            pipeline: [
+              { $match: { $expr: { $and: [{ $eq: ['$category_id', '$$categoryId'] }, { $eq: ['$status', 'published'] }] } } },
+              { $limit: 1 },
+            ],
+            as: 'publishedArticles',
+          },
         },
-      },
-      { $match: { 'publishedArticles.0': { $exists: true } } },
-      { $project: { slug: 1, created_at: 1 } },
-    ]),
-  ]);
+        { $match: { 'publishedArticles.0': { $exists: true } } },
+        { $project: { slug: 1, created_at: 1 } },
+      ]),
+    ]);
 
-  const articleEntries: MetadataRoute.Sitemap = articles.map((article) => ({
-    url: `${baseUrl}/article/${article.slug}`,
-    lastModified: article.updated_at || article.created_at,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
+    articleEntries = articles.map((article) => ({
+      url: `${baseUrl}/article/${article.slug}`,
+      lastModified: article.updated_at || article.created_at,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
 
-  const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
-    url: `${baseUrl}/category/${category.slug}`,
-    lastModified: category.created_at,
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }));
+    categoryEntries = categories.map((category) => ({
+      url: `${baseUrl}/category/${category.slug}`,
+      lastModified: category.created_at,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    }));
 
-  const newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
+    newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
+  } catch {
+    // Build-time prerender (e.g. CI) has no MongoDB — emit static entries only;
+    // ISR revalidation (or revalidateSitemap() on CMS writes) refreshes at runtime.
+  }
+
   const trustPagesUpdated = new Date('2026-09-04T00:00:00.000Z');
   const staticEntrySeeds: Array<{
     path: string;
