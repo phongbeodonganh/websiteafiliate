@@ -331,12 +331,12 @@ export default function TechFinanceNewsClient({
               <div className={styles.sectionRule} />
               <div className={styles.featuredAccent} />
               <Link className={styles.featuredMedia} href={articleHref(featured)} aria-label={`Read ${featured.title}`}>
-                <PublicArticleImage key={featured.id} src={imageFor(featured)} alt="" loading="eager" fetchPriority="high" />
+                <PublicArticleImage key={featured.id} src={imageFor(featured)} alt={featured.title} loading="eager" fetchPriority="high" />
               </Link>
               <div className={styles.featuredShade} aria-hidden="true" />
               <div className={styles.featuredCopy} key={featured.id} aria-live="polite" aria-atomic="true">
                 <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "LATEST PUBLISHED"}</p>
-                <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
+                <h2 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h2>
                 <p className={styles.lede}>{featuredDescriptionFor(featured)}</p>
                 <p className={styles.meta}>
                   By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
@@ -385,7 +385,7 @@ export default function TechFinanceNewsClient({
                 style={{ '--motion-delay': `${70 + index * 60}ms` } as React.CSSProperties}
               >
                 <div className={styles.bentoCardMedia}>
-                  <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
+                  <PublicArticleImage src={imageFor(article)} alt={article.title} loading="lazy" />
                   <span>{String(rank).padStart(2, "0")}</span>
                 </div>
                 <div className={styles.bentoCardBody}>
@@ -417,7 +417,7 @@ export default function TechFinanceNewsClient({
                     style={{ '--motion-delay': `${190 + index * 55}ms` } as React.CSSProperties}
                   >
                     <div className={styles.bentoCardMedia}>
-                      <PublicArticleImage src={imageFor(article)} alt="" loading="lazy" />
+                      <PublicArticleImage src={imageFor(article)} alt={article.title} loading="lazy" />
                     </div>
                     <div className={styles.bentoCardBody}>
                       <p className={styles.meta}>EDITOR&apos;S PICK &middot; {article.categoryName || "NEWS"} &middot; {readingTime(article)}</p>

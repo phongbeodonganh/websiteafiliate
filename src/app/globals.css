@@ -50,7 +50,7 @@ body, p, span, li, a, button, input, select, textarea {
 }
 
 /* Ensure all title headings in news/article cards are bold Plus Jakarta Sans */
-.featuredCopy h1,
+.featuredCopy h2,
 .latestItem h3,
 .hotItem h3,
 .editorialLead h3,
