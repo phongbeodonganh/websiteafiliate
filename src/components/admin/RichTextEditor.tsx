@@ -35,6 +35,8 @@ import {
   AlignRight,
 } from 'lucide-react';
 import AffiliateInsertModal from './AffiliateInsertModal';
+import ImageUploadModal from './ImageUploadModal';
+import { dialog } from '@/lib/dialog';
 import { AlignableImage } from './editor/alignableImage';
 import { SlashCommand, slashCommandHandlers } from './editor/slashCommand';
 import { SearchAndReplace } from './editor/searchAndReplace';
@@ -84,6 +86,7 @@ function ToolbarButton({
 
 export default function RichTextEditor({ value, onChange, articleId, affiliateLinks }: RichTextEditorProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [isCodeView, setIsCodeView] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
@@ -139,33 +142,35 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
     },
   });
 
-  const uploadAndInsertImage = useCallback(
-    async (file: File) => {
-      setIsUploadingImage(true);
-      try {
-        const token = localStorage.getItem('token');
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('/api/v1/cms/upload', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-        const json = await res.json();
-        if (res.ok && json.status === 'success') {
-          const alt = window.prompt('Enter image alt text for accessibility and SEO (optional):', '') || '';
-          editor?.chain().focus().setImage({ src: json.data.url, alt }).run();
-        } else {
-          alert(`Upload failed: ${json.message || 'Unable to upload the image.'}`);
-        }
-      } catch {
-        alert('An error occurred while uploading the image.');
-      } finally {
-        setIsUploadingImage(false);
+  // Opens the upload modal (file name + alt text); the actual upload runs on confirm.
+  const uploadAndInsertImage = useCallback((file: File) => setPendingImage(file), []);
+
+  const confirmImageUpload = async ({ filename, alt }: { filename: string; alt: string }) => {
+    if (!pendingImage) return;
+    setIsUploadingImage(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', pendingImage);
+      if (filename) formData.append('filename', filename);
+      const res = await fetch('/api/v1/cms/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const json = await res.json();
+      if (res.ok && json.status === 'success') {
+        editor?.chain().focus().setImage({ src: json.data.url, alt }).run();
+        setPendingImage(null);
+      } else {
+        void dialog.alert(`Upload failed: ${json.message || 'Unable to upload the image.'}`);
       }
-    },
-    [editor]
-  );
+    } catch {
+      void dialog.alert('An error occurred while uploading the image.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleImageButtonClick = () => fileInputRef.current?.click();
 
@@ -183,10 +188,15 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
     e.target.value = '';
   };
 
-  const handleSetLink = () => {
+  const handleSetLink = async () => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('Enter a URL:', previousUrl || 'https://');
+    const url = await dialog.prompt('Enter the link URL. Leave it empty to remove the link.', {
+      title: 'Insert link',
+      defaultValue: previousUrl || 'https://',
+      placeholder: 'https://',
+      confirmLabel: 'Apply',
+    });
     if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
@@ -446,6 +456,14 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
           <span>~{Math.max(1, Math.ceil(editor.storage.characterCount.words() / 200))} min read</span>
         </div>
       )}
+
+      <ImageUploadModal
+        file={pendingImage}
+        uploading={isUploadingImage}
+        showAlt
+        onConfirm={confirmImageUpload}
+        onCancel={() => setPendingImage(null)}
+      />
 
       <AffiliateInsertModal
         open={showAffiliateModal}

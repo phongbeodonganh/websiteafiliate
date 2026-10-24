@@ -8,6 +8,9 @@ import { generateObjectId } from '@/lib/utils';
 import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import { ARTICLE_CONTENT_TYPES, isArticleContentType, articleContentTypeLabel, type ArticleContentType } from '@/lib/article-content-types';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import ImageUploadModal from '@/components/admin/ImageUploadModal';
+import DialogHost from '@/components/admin/DialogHost';
+import { dialog } from '@/lib/dialog';
 import {
   LayoutDashboard,
   FileText,
@@ -579,21 +582,25 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(`Added "${data.data.extractedDomain}" to the blacklist.\nUpdated ${data.data.sweep?.totalUpdatedLinks || 0} affected campaigns.`);
+        void dialog.alert(`Added "${data.data.extractedDomain}" to the blacklist.\nUpdated ${data.data.sweep?.totalUpdatedLinks || 0} affected campaigns.`);
         setShowAddBlacklistModal(false);
         setBlProjectName('');
         setBlWebsiteUrl('');
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch {
-      alert('Unable to add this domain to the blacklist.');
+      void dialog.alert('Unable to add this domain to the blacklist.');
     }
   };
 
   const handleQuickBlacklist = async (campaignId: string, campaignName: string) => {
-    const reasonPrompt = prompt(`Add campaign "${campaignName}" to the blacklist?\nEnter a reason (e.g. unpaid commissions):`, 'Unpaid commissions');
+    const reasonPrompt = await dialog.prompt(`Add campaign "${campaignName}" to the blacklist?\nEnter a reason (e.g. unpaid commissions):`, {
+      title: 'Blacklist campaign',
+      defaultValue: 'Unpaid commissions',
+      confirmLabel: 'Blacklist',
+    });
     if (!reasonPrompt) return;
 
     const token = localStorage.getItem('token');
@@ -605,18 +612,18 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(`Campaign "${campaignName}" was added to the blacklist (domain: ${data.data.domainBlacklisted}).\nUpdated ${data.data.sweptCount} campaigns.`);
+        void dialog.alert(`Campaign "${campaignName}" was added to the blacklist (domain: ${data.data.domainBlacklisted}).\nUpdated ${data.data.sweptCount} campaigns.`);
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch {
-      alert('Unable to blacklist this campaign.');
+      void dialog.alert('Unable to blacklist this campaign.');
     }
   };
 
   const handleDeleteBlacklist = async (id: string) => {
-    if (!confirm('Remove this domain or URL from the blacklist?')) return;
+    if (!(await dialog.confirm('Remove this domain or URL from the blacklist?', { confirmLabel: 'Remove' }))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/blacklist?id=${id}`, {
@@ -625,7 +632,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) loadAllData();
     } catch {
-      alert('Unable to remove this entry from the blacklist.');
+      void dialog.alert('Unable to remove this entry from the blacklist.');
     }
   };
 
@@ -726,13 +733,13 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(`Sample spreadsheet imported successfully.\nSaved ${data.data.totalImported} blocked domains and updated ${data.data.totalSweptCampaigns} campaigns.`);
+        void dialog.alert(`Sample spreadsheet imported successfully.\nSaved ${data.data.totalImported} blocked domains and updated ${data.data.totalSweptCampaigns} campaigns.`);
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch {
-      alert('Unable to import the sample spreadsheet.');
+      void dialog.alert('Unable to import the sample spreadsheet.');
     }
   };
 
@@ -749,7 +756,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteSubscriber = async (id: number) => {
-    if (!confirm('Delete this subscriber?')) return;
+    if (!(await dialog.confirm('Delete this subscriber?'))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/subscribers/${id}`, {
@@ -758,7 +765,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) loadSubscribersData();
     } catch (err) {
-      alert('Unable to delete the subscriber.');
+      void dialog.alert('Unable to delete the subscriber.');
     }
   };
 
@@ -768,7 +775,7 @@ export default function AdminDashboardPage() {
       setInsiderDispatchNotice({ type: 'error', text: 'No active Insider recipients are available.' });
       return;
     }
-    if (!confirm(`Send today's Insider digest to ${activeRecipients.toLocaleString('en-US')} active recipient${activeRecipients === 1 ? '' : 's'} now? This manual send will not replace or suppress the next scheduled cron digest.`)) return;
+    if (!(await dialog.confirm(`Send today's Insider digest to ${activeRecipients.toLocaleString('en-US')} active recipient${activeRecipients === 1 ? '' : 's'} now? This manual send will not replace or suppress the next scheduled cron digest.`, { title: 'Send digest now', confirmLabel: 'Send now', variant: 'info' }))) return;
 
     const token = localStorage.getItem('token');
     setSendingInsiderDigest(true);
@@ -870,17 +877,17 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert('Team member added successfully.');
+        void dialog.alert('Team member added successfully.');
         setShowAddUserModal(false);
         setNewUsername('');
         setNewPassword('');
         setNewName('');
         loadUsersData();
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch (err) {
-      alert('Unable to add the team member.');
+      void dialog.alert('Unable to add the team member.');
     }
   };
 
@@ -982,7 +989,7 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(`Article generated successfully.\n\nTitle: "${data.data.title}"\nStatus: Draft\nProduct information was retrieved and links were checked against the blacklist.`);
+        void dialog.alert(`Article generated successfully.\n\nTitle: "${data.data.title}"\nStatus: Draft\nProduct information was retrieved and links were checked against the blacklist.`);
         setShowAiGenerateModal(false);
         loadAllData();
         // Switch to Articles tab and open edit mode
@@ -1009,10 +1016,10 @@ export default function AdminDashboardPage() {
           },
         });
       } else {
-        alert(`Unable to generate the article: ${data.message}`);
+        void dialog.alert(`Unable to generate the article: ${data.message}`);
       }
     } catch {
-      alert('Unable to connect to the article generation service.');
+      void dialog.alert('Unable to connect to the article generation service.');
     } finally {
       setIsGeneratingAiArticle(false);
     }
@@ -1035,21 +1042,21 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert('Affiliate campaign added successfully.');
+        void dialog.alert('Affiliate campaign added successfully.');
         setNewAffName('');
         setNewAffUrl('');
         setNewAffProductUrl('');
         loadAllData();
       } else {
-        alert(data.message);
+        void dialog.alert(data.message);
       }
     } catch (err) {
-      alert('Unable to add the affiliate link.');
+      void dialog.alert('Unable to add the affiliate link.');
     }
   };
 
   const handleDeleteAffiliateLink = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this campaign?')) return;
+    if (!(await dialog.confirm('Are you sure you want to delete this campaign?'))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/affiliate-links/${id}`, {
@@ -1058,7 +1065,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) loadAllData();
     } catch (err) {
-      alert('Unable to delete the campaign.');
+      void dialog.alert('Unable to delete the campaign.');
     }
   };
 
@@ -1073,12 +1080,12 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert('Settings saved successfully.');
+        void dialog.alert('Settings saved successfully.');
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch (err) {
-      alert('Unable to save settings.');
+      void dialog.alert('Unable to save settings.');
     }
   };
 
@@ -1109,21 +1116,21 @@ export default function AdminDashboardPage() {
       }
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(editingCategoryObj?.id ? 'Category updated successfully.' : 'Category created successfully.');
+        void dialog.alert(editingCategoryObj?.id ? 'Category updated successfully.' : 'Category created successfully.');
         setShowCategoryModal(false);
         setEditingCategoryObj(null);
         setCatName(''); setCatSlug(''); setCatDesc(''); setCatMetaTitle(''); setCatMetaDesc('');
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch (err) {
-      alert('Unable to save the category.');
+      void dialog.alert('Unable to save the category.');
     }
   };
 
   const handleDeleteCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this main category? Linked subcategories will be removed.')) return;
+    if (!(await dialog.confirm('Are you sure you want to delete this main category? Linked subcategories will be removed.'))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/categories/${id}`, {
@@ -1132,7 +1139,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) loadAllData();
     } catch (err) {
-      alert('Unable to delete the category.');
+      void dialog.alert('Unable to delete the category.');
     }
   };
 
@@ -1164,21 +1171,21 @@ export default function AdminDashboardPage() {
       }
       const data = await res.json();
       if (res.ok && data.status === 'success') {
-        alert(editingSubCategoryObj?.id ? 'Subcategory updated successfully.' : 'Subcategory created successfully.');
+        void dialog.alert(editingSubCategoryObj?.id ? 'Subcategory updated successfully.' : 'Subcategory created successfully.');
         setShowSubCategoryModal(false);
         setEditingSubCategoryObj(null);
         setSubCatName(''); setSubCatSlug(''); setSubCatDesc(''); setSubCatMetaTitle(''); setSubCatMetaDesc('');
         loadAllData();
       } else {
-        alert(`Error: ${data.message}`);
+        void dialog.alert(`Error: ${data.message}`);
       }
     } catch (err) {
-      alert('Failed to save subcategory');
+      void dialog.alert('Failed to save subcategory');
     }
   };
 
   const handleDeleteSubCategory = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this subcategory?')) return;
+    if (!(await dialog.confirm('Are you sure you want to delete this subcategory?'))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/v1/cms/sub-categories/${id}`, {
@@ -1187,7 +1194,7 @@ export default function AdminDashboardPage() {
       });
       if (res.ok) loadAllData();
     } catch (err) {
-      alert('Error deleting subcategory');
+      void dialog.alert('Error deleting subcategory');
     }
   };
 
@@ -3158,7 +3165,7 @@ export default function AdminDashboardPage() {
 
     const exportToCsv = () => {
       if (subscribersList.length === 0) {
-        alert('There are no subscribers to export.');
+        void dialog.alert('There are no subscribers to export.');
         return;
       }
       const headers = ['ID', 'Email Address', 'Subscription Status', 'Subscription Date', 'Last Digest'];
@@ -3476,6 +3483,8 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      <DialogHost />
+
       {/* D-03: shared auth-fetch toast. Error toasts persist until dismissed
           (rose border); success auto-dismisses (~3s). A 401 clears the token
           and offers a Sign in action. */}
@@ -3779,6 +3788,7 @@ const ArticleEditorForm = ({
   // this guard (D-09).
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [pendingThumbnail, setPendingThumbnail] = useState<File | null>(null);
   // Preview nội dung đang viết dở (chưa lưu) — overlay cục bộ trong chính form
   // này, KHÔNG dùng chung previewArticle/navigate() của trang ngoài, vì
   // navigate() sẽ set editingArticle = null làm unmount hẳn ArticleEditorForm
@@ -3907,7 +3917,7 @@ const ArticleEditorForm = ({
           if (!entitiesText) {
             setEntitiesText(json.data.entities.join(', '));
           }
-          alert('Key takeaways and entities generated successfully.');
+          void dialog.alert('Key takeaways and entities generated successfully.');
           return;
         }
       }
@@ -3915,7 +3925,7 @@ const ArticleEditorForm = ({
     setKeyTakeawaysText(
       `- Explore the solution discussed in "${title || 'AI Insights'}".\n- Review how generative AI can support the workflow.\n- Identify opportunities to automate routine tasks.`
     );
-    alert('Sample key takeaways added. Review them before publishing.');
+    void dialog.alert('Sample key takeaways added. Review them before publishing.');
   };
 
   const addFaqRow = () => {
@@ -4019,15 +4029,21 @@ const ArticleEditorForm = ({
     handleCmsFailure(result.status, result.message);
   };
 
-  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    e.target.value = '';
+    if (file) setPendingThumbnail(file);
+  };
+
+  const confirmThumbnailUpload = async ({ filename }: { filename: string }) => {
+    if (!pendingThumbnail) return;
 
     setIsUploadingThumbnail(true);
     try {
       const token = localStorage.getItem('token');
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', pendingThumbnail);
+      if (filename) formData.append('filename', filename);
 
       const result = await cmsFetch<{ url: string }>('/api/v1/cms/upload', {
         method: 'POST',
@@ -4037,12 +4053,12 @@ const ArticleEditorForm = ({
 
       if (result.ok) {
         setThumbnailUrl(result.data.url);
+        setPendingThumbnail(null);
       } else {
         handleCmsFailure(result.status, result.message);
       }
     } finally {
       setIsUploadingThumbnail(false);
-      e.target.value = '';
     }
   };
 
@@ -4225,6 +4241,12 @@ const ArticleEditorForm = ({
                   />
                 </label>
               </div>
+              <ImageUploadModal
+                file={pendingThumbnail}
+                uploading={isUploadingThumbnail}
+                onConfirm={confirmThumbnailUpload}
+                onCancel={() => setPendingThumbnail(null)}
+              />
               <input
                 type="url"
                 value={thumbnailUrl}

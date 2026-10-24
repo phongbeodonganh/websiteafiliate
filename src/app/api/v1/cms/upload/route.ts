@@ -36,7 +36,14 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const url = await uploadFile(buffer, file.name, file.type);
+    const customName = formData.get('filename');
+    const url = await uploadFile(
+      buffer,
+      file.name,
+      file.type,
+      'uploads',
+      typeof customName === 'string' ? customName : undefined
+    );
 
     return NextResponse.json({ status: 'success', data: { url } }, { status: 201 });
   } catch (error) {
