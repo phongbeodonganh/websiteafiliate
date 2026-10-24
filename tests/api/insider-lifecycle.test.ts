@@ -95,7 +95,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
 
     expect(confirmResponse.status).toBe(200);
     expect(confirmPayload.alreadyActive).toBe(true);
-    expect(confirmPayload.message).toContain('already subscribed to the GoodPick Edit');
+    expect(confirmPayload.message).toContain('already subscribed to TheHavenDeals Edit');
   });
 
   it('keeps a new subscriber pending when confirmation delivery is temporarily unavailable', async () => {
@@ -151,7 +151,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://goodpick.eu/insider/success?status=confirmed');
+    expect(response.headers.get('location')).toBe('https://thehavendeals.com/insider/success?status=confirmed');
   });
 
   it('redirects an invalid confirmation link to the failed page', async () => {
@@ -160,7 +160,7 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://goodpick.eu/insider/failed');
+    expect(response.headers.get('location')).toBe('https://thehavendeals.com/insider/failed');
   });
 
   it('unsubscribes an active subscriber idempotently', async () => {
@@ -197,6 +197,6 @@ describe('Insider confirmation and unsubscribe APIs', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('https://goodpick.eu/insider/success?status=unsubscribed');
+    expect(response.headers.get('location')).toBe('https://thehavendeals.com/insider/success?status=unsubscribed');
   });
 });

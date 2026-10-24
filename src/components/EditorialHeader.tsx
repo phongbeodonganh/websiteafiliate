@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, KeyboardEvent, Suspense, useRef } from 'react';
 import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X, Sparkles, TrendingUp, Compass, Mail } from 'lucide-react';
 import CategorySelector from '@/components/CategorySelector';
-import { BRAND_NAME } from '@/lib/brand';
+import BrandLogo from '@/components/BrandLogo';
 
 interface EditorialHeaderProps {
   initialSearchQuery?: string;
@@ -141,7 +141,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           </span>
           <span className="font-semibold text-white/90 tracking-wider">LIVE EDITION</span>
           <span className="text-white/10">|</span>
-          <span className="text-neutral-400">UK AI & Tech Intelligence Platform</span>
+          <span className="text-neutral-400">Independent product guides & retailer offers</span>
         </div>
         <div className="flex items-center gap-4 text-xs font-sans text-neutral-400">
           <Link href="/hottest" className="hover:text-white transition-colors duration-200 flex items-center gap-1.5">
@@ -169,12 +169,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
             }}
             className="flex items-center gap-2.5 group text-decoration-none"
           >
-            <span className="whitespace-nowrap text-xl sm:text-2xl lg:text-[28px] font-extrabold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif] group-hover:text-neutral-200 transition-colors duration-200">
-              {BRAND_NAME}
-            </span>
-            <span className="hidden xl:inline-block bg-[#0D766E] text-white text-[9px] font-extrabold uppercase px-1.5 py-0.5 tracking-widest font-mono">
-              UK
-            </span>
+            <BrandLogo />
           </Link>
 
           {!isHome && (
@@ -445,7 +440,7 @@ export default function EditorialHeader(props: EditorialHeaderProps) {
       fallback={
         <header className="fixed top-0 left-0 right-0 z-[1000] h-[66px] bg-[#0a0a0a] border-b border-white/[0.06] flex items-center justify-between px-4 sm:px-7">
           <Link href="/" className="text-white text-2xl font-bold font-['Plus_Jakarta_Sans']">
-            {BRAND_NAME}
+            <BrandLogo />
           </Link>
         </header>
       }

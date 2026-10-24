@@ -33,7 +33,7 @@ export type StoreRecord = {
   updatedAt?: string;
 };
 
-export function isOfferActive(offer: StoreOffer, now = Date.now()) {
+export function isOfferActive(offer: Pick<StoreOffer, "active" | "startsAt" | "expiresAt">, now = Date.now()) {
   return offer.active
     && (!offer.startsAt || Date.parse(offer.startsAt) <= now)
     && (!offer.expiresAt || Date.parse(offer.expiresAt) > now);

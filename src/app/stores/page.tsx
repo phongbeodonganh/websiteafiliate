@@ -33,7 +33,7 @@ function hasFilters(filters: StoreFilters) {
 export async function generateMetadata({ searchParams }: DirectoryProps): Promise<Metadata> {
   const filtered = hasFilters(readFilters(await searchParams));
   return {
-    ...createPageMetadata({ title: "All stores: active coupons & promo codes", description: "Find your favourite stores, explore active coupons and promo codes, and filter by category to discover your next place to shop with GoodPick.", path: "/stores" }),
+    ...createPageMetadata({ title: "All stores: active coupons & promo codes", description: "Find your favourite stores, explore active coupons and promo codes, and filter by category to discover your next place to shop with TheHavenDeals.", path: "/stores" }),
     ...(filtered ? { robots: { index: false, follow: true } } : {}),
   };
 }
@@ -56,7 +56,7 @@ export default async function StoresPage({ searchParams }: DirectoryProps) {
   const jsonLd = {
     "@context": "https://schema.org", "@graph": [
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: normalizeSiteUrl() }, { "@type": "ListItem", position: 2, name: "All stores", item: `${normalizeSiteUrl()}/stores` }] },
-      { "@type": "ItemList", name: "GoodPick store directory", numberOfItems: stores.length, itemListElement: stores.map((store, index) => ({ "@type": "ListItem", position: index + 1, name: store.name, url: `${normalizeSiteUrl()}/store/${store.slug}` })) },
+      { "@type": "ItemList", name: "TheHavenDeals store directory", numberOfItems: stores.length, itemListElement: stores.map((store, index) => ({ "@type": "ListItem", position: index + 1, name: store.name, url: `${normalizeSiteUrl()}/store/${store.slug}` })) },
     ],
   };
   return <div className={styles.page}>
@@ -64,7 +64,7 @@ export default async function StoresPage({ searchParams }: DirectoryProps) {
     <main className={styles.main}>
       <nav className={styles.breadcrumb} aria-label="Breadcrumb"><Link href="/">Home</Link><ChevronRight size={13} aria-hidden="true" /><span aria-current="page">All stores</span></nav>
       <header className={styles.hero}>
-        <div className={styles.heroCopy}><p className={styles.eyebrow}><Store size={15} aria-hidden="true" /> The GoodPick store directory</p><h1>Find your next<br /><span>favourite store.</span></h1><p>Find a brand you love, discover somewhere new and explore the coupons and promo codes available before you shop.</p><a href="#find-stores" className={styles.heroCta}>Find your store <ArrowRight size={18} aria-hidden="true" /></a></div>
+        <div className={styles.heroCopy}><p className={styles.eyebrow}><Store size={15} aria-hidden="true" /> TheHavenDeals store directory</p><h1>Find your next<br /><span>favourite store.</span></h1><p>Find a brand you love, discover somewhere new and explore the coupons and promo codes available before you shop.</p><a href="#find-stores" className={styles.heroCta}>Find your store <ArrowRight size={18} aria-hidden="true" /></a></div>
         <div className={styles.heroStats}><div><span className={styles.statIcon}><Store size={22} aria-hidden="true" /></span><strong>{allStores.length}</strong><span>stores to discover</span></div><div><span className={styles.statIcon}><TicketPercent size={22} aria-hidden="true" /></span><strong>{totalOffers}</strong><span>active coupons<br />&amp; promo codes</span></div><p>Real stores. Clear offer details.<br />A simpler way to shop.</p></div>
       </header>
 

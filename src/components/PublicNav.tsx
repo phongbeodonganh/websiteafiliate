@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search,
@@ -107,9 +108,7 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
     router.push('/');
   };
 
-  const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'GoodPick';
 
   return (
     <nav className="fixed top-0 left-0 w-full z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all duration-300 shadow-sm">
@@ -126,32 +125,10 @@ export default function PublicNav({ categoriesList, siteSettings: initialSetting
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-4">
         {/* Brand Logo or Custom Image Logo */}
         <Link href="/" className="text-2xl font-bold tracking-tighter text-slate-900 flex items-center gap-2.5 shrink-0">
-          {logoUrl ? (
-            <img src={logoUrl} alt={siteTitle} className="h-9 object-contain" />
-          ) : (
-            <>
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-md bg-[#0056B3]"
-              >
-                {siteTitle[0] || 'A'}
-              </div>
-              <span className="font-extrabold tracking-tight text-slate-900">
-                {siteTitle}
-              </span>
-            </>
-          )}
+          <BrandLogo />
         </Link>
-
-        {/* Main Desktop Navigation Items */}
         <div className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-700">
-          <Link
-            href="/"
-            className={`transition-colors hover:text-[#0056B3] ${
-              !currentTab && !currentCat ? 'text-[#0056B3] font-bold' : ''
-            }`}
-          >
-            Home
-          </Link>
+          <Link href="/" className="transition-colors hover:text-[#124B3C]">Home</Link>
 
           {/* Interactive Categories & Sub-categories Dropdown */}
           <div className="relative" ref={dropdownRef}>

@@ -11,12 +11,12 @@
   --ed-verdict: #0d766e;
   --ed-cta-hover: #075a54;
   --ed-accent-glow: rgba(13, 118, 110, 0.22);
-  --editorial-accent: #0d766e;
+  --editorial-accent: #124b3c;
   --editorial-accent-soft: #cff6e5;
   --editorial-dark: #17211f;
   --editorial-dark-copy: #d8e4df;
   --editorial-signal: #cff6e5;
-  --editorial-alert: #ff6b35;
+  --editorial-alert: #c5a052;
   --editorial-yellow: #ffd978;
   --editorial-pink: #ffb9aa;
   --editorial-lilac: #c9b8ff;
@@ -46,7 +46,7 @@ body {
 }
 
 /* The CMS keeps its dense dark work surface, with the public poster palette at
-   the route boundary so admin and login still belong to the GoodPick system. */
+   the route boundary so admin and login still belong to TheHavenDeals system. */
 .admin-poster-theme {
   min-height: 100vh;
   background: #17211f;

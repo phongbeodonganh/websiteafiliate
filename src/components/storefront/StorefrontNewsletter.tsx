@@ -33,7 +33,7 @@ export default function StorefrontNewsletter() {
   return (
     <section className={styles.newsletter} aria-labelledby="newsletter-title">
       <div>
-        <p className={styles.newsletterKicker}><Sparkles aria-hidden="true" /> The GoodPick shortlist</p>
+        <p className={styles.newsletterKicker}><Sparkles aria-hidden="true" /> TheHavenDeals shortlist</p>
         <h2 id="newsletter-title">Useful picks, once a week.</h2>
         <p>New recommendations, meaningful price drops and practical buying notes. No daily inbox noise.</p>
       </div>

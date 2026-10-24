@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import { useEffect, useState } from 'react';
 import CategorySelector from '@/components/CategorySelector';
 import { BRAND_NAME, BRAND_TAGLINE } from '@/lib/brand';
@@ -41,7 +42,7 @@ export default function EditorialFooter() {
       <div className="mx-auto grid max-w-[1440px] grid-cols-1 gap-10 px-6 pb-8 pt-12 sm:grid-cols-2 sm:px-8 lg:grid-cols-4">
         <div>
           <Link href="/" className="mb-4 block font-['Plus_Jakarta_Sans',sans-serif] text-[24px] font-extrabold text-white no-underline">
-            GOOD<span className="text-[#f4c95d]">PICK</span>
+            <BrandLogo background="white" />
           </Link>
           <p className="max-w-[300px] text-[12px] leading-relaxed text-neutral-400">{BRAND_TAGLINE}</p>
         </div>
@@ -81,7 +82,7 @@ export default function EditorialFooter() {
       <div className="mx-auto max-w-[1440px] px-6 sm:px-8">
         <p className="m-0 border-t border-white/[0.08] pt-5 text-[11px] leading-relaxed text-neutral-500">
           <strong className="text-neutral-300">Affiliate disclosure:</strong>{' '}
-          GoodPick may earn commission from qualifying purchases. You pay no extra and commercial relationships do not buy a favourable verdict.
+          TheHavenDeals may earn commission from qualifying purchases. You pay no extra and commercial relationships do not buy a favourable verdict.
         </p>
       </div>
 

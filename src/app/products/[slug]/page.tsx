@@ -88,7 +88,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {(product.ratingCount > 0 || product.editorScore) && <section className={styles.socialProof} data-motion="scale">
           <div><Sparkles size={23} /><p className={styles.miniLabel}>Recorded signals</p><h2>Useful data, not invented praise.</h2></div>
           {product.ratingCount > 0 && <div className={styles.proofMetric}><Star size={22} fill="currentColor" /><strong>{product.rating.toFixed(1)}/5</strong><span>From {product.ratingCount.toLocaleString("en-GB")} recorded ratings</span></div>}
-          {product.editorScore && <div className={styles.proofMetric}><BadgeCheck size={22} /><strong>{product.editorScore.toFixed(1)}/10</strong><span>GoodPick editor score</span></div>}
+          {product.editorScore && <div className={styles.proofMetric}><BadgeCheck size={22} /><strong>{product.editorScore.toFixed(1)}/10</strong><span>TheHavenDeals editor score</span></div>}
         </section>}
 
         <div className={styles.contentGrid}>
@@ -98,7 +98,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {(product.specs.length > 0 || product.material || product.originCountry || product.warrantyMonths) && <section className={styles.section} data-motion="fade"><h2>Product details</h2>{product.specs.map((group) => <div className={styles.specGroup} key={group.group}><h3>{group.group}</h3>{group.items.map((item) => <div className={styles.specRow} key={`${item.label}-${item.value}`}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div>)}{(product.material || product.originCountry || product.warrantyMonths) && <div className={styles.specGroup}><h3>Additional details</h3>{product.material && <div className={styles.specRow}><span>Material</span><strong>{product.material}</strong></div>}{product.originCountry && <div className={styles.specRow}><span>Country of origin</span><strong>{product.originCountry}</strong></div>}{product.warrantyMonths && <div className={styles.specRow}><span>Commercial warranty</span><strong>{product.warrantyMonths} months</strong></div>}</div>}</section>}
             {product.faq.length > 0 && <section className={`${styles.section} ${styles.faq}`} data-motion="fade"><h2>Frequently asked questions</h2>{product.faq.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</section>}
           </div>
-          <aside><div className={styles.sideNote}><BadgeCheck size={25} /><h3>Why is this a GoodPick?</h3><p>We assess practical use, compare available offers and state the trade-offs before sending you to a retailer.</p></div><p className={styles.disclosure}><ShieldCheck size={13} /> GoodPick may earn a commission from qualifying purchases. This does not change the price you pay or our editorial verdict.</p></aside>
+          <aside><div className={styles.sideNote}><BadgeCheck size={25} /><h3>Why we chose this product</h3><p>We assess practical use, compare available offers and state the trade-offs before sending you to a retailer.</p></div><p className={styles.disclosure}><ShieldCheck size={13} /> TheHavenDeals may earn a commission from qualifying purchases. This does not change the price you pay or our editorial verdict.</p></aside>
         </div>
       </main>
 

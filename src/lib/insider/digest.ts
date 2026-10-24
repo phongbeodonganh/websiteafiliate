@@ -129,7 +129,7 @@ export function buildInsiderDigestEmail(input: {
       <html lang="en">
         <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
         <body style="margin:0;background:#f4f4f5;color:#111827;font-family:Arial,sans-serif">
-          <div style="display:none;max-height:0;overflow:hidden">Your latest GoodPick product guides for ${escapeHtml(input.dayKey)}.</div>
+          <div style="display:none;max-height:0;overflow:hidden">Your latest TheHavenDeals product guides for ${escapeHtml(input.dayKey)}.</div>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f5;padding:32px 16px">
             <tr><td align="center">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-top:4px solid #173f35">

@@ -5,7 +5,7 @@ import {
   getPreviousGmtPlus12Period,
 } from '@/lib/insider/digest';
 
-describe('GoodPick product digest', () => {
+describe('TheHavenDeals product digest', () => {
   it('selects the GMT+12 calendar day that just ended', () => {
     const period = getPreviousGmtPlus12Period(new Date('2026-08-31T12:00:00.000Z'));
 
@@ -24,8 +24,8 @@ describe('GoodPick product digest', () => {
 
   it('renders latest, hottest, website and unsubscribe links as safe HTML', () => {
     const email = buildInsiderDigestEmail({
-      siteName: 'GoodPick',
-      siteUrl: 'https://goodpick.eu',
+      siteName: 'TheHavenDeals',
+      siteUrl: 'https://thehavendeals.com',
       dayKey: '2026-08-31',
       latest: [{
         title: 'Latest <AI> story',
@@ -39,7 +39,7 @@ describe('GoodPick product digest', () => {
         summary: 'The hottest story today.',
         viewCount: 100,
       }],
-      unsubscribeUrl: 'https://goodpick.eu/api/v1/public/insider/unsubscribe?token=test',
+      unsubscribeUrl: 'https://thehavendeals.com/api/v1/public/insider/unsubscribe?token=test',
     });
 
     expect(email.subject).toContain('2026-08-31');
@@ -48,13 +48,13 @@ describe('GoodPick product digest', () => {
     expect(email.html).toContain('/article/latest-ai-story');
     expect(email.html).toContain('/article/most-read-story');
     expect(email.html).toContain('Unsubscribe');
-    expect(email.text).toContain('https://goodpick.eu');
+    expect(email.text).toContain('https://thehavendeals.com');
   });
 
   it('renders a hottest-only digest when there are no latest stories', () => {
     const email = buildInsiderDigestEmail({
-      siteName: 'GoodPick',
-      siteUrl: 'https://goodpick.eu',
+      siteName: 'TheHavenDeals',
+      siteUrl: 'https://thehavendeals.com',
       dayKey: '2026-08-31',
       latest: [],
       hottest: [{
@@ -63,7 +63,7 @@ describe('GoodPick product digest', () => {
         summary: 'The most-read published story.',
         viewCount: 200,
       }],
-      unsubscribeUrl: 'https://goodpick.eu/unsubscribe',
+      unsubscribeUrl: 'https://thehavendeals.com/unsubscribe',
     });
 
     expect(email.html).not.toContain('>Latest guides</p>');

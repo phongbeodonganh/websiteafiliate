@@ -18,7 +18,8 @@
 .cardCta { align-items: center; background: #edf6f1; border: 1px solid #d8eade; border-radius: 10px; color: #0b6356; display: flex; font-size: 12px; font-weight: 800; gap: 12px; justify-content: space-between; margin-top: auto; min-height: 44px; padding: 0 12px; white-space: nowrap; transition: background .2s, color .2s; }
 .card:hover .cardCta, .card:focus-visible .cardCta { background: #0d766e; border-color: #0d766e; color: #fff; }
 .compact { padding: 15px; }
-.compact .image { height: 92px; }
+.compact .image { align-self: center; background: #fff; border: 0; height: 112px; max-width: 100%; width: fit-content; }
+.compact .image img { height: auto; max-height: 112px; max-width: 100%; width: auto; }
 .compact .copy { padding-top: 14px; }
 .compact .copy > strong { font-size: 16px; min-height: 45px; }
 .compact .offerCount { gap: 6px; margin: 11px 0 16px; }
@@ -26,8 +27,8 @@
 .compact .offerCount > span { font-size: 11px; }
 .compact .offerCount > svg { display: none; }
 
-/* The homepage shelf spans the viewport; only its text aligns to the main grid. */
-.spotlight { --shelf-gutter: max(28px, calc((100vw - 1256px) / 2)); background: linear-gradient(120deg, #eaf4ee, #f5f9f5 55%, #e8f3ee); border-block: 1px solid #dbe7de; margin-block: 12px 28px; overflow: hidden; padding-block: 54px 24px; position: relative; scroll-margin-top: 145px; }
+/* Keep the homepage shelf within the same content grid as adjacent sections. */
+.spotlight { --shelf-gutter: 28px; background: linear-gradient(120deg, #eaf4ee, #f5f9f5 55%, #e8f3ee); border: 1px solid #dbe7de; border-radius: 20px; margin: 12px auto 28px; max-width: 1256px; overflow: hidden; padding-block: 54px 24px; position: relative; scroll-margin-top: 145px; }
 .spotlight::before { background: radial-gradient(ellipse, #a2dbc240, transparent 65%); content: ''; height: 360px; pointer-events: none; position: absolute; right: -60px; top: -200px; width: 650px; }
 .spotlightHeading { align-items: center; display: flex; gap: 30px; justify-content: space-between; padding-inline: var(--shelf-gutter); position: relative; }
 .spotlightEyebrow { align-items: center; color: #0d766e; display: flex; font-size: 10px; font-weight: 850; gap: 8px; letter-spacing: .13em; margin: 0 0 12px; text-transform: uppercase; }
@@ -47,7 +48,7 @@
 .carouselControls button:hover:not(:disabled) { background: #0d766e; border-color: #0d766e; color: #fff; transform: translateY(-2px); }
 .carouselControls button:disabled { cursor: default; opacity: .4; }
 .carouselControls button:focus-visible { outline: 3px solid #0d766e; outline-offset: 3px; }
-.carouselList { display: grid; gap: 16px; grid-auto-columns: 188px; grid-auto-flow: column; list-style: none; margin: 0; overscroll-behavior-x: contain; overflow-x: auto; padding: 14px 28px 25px; scroll-padding-inline: 28px; scroll-snap-type: x mandatory; scrollbar-color: #a6c3b1 transparent; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.carouselList { display: grid; gap: 16px; grid-auto-columns: 188px; grid-auto-flow: column; list-style: none; margin: 0; overscroll-behavior-x: contain; overflow-x: auto; padding: 14px var(--shelf-gutter) 25px; scroll-padding-inline: var(--shelf-gutter); scroll-snap-type: x mandatory; scrollbar-color: #a6c3b1 transparent; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
 .carouselList > li { min-width: 0; scroll-snap-align: start; }
 .carouselList::-webkit-scrollbar { height: 4px; }
 .carouselList::-webkit-scrollbar-thumb { background: #a6c3b1; border-radius: 100px; }
@@ -81,7 +82,13 @@
 .terms summary { cursor: pointer; font-size: 12px; font-weight: 750; }
 .terms p { margin-top: 10px; white-space: pre-line; }
 .notice { color: var(--muted, #64716c); font-size: 13px; line-height: 1.7; }
+@media (max-width: 1300px) { .spotlight { margin-inline: 28px; } }
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+@media (max-width: 700px) {
+  .spotlight { --shelf-gutter: 16px; margin-inline: 16px; }
+  .spotlightHeading { align-items: flex-start; flex-direction: column; gap: 22px; }
+  .allStoresButton { width: 100%; }
+}
 @media (max-width: 600px) {
   .grid { gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid .card { border-radius: 15px; padding: 12px; }
@@ -94,15 +101,15 @@
   .grid .cardCta { font-size: 11px; padding-inline: 10px; }
   .offers { grid-template-columns: 1fr; }
   .offer { padding: 20px; }
-  .spotlight { --shelf-gutter: 20px; margin-block: 0 12px; padding-top: 36px; scroll-margin-top: 120px; }
+  .spotlight { margin-block: 0 12px; padding-top: 36px; scroll-margin-top: 120px; }
   .spotlightHeading { align-items: flex-start; flex-direction: column; gap: 22px; }
   .spotlightHeading h2 { font-size: 30px; }
   .spotlightHeading p:not(.spotlightEyebrow) { font-size: 13px; }
   .allStoresButton { width: 100%; }
   .carouselToolbar { margin-top: 24px; }
   .carouselHint { display: none; }
-  .carouselList { gap: 12px; grid-auto-columns: 166px; padding-inline: 20px; scroll-padding-inline: 20px; }
-  .compact .image { height: 84px; }
+  .carouselList { gap: 12px; grid-auto-columns: 166px; }
+  .compact .image { height: 104px; }
   .compact .offerCount > svg { display: none; }
   .carouselFooter > span:first-child { max-width: 26ch; line-height: 1.5; }
 }

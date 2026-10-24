@@ -106,7 +106,7 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
           isBlacklisted: true,
           projectName: item.project_name || item.extracted_domain,
           matchedDomain: item.extracted_domain,
-          reason: item.reason || 'Flagged by the GoodPick safety review — the destination may be unsafe or commercially unreliable.',
+          reason: item.reason || 'Flagged by TheHavenDeals safety review — the destination may be unsafe or commercially unreliable.',
           blockedCountries: item.blocked_countries || [],
           matchType: 'exact_url',
         };
@@ -126,7 +126,7 @@ export async function checkUrlAgainstBlacklist(urlStr: string): Promise<Blacklis
           isBlacklisted: true,
           projectName: item.project_name || item.extracted_domain,
           matchedDomain: item.extracted_domain || itemRoot,
-          reason: item.reason || 'Flagged by the GoodPick safety review — the destination may be unsafe or commercially unreliable.',
+          reason: item.reason || 'Flagged by TheHavenDeals safety review — the destination may be unsafe or commercially unreliable.',
           blockedCountries: item.blocked_countries || [],
           matchType: 'domain',
         };

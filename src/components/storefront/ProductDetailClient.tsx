@@ -32,7 +32,7 @@ export default function ProductDetailClient({ product }: { product: StorefrontPr
               // Retailer images can come from admin-configured CDN domains.
               // eslint-disable-next-line @next/next/no-img-element
               <img src={product.images[activeImage].url} alt={product.images[activeImage].alt || product.name} width="900" height="900" fetchPriority="high" decoding="async" />
-            ) : <span>GOODPICK</span>}
+            ) : <span>THEHAVENDEALS</span>}
             {product.discountPercent > 0 && <b>Save {product.discountPercent}%</b>}
           </div>
           {product.images.length > 1 && <div className={styles.thumbs} aria-label="Product images">{product.images.map((image, index) => (
@@ -44,8 +44,8 @@ export default function ProductDetailClient({ product }: { product: StorefrontPr
         </div>
 
         <aside className={styles.buyBox}>
-          {product.editorScore && <div className={styles.score}><span>GoodPick score</span><strong>{product.editorScore.toFixed(1)}</strong><small>/10</small></div>}
-          <p className={styles.kicker}>{product.brand || "GoodPick"} · {product.category || "Recommended product"}</p>
+          {product.editorScore && <div className={styles.score}><span>TheHavenDeals score</span><strong>{product.editorScore.toFixed(1)}</strong><small>/10</small></div>}
+          <p className={styles.kicker}>{product.brand || "TheHavenDeals"} · {product.category || "Recommended product"}</p>
           <h1>{product.name}</h1>
           <p className={styles.shortDescription}>{product.shortDescription}</p>
           <div className={styles.priceBlock}><span>Best listed price</span><div><strong>{money(product.price)}</strong>{product.originalPrice && <del>{money(product.originalPrice)}</del>}</div>{primaryOffer?.lastCheckedAt && <small>Offer checked {new Date(primaryOffer.lastCheckedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</small>}</div>

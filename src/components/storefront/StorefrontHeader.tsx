@@ -1,5 +1,6 @@
+import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
-import { Compass, Menu, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { Compass, Menu, Search, ShieldCheck } from "lucide-react";
 import { getStorefrontCategories } from "@/lib/storefront-categories";
 import styles from "./storefront.module.css";
 
@@ -18,9 +19,8 @@ export default async function StorefrontHeader({ query = "" }: { query?: string 
       </div>
       <header className={styles.header}>
         <div className={styles.headerMain}>
-          <Link href="/" className={styles.logo} aria-label="GoodPick home">
-            <span className={styles.logoMark}><Sparkles size={18} /></span>
-            <span>GOOD<span>PICK</span></span>
+          <Link href="/" className={styles.logo} aria-label="TheHavenDeals home">
+            <BrandLogo background="white" />
           </Link>
           <form action="/" className={styles.searchForm} role="search">
             <Search size={18} aria-hidden="true" />
@@ -32,7 +32,8 @@ export default async function StorefrontHeader({ query = "" }: { query?: string 
             <details className={styles.mobileMenu}>
               <summary aria-label="Open product menu"><Menu size={22} /></summary>
               <nav aria-label="Mobile product navigation">
-                <Link href="/#products">All good picks</Link>
+                <Link href="/#deals">Coupons & deals</Link>
+                <Link href="/#products">All product picks</Link>
                 <Link href="/stores">Stores & coupons</Link>
                 {categoryLinks}
                 <Link href="/#guides">Buying guides</Link>
@@ -42,6 +43,7 @@ export default async function StorefrontHeader({ query = "" }: { query?: string 
           </div>
         </div>
         <nav className={styles.categoryNav} aria-label="Product navigation">
+          <Link href="/#deals">Coupons & deals</Link>
           <Link href="/#products">All picks</Link>
           {categoryLinks}
           <Link href="/stores">Stores & coupons</Link>

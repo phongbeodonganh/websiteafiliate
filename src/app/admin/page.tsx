@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import ProductManager from '@/components/admin/ProductManager';
 import StoreManager from '@/components/admin/StoreManager';
@@ -1041,7 +1042,7 @@ export default function AdminDashboardPage() {
     const schema = {
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": settingsData?.businessName || settingsData?.siteTitle || "AIDEALSUK",
+      "name": settingsData?.businessName || settingsData?.siteTitle || "TheHavenDeals",
       "url": settingsData?.canonicalUrl || "https://nexusfinance.global",
       "logo": settingsData?.logoUrl || "https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=300",
       "description": settingsData?.metaDescription || "Institutional Financial Intelligence & Affiliate Deals",
@@ -1071,7 +1072,7 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen bg-[#060608] flex items-center justify-center text-amber-400 font-sans">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin"></div>
-          <span>Đang mở trung tâm quản trị GoodPick...</span>
+          <span>Đang mở trung tâm quản trị TheHavenDeals...</span>
         </div>
       </div>
     );
@@ -2557,7 +2558,7 @@ export default function AdminDashboardPage() {
                 rows={2}
                 value={settingsData?.footerText || ''}
                 onChange={(e) => setSettingsData({ ...settingsData, footerText: e.target.value })}
-                placeholder="© 2026 GoodPick. Bảo lưu mọi quyền..."
+                placeholder="© 2026 TheHavenDeals. Bảo lưu mọi quyền..."
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-xs text-white resize-none"
               />
             </div>
@@ -2617,7 +2618,7 @@ export default function AdminDashboardPage() {
                   type="text"
                   value={settingsData?.canonicalUrl || ''}
                   onChange={(e) => setSettingsData({ ...settingsData, canonicalUrl: e.target.value })}
-                  placeholder="https://goodpick.vn"
+                  placeholder="https://thehavendeals.com"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
                 />
               </div>
@@ -3023,10 +3024,7 @@ export default function AdminDashboardPage() {
           <aside className="w-64 bg-[#0a0a0c]/80 backdrop-blur-xl border-r border-slate-800/60 flex flex-col shadow-2xl">
             <div className="h-20 flex items-center px-6 border-b border-slate-800/60">
               <Link href="/" className="text-xl font-bold tracking-tighter text-white flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                  <span className="text-slate-900 font-bold text-lg">G</span>
-                </div>
-                GOOD<span className="text-emerald-400 font-light">PICK</span> <span className="text-[9px] tracking-widest text-slate-500">CMS</span>
+                <BrandLogo compact />
               </Link>
             </div>
 

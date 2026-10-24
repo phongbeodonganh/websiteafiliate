@@ -1,0 +1,5 @@
+.wordmark { align-items: center; background: #f8f4e6; border-radius: 4px; display: inline-flex; flex: 0 0 auto; justify-content: center; max-width: 100%; padding: 8px 10px; vertical-align: middle; width: 242px; }
+.wordmark img { display: block; height: auto; max-width: 100%; width: 100%; }
+.compact { width: 202px; }
+.white { background: #fff; }
+@media (max-width: 700px) { .wordmark { padding: 7px 8px; width: 214px; } .compact { width: 190px; } }

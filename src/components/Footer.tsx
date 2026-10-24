@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Newspaper, Shield, ExternalLink } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
+import { Shield, ExternalLink } from 'lucide-react';
 
 interface FooterProps {
   bioText?: string;
@@ -12,12 +13,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-[#0056B3] flex items-center justify-center text-white font-bold shadow-md">
-                <Newspaper className="w-5 h-5" />
-              </div>
-              <span className="text-lg font-extrabold text-slate-900">GOODPICK</span>
-            </div>
+            <Link href="/" className="mb-4 inline-flex" aria-label="TheHavenDeals home"><BrandLogo background="white" /></Link>
             <p className="text-sm text-slate-600 max-w-md leading-relaxed mb-4">
               {bioText || 'Your Trusted Source for AI Tool Reviews, Tech News & Exclusive Affiliate Deals. Delivering in-depth software benchmarks, lifetime deals, and revenue automation insights.'}
             </p>
@@ -42,7 +38,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
             <h4 className="text-slate-900 font-bold text-sm mb-4">Quick Links</h4>
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/admin/login" className="hover:text-[#0056B3] transition-colors flex items-center gap-1">CMS Login <ExternalLink className="w-3 h-3" /></Link></li>
-              <li><Link href="/" className="hover:text-[#0056B3] transition-colors">GoodPick</Link></li>
+              <li><Link href="/" className="hover:text-[#0056B3] transition-colors">TheHavenDeals</Link></li>
               <li><Link href="/affiliates" className="hover:text-[#0056B3] transition-colors">Affiliate Deals</Link></li>
             </ul>
           </div>
@@ -54,7 +50,7 @@ export default function Footer({ bioText, copyrightText }: FooterProps) {
             Some links on this site are affiliate links. If you click through and make a purchase, we may earn a commission at no additional cost to you. We only recommend products we genuinely believe in.
           </p>
           <p className="text-center font-medium">
-            {copyrightText || `© ${new Date().getFullYear()} GoodPick. All rights reserved.`}
+            {copyrightText || `© ${new Date().getFullYear()} TheHavenDeals. All rights reserved.`}
           </p>
         </div>
       </div>

@@ -323,7 +323,7 @@ export interface ISetting extends Document {
 }
 
 const SettingSchema = new Schema<ISetting>({
-  site_title: { type: String, default: 'GoodPick' },
+  site_title: { type: String, default: 'TheHavenDeals' },
   metaDescription: { type: String },
   focusKeywords: { type: String },
   canonicalUrl: { type: String },

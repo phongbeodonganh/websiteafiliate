@@ -116,7 +116,7 @@ export function InstitutionalPage({
                 <FileText aria-hidden="true" />
                 <span>{documentCode}</span>
               </div>
-              <div className={styles.documentMark} aria-hidden="true">G</div>
+              <div className={styles.documentMark} aria-hidden="true">H</div>
               <div className={styles.documentMeta}>
                 <span><i className={styles.liveDot} /> {statusLabel}</span>
                 {updated && <span>Updated {updated}</span>}
@@ -151,7 +151,7 @@ export function InstitutionalPage({
                 <p>{asideTitle}</p>
                 <span>{asideCopy}</span>
                 <Link href="/contact">
-                  Contact GoodPick <ArrowRight aria-hidden="true" />
+                  Contact TheHavenDeals <ArrowRight aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -160,7 +160,7 @@ export function InstitutionalPage({
 
         <section className={styles.closingCta} data-motion="rise">
           <div>
-            <p>GOODPICK / TRUST CENTRE</p>
+            <p>THEHAVENDEALS / TRUST CENTRE</p>
             <h2>Clear standards. Better decisions.</h2>
           </div>
           <div className={styles.closingLinks}>

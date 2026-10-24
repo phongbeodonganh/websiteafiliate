@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import styles from './result.module.css';
 
 type InsiderResultProps = {
@@ -27,10 +28,10 @@ export default function InsiderResult({
       <div className={styles.grid} aria-hidden="true" />
       <section className={styles.shell} aria-labelledby="insider-result-title">
         <header className={styles.masthead}>
-          <Link className={styles.brand} href="/" aria-label="GoodPick home">
-            GOODPICK
+          <Link className={styles.brand} href="/" aria-label="TheHavenDeals home">
+            <BrandLogo />
           </Link>
-          <span className={styles.edition}>The GoodPick Edit</span>
+          <span className={styles.edition}>TheHavenDeals Edit</span>
         </header>
 
         <div className={styles.content}>
@@ -68,13 +69,13 @@ export default function InsiderResult({
               <span aria-hidden="true">→</span>
             </Link>
             <Link className={`${styles.button} ${styles.secondary}`} href="/">
-              Back to GoodPick
+              Back to TheHavenDeals
             </Link>
           </div>
         </div>
 
         <footer className={styles.footer}>
-          <span>GOODPICK / THE EDIT</span>
+          <span>THEHAVENDEALS / THE EDIT</span>
           <span>{isSuccess ? 'ACCESS CONFIRMED' : 'LINK NOT CONFIRMED'}</span>
         </footer>
       </section>

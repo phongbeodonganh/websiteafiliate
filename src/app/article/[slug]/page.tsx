@@ -155,7 +155,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   const baseUrl = normalizeSiteUrl(settings?.canonicalUrl as string | undefined);
   const canonicalUrl = `${baseUrl}/article/${doc.slug as string}`;
   const socialImage = normalizeHttpUrl(doc.thumbnail_url as string | undefined, normalizeHttpUrl(settings?.ogImageUrl as string | undefined, DEFAULT_OG_IMAGE));
-  const siteTitle = (settings?.site_title as string) || 'GoodPick';
+  const siteTitle = (settings?.site_title as string) || 'TheHavenDeals';
   return {
     title,
     description,
@@ -236,7 +236,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     dateModified: (doc.updated_at as Date) || (doc.created_at as Date),
     ...(authorName ? { author: { '@type': 'Person', name: authorName } } : {}),
     mainEntityOfPage: `${normalizeSiteUrl(settings?.canonicalUrl as string | undefined)}/article/${doc.slug as string}`,
-    publisher: { '@type': 'Organization', name: (settings?.site_title as string) || 'GoodPick' },
+    publisher: { '@type': 'Organization', name: (settings?.site_title as string) || 'TheHavenDeals' },
   };
 
   const baseUrl = normalizeSiteUrl(settings?.canonicalUrl as string | undefined);
@@ -298,9 +298,9 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
 
             <div className={styles.mastheadFooter}>
               <div className={styles.authorMeta}>
-                <AuthorAvatar className={styles.authorAvatar} name={authorName || 'GoodPick Editorial'} src={authorAvatar} />
+                <AuthorAvatar className={styles.authorAvatar} name={authorName || 'TheHavenDeals Editorial'} src={authorAvatar} />
                 <div className={styles.authorMetaText}>
-                  <p>By {authorName || 'GoodPick Editorial'}</p>
+                  <p>By {authorName || 'TheHavenDeals Editorial'}</p>
                   <div className={styles.metadata}>
                     <span><CalendarDays aria-hidden="true" /> {publishedDate}</span>
                     <span><Clock3 aria-hidden="true" /> {readingMinutes} min read</span>
@@ -380,14 +380,14 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               )}
 
               <section className={styles.authorBio} aria-labelledby="author-bio-title" data-motion="rise">
-                <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'GoodPick Editorial'} src={authorAvatar} />
+                <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'TheHavenDeals Editorial'} src={authorAvatar} />
                 <div>
                   <p className={styles.sectionEyebrow}>About the author</p>
-                  <h2 id="author-bio-title">{authorName || 'GoodPick Editorial'}</h2>
+                  <h2 id="author-bio-title">{authorName || 'TheHavenDeals Editorial'}</h2>
                   <p>
                     {authorName
-                      ? `${authorName} contributes product research and practical buying guidance to GoodPick for shoppers across Europe.`
-                      : 'The GoodPick editorial desk compares physical products, retailer offers and ownership trade-offs—with clarity over hype.'}
+                      ? `${authorName} contributes product research and practical buying guidance to TheHavenDeals for shoppers across Europe.`
+                      : 'TheHavenDeals editorial desk compares physical products, retailer offers and ownership trade-offs—with clarity over hype.'}
                   </p>
                 </div>
               </section>

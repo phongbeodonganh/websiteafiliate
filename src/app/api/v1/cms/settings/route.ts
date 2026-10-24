@@ -16,10 +16,10 @@ export async function GET(req: Request) {
 
     if (!currentSettings) {
       currentSettings = await SettingModel.create({
-        site_title: 'GoodPick',
+        site_title: 'TheHavenDeals',
         metaDescription: 'Independent product reviews, clear price comparisons and practical buying guides for shoppers across Europe.',
         focusKeywords: 'product reviews Europe, price comparison, buying guides, home products, technology deals',
-        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://goodpick.eu',
+        canonicalUrl: process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://thehavendeals.com',
         hreflang: 'en-GB',
         geoTarget: 'EUROPE',
       });

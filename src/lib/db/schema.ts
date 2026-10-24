@@ -224,7 +224,7 @@ const SubscriberSchema = new Schema<ISubscriber>(
 // 9. Setting Schema
 const SettingSchema = new Schema<ISetting>(
   {
-    siteTitle: { type: String, default: 'GoodPick' },
+    siteTitle: { type: String, default: 'TheHavenDeals' },
     metaDescription: { type: String },
     focusKeywords: { type: String },
     canonicalUrl: { type: String },

@@ -18,12 +18,12 @@ export default function ProductCard({ product }: { product: StorefrontProduct })
           // Product images can come from admin-configured retailer CDNs.
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.images[0].url} alt={product.images[0].alt || product.name} width="640" height="640" loading="lazy" decoding="async" />
-        ) : <span className={styles.imagePlaceholder}>GP</span>}
+        ) : <span className={styles.imagePlaceholder}>TH</span>}
         {product.discountPercent > 0 && <span className={styles.discountTag}>Save {product.discountPercent}%</span>}
         {product.trust.authentic && <span className={styles.verifiedTag}><BadgeCheck size={13} /> Details checked</span>}
       </Link>
       <div className={styles.productBody}>
-        <p className={styles.productKicker}>{product.category || "GoodPick selection"}{product.brand ? ` · ${product.brand}` : ""}</p>
+        <p className={styles.productKicker}>{product.category || "TheHavenDeals selection"}{product.brand ? ` · ${product.brand}` : ""}</p>
         <h3><Link href={`/products/${product.slug}`}>{product.name}</Link></h3>
         <div className={styles.passport}>
           <span className={styles.passportLabel}><BadgeCheck size={13} /> Product passport</span>
