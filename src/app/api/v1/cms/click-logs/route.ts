@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   if (user.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin xem được log tracking' },
+      { status: 'error', message: 'Only administrators can view tracking logs.' },
       { status: 403 }
     );
   }
@@ -41,6 +41,6 @@ export async function GET(req: Request) {
       data: logs,
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy log tracking' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load tracking logs.' }, { status: 500 });
   }
 }

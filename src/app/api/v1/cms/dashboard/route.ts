@@ -142,6 +142,6 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     console.error('Dashboard API error:', error);
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy dữ liệu Dashboard' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load dashboard data.' }, { status: 500 });
   }
 }

@@ -1,18 +1,18 @@
 /**
  * CR-02 — source-contract ensuring the Edit-user modal is co-located inside
- * `UsersView`.
+ * `renderUsersView`.
  *
  * Before this fix the modal JSX (`{showEditUserModal && editingUser && (`) lived
- * inside `BlacklistView` while its only trigger (`openEditUserModal(u)`) lived in
- * `UsersView`. Since `renderContent` mounts exactly one view per tab, clicking
+ * inside `renderBlacklistView` while its only trigger (`openEditUserModal(u)`) lived in
+ * `renderUsersView`. Since `renderContent` mounts exactly one view per tab, clicking
  * Edit on the Users tab set state on an unmounted component — nothing rendered.
  *
  * This suite reads the admin page source and asserts:
- *   1. The modal block sits *after* the `const UsersView = () => (` marker and
- *      *before* the `const ArticlesView = () => (` marker (i.e. it is hosted by
- *      the UsersView region).
- *   2. The modal block sits *before* the `const BlacklistView = () => {` marker
- *      (i.e. it has not been re-nested in BlacklistView).
+ *   1. The modal block sits *after* the `const renderUsersView = () => (` marker and
+ *      *before* the `const renderArticlesView = () => (` marker (i.e. it is hosted by
+ *      the renderUsersView region).
+ *   2. The modal block sits *before* the `const renderBlacklistView = () => {` marker
+ *      (i.e. it has not been re-nested in renderBlacklistView).
  *   3. The trigger (`openEditUserModal(u)`) and the modal marker are both
  *      present in the source.
  *   4. The modal content still satisfies UI-SPEC D-14: the title
@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-describe('CR-02 — Edit-user modal is co-located inside UsersView', () => {
+describe('CR-02 — Edit-user modal is co-located inside renderUsersView', () => {
   const source = readFileSync(
     join(process.cwd(), 'src/app/admin/page.tsx'),
     'utf8',
@@ -39,25 +39,25 @@ describe('CR-02 — Edit-user modal is co-located inside UsersView', () => {
     expect(second).toBe(-1);
   });
 
-  it('the modal sits inside the UsersView region (after UsersView marker, before ArticlesView marker)', () => {
-    const usersStart = source.indexOf('const UsersView = () => (');
+  it('the modal sits inside the renderUsersView region (after renderUsersView marker, before renderArticlesView marker)', () => {
+    const usersStart = source.indexOf('const renderUsersView = () => (');
     expect(usersStart).toBeGreaterThan(-1);
-    const articlesStart = source.indexOf('const ArticlesView = () => (');
+    const articlesStart = source.indexOf('const renderArticlesView = () => (');
     expect(articlesStart).toBeGreaterThan(-1);
     const modalIdx = source.indexOf('{showEditUserModal && editingUser && (');
     expect(modalIdx).toBeGreaterThan(-1);
 
-    expect(modalIdx, 'modal is after UsersView marker').toBeGreaterThan(usersStart);
-    expect(modalIdx, 'modal is before ArticlesView marker').toBeLessThan(articlesStart);
+    expect(modalIdx, 'modal is after renderUsersView marker').toBeGreaterThan(usersStart);
+    expect(modalIdx, 'modal is before renderArticlesView marker').toBeLessThan(articlesStart);
   });
 
-  it('the modal has not been re-nested inside BlacklistView', () => {
-    const blacklistStart = source.indexOf('const BlacklistView = () => {');
+  it('the modal has not been re-nested inside renderBlacklistView', () => {
+    const blacklistStart = source.indexOf('const renderBlacklistView = () => {');
     expect(blacklistStart).toBeGreaterThan(-1);
     const modalIdx = source.indexOf('{showEditUserModal && editingUser && (');
     expect(modalIdx).toBeGreaterThan(-1);
 
-    expect(modalIdx, 'modal must appear before BlacklistView (not inside it)').toBeLessThan(blacklistStart);
+    expect(modalIdx, 'modal must appear before renderBlacklistView (not inside it)').toBeLessThan(blacklistStart);
   });
 
   it('the openEditUserModal trigger is present', () => {

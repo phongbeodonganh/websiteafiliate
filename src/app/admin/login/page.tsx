@@ -31,10 +31,10 @@ export default function AdminLoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         router.push('/admin');
       } else {
-        setError(data.message || 'Login failed. Please check your credentials.');
+        setError(data.message || 'Unable to sign in. Check your username and password.');
       }
     } catch (err) {
-      setError('Server connection error.');
+      setError('Unable to connect to the server. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
                 AFFILIATE<span className="text-amber-400 font-light">PRO</span>
               </span>
               <span className="text-[10px] uppercase tracking-widest text-amber-400 font-semibold">
-                Global CMS Portal
+                Content Management
               </span>
             </div>
           </Link>
@@ -63,9 +63,9 @@ export default function AdminLoginPage() {
         {/* Login Card */}
         <div className="bg-[#0a0a0c]/90 border border-slate-800/80 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-white mb-1">CMS Dashboard Login</h1>
+            <h1 className="text-xl font-bold text-white mb-1">Sign In to Your Workspace</h1>
             <p className="text-xs text-slate-400">
-              Sign in with your Administrator or Editor account to manage articles & global affiliate campaigns.
+              Sign in to write articles and access the tools available to your role.
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
                 <span>Authenticating...</span>
               ) : (
                 <>
-                  <span>Sign In To Portal</span>
+                  <span>Sign In</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

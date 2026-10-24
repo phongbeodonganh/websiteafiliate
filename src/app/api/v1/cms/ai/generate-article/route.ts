@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
     if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
-      return NextResponse.json({ status: 'error', message: 'Unauthorized. Yêu cầu quyền Admin/Editor.' }, { status: 401 });
+      return NextResponse.json({ status: 'error', message: 'Administrator or editor access is required.' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     if (!baseUrl) {
       return NextResponse.json(
-        { status: 'error', message: 'Vui lòng chọn một Chiến dịch Affiliate có sẵn hoặc nhập Link Affiliate / Website URL.' },
+        { status: 'error', message: 'Select an affiliate campaign or enter an affiliate link or website URL.' },
         { status: 400 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           status: 'error',
-          message: `🛑 URL ${baseUrl} đã bị chặn bởi Blacklist! Lý do: ${blacklistCheck.reason || 'Không an toàn'}`,
+          message: `🛑 URL ${baseUrl} is on the blacklist. Reason: ${blacklistCheck.reason || 'Restricted URL'}`,
           isBlacklisted: true,
         },
         { status: 422 }
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         {
           status: 'error',
           message:
-            'Vui lòng thiết lập biến môi trường GEMINI_API_KEY hoặc nhập API Key vào trường "Gemini API Key" trong Cài Đặt Hệ Thống.',
+            'Set GEMINI_API_KEY on the server or enter a Gemini API key in Settings.',
         },
         { status: 400 }
       );
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!authorId) {
-      return NextResponse.json({ status: 'error', message: 'Không thể xác định Tác giả (author_id) bài viết.' }, { status: 400 });
+      return NextResponse.json({ status: 'error', message: 'Unable to identify the article author.' }, { status: 400 });
     }
 
     // Convert FAQ into structured array
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       status: 'success',
-      message: '✨ Đã sinh bài viết tự động chuẩn SEO & GEO V5.3 thành công!',
+      message: 'Article generated and saved as a draft.',
       data: {
         articleId: (newArticle as any)._id.toString(),
         title: rawTitle,

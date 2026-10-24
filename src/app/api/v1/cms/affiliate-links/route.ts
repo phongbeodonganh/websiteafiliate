@@ -8,7 +8,7 @@ import { isHttpUrl } from '@/lib/seo';
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
   if (!user) {
-    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+    return NextResponse.json({ status: 'error', message: 'Authentication required. Please sign in.' }, { status: 401 });
   }
 
   try {
@@ -40,7 +40,7 @@ export async function GET(req: Request) {
       data: links,
     });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy danh sách affiliate links' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load affiliate links.' }, { status: 500 });
   }
 }
 
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json(
-      { status: 'error', message: '403 Forbidden - Chỉ Admin mới có quyền quản lý Link Affiliate' },
+      { status: 'error', message: 'Only administrators can manage affiliate links.' },
       { status: 403 }
     );
   }
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
     if (!name || !finalBaseUrl) {
       return NextResponse.json(
-        { status: 'error', message: 'Vui lòng nhập Tên chiến dịch và Link gốc' },
+        { status: 'error', message: 'Enter a campaign name and tracking URL.' },
         { status: 400 }
       );
     }
@@ -72,13 +72,13 @@ export async function POST(req: Request) {
     // finalBaseUrl passed the required-field check.
     if (!isHttpUrl(finalBaseUrl) || !isHttpUrl(finalProductUrl)) {
       return NextResponse.json(
-        { status: 'error', message: 'base_url phải là URL http/https' },
+        { status: 'error', message: 'The tracking URL must use HTTP or HTTPS.' },
         { status: 400 }
       );
     }
 
     const finalCommission = commission || 'N/A';
-    const finalCookie = cookie || '30 ngày';
+    const finalCookie = cookie || '30 Days';
 
     await connectToDatabase();
     const newLink = await AffiliateLinkModel.create({
@@ -114,6 +114,6 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi thêm mới affiliate link' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to create the affiliate link.' }, { status: 500 });
   }
 }

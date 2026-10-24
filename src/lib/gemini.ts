@@ -76,16 +76,14 @@ export async function generateSeoGeoArticleWithGemini(
     // supplied by the caller (the AI route resolves request userApiKey -> env
     // GEMINI_API_KEY -> settings.gemini_api_key per D-07). If all three
     // sources are empty the existing fail-fast below activates with the
-    // actionable bilingual message.
+    // actionable setup message.
     apiKey = process.env.GEMINI_API_KEY,
     language = 'vi-VN',
   } = options;
 
   if (!apiKey) {
     throw new Error(
-      'Chưa cung cấp Gemini API Key. Vui lòng thiết lập biến môi trường GEMINI_API_KEY ' +
-      'hoặc nhập API Key vào trường "Gemini API Key" trong Cài Đặt Hệ Thống. ' +
-      '(Set the GEMINI_API_KEY env var, or add a key via the CMS Settings Gemini API Key field.)'
+      'A Gemini API key is required. Set GEMINI_API_KEY on the server or enter a key in the Gemini API Key field in Settings.'
     );
   }
 
@@ -207,9 +205,8 @@ Hãy viết bài viết hoàn chỉnh và trả về định dạng JSON đúng 
 
   if (lastError.includes('API_KEY_INVALID') || lastError.includes('API key not valid')) {
     throw new Error(
-      `Lỗi API Key (${apiKey.slice(0, 8)}...): Google báo API Key chưa được kích hoạt dịch vụ hoặc không hợp lệ.\n` +
-      `👉 Nếu key tạo từ Google Cloud: Hãy đảm bảo đã bật "Generative Language API" tại https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n` +
-      `👉 Hoặc tạo Key trực tiếp miễn phí 100% tại: https://aistudio.google.com/app/apikey`
+      'Your Gemini API key is invalid or does not have access to the Generative Language API. ' +
+      'Enable the API in Google Cloud Console or create a key at https://aistudio.google.com/app/apikey.'
     );
   }
 

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       const websiteUrl = raw.websiteUrl || raw.website || raw.url || raw.domain;
       if (!websiteUrl) continue;
 
-      const reason = raw.reason || raw.note || raw.Note || 'Bắt Ads - Không trả tiền';
+      const reason = raw.reason || raw.note || raw.Note || 'Unpaid commissions';
       const projectName = raw.projectName || raw.project_name || raw['Tên Dự Án'] || raw.Name || '';
       const blockedCountriesStr = raw.blockedCountries || raw.blocked_countries || raw['Quốc Gia'] || '';
 

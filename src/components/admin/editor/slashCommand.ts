@@ -32,51 +32,51 @@ export const slashCommandHandlers: SlashCommandExternalHandlers = {
 function buildAllItems(): SlashCommandItem[] {
   return [
     {
-      title: 'Tiêu đề H2',
-      description: 'Tiêu đề phụ cấp 1',
+      title: 'Heading 2',
+      description: 'Insert a level 2 heading',
       icon: Heading2,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run(),
     },
     {
-      title: 'Tiêu đề H3',
-      description: 'Tiêu đề phụ cấp 2',
+      title: 'Heading 3',
+      description: 'Insert a level 3 heading',
       icon: Heading3,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run(),
     },
     {
-      title: 'Danh sách',
-      description: 'Danh sách gạch đầu dòng',
+      title: 'Bulleted List',
+      description: 'Insert a bulleted list',
       icon: List,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBulletList().run(),
     },
     {
-      title: 'Danh sách số',
-      description: 'Danh sách đánh số thứ tự',
+      title: 'Numbered List',
+      description: 'Insert a numbered list',
       icon: ListOrdered,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
     },
     {
-      title: 'Trích dẫn',
-      description: 'Khối trích dẫn',
+      title: 'Block Quote',
+      description: 'Insert a block quote',
       icon: Quote,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
     },
     {
-      title: 'Khối code',
-      description: 'Đoạn mã nguồn',
+      title: 'Code Block',
+      description: 'Insert a code block',
       icon: Code,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
     },
     {
-      title: 'Bảng',
-      description: 'Bảng 3x3 có header',
+      title: 'Table',
+      description: 'Insert a 3 × 3 table with a header row',
       icon: TableIcon,
       run: ({ editor, range }) =>
         editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
     },
     {
-      title: 'Ảnh',
-      description: 'Tải ảnh lên từ máy',
+      title: 'Image',
+      description: 'Upload an image from your device',
       icon: ImageIcon,
       run: ({ editor, range }) => {
         editor.chain().focus().deleteRange(range).run();
@@ -85,7 +85,7 @@ function buildAllItems(): SlashCommandItem[] {
     },
     {
       title: 'Affiliate',
-      description: 'Chèn link/nút affiliate',
+      description: 'Insert an affiliate link or button',
       icon: Tag,
       run: ({ editor, range }) => {
         editor.chain().focus().deleteRange(range).run();
@@ -93,8 +93,8 @@ function buildAllItems(): SlashCommandItem[] {
       },
     },
     {
-      title: 'Đường kẻ ngang',
-      description: 'Phân tách nội dung',
+      title: 'Horizontal Rule',
+      description: 'Insert a horizontal divider',
       icon: Minus,
       run: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
     },

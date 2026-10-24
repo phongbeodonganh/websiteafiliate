@@ -5,7 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 export async function POST(req: NextRequest) {
   const user = await getAuthUser(req);
   if (!user) {
-    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+    return NextResponse.json({ status: 'error', message: 'Authentication required. Please sign in.' }, { status: 401 });
   }
 
   try {

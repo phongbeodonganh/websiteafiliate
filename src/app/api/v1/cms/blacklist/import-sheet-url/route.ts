@@ -43,13 +43,13 @@ export async function POST(req: NextRequest) {
     const { sheetUrl } = body;
 
     if (!sheetUrl || typeof sheetUrl !== 'string') {
-      return NextResponse.json({ status: 'error', message: 'Vui lòng cung cấp URL Google Sheet hợp lệ.' }, { status: 400 });
+      return NextResponse.json({ status: 'error', message: 'Enter a valid Google Sheet URL.' }, { status: 400 });
     }
 
     // Extract Document ID and GID from Google Sheet URL
     const docIdMatch = sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if (!docIdMatch || !docIdMatch[1]) {
-      return NextResponse.json({ status: 'error', message: 'Không thể nhận diện Google Sheet ID từ URL.' }, { status: 400 });
+      return NextResponse.json({ status: 'error', message: 'Unable to identify the spreadsheet ID in this URL.' }, { status: 400 });
     }
 
     const docId = docIdMatch[1];
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     const csvResponse = await fetch(csvExportUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     if (!csvResponse.ok) {
       return NextResponse.json(
-        { status: 'error', message: `Không thể tải file CSV từ Google Sheet. Vui lòng đảm bảo Google Sheet đã mở quyền xem (Public). Status: ${csvResponse.status}` },
+        { status: 'error', message: `Unable to download the spreadsheet. Make sure it is publicly accessible. HTTP status: ${csvResponse.status}` },
         { status: 400 }
       );
     }
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       const columns = parseCsvLine(line);
       const projectName = columns[0] || '';
       const websiteUrl = columns[1] || '';
-      const reason = columns[2] || 'Bắt Ads - Không trả tiền';
+      const reason = columns[2] || 'Unpaid commissions';
       const blockedCountriesStr = columns[7] || columns[3] || '';
 
       // Skip header rows or invalid rows
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
           website_url: websiteUrl,
           extracted_domain: domainToSave,
           match_type: 'domain',
-          reason: reason || 'Bắt Ads - Không trả tiền',
+          reason: reason || 'Unpaid commissions',
           blocked_countries: blockedCountries,
           status: 'active',
           created_by: user.userId,
