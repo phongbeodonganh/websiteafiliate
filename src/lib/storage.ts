@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
-import { slugifyFileName } from '@/lib/file-name';
+import { slugifyFileName } from './file-name';
 
 function getEnv(name: string): string {
   const value = process.env[name];
