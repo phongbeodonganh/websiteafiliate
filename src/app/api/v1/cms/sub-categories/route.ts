@@ -7,7 +7,7 @@ import { getAuthUser } from '@/lib/auth';
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
   if (!user) {
-    return NextResponse.json({ status: 'error', message: 'Unauthorized - Vui lòng đăng nhập' }, { status: 401 });
+    return NextResponse.json({ status: 'error', message: 'Authentication required. Please sign in.' }, { status: 401 });
   }
 
   try {
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     }));
     return NextResponse.json({ status: 'success', data });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi lấy danh sách danh mục con' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to load subcategories.' }, { status: 500 });
   }
 }
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     if (!Types.ObjectId.isValid(String(categoryId))) {
-      return NextResponse.json({ status: 'error', message: 'CategoryId không hợp lệ' }, { status: 400 });
+      return NextResponse.json({ status: 'error', message: 'Choose a valid parent category.' }, { status: 400 });
     }
 
     await connectToDatabase();
@@ -75,8 +75,8 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error creating sub-category:', error);
     if (error?.code === 11000) {
-      return NextResponse.json({ status: 'error', message: 'Slug sub-category đã tồn tại' }, { status: 400 });
+      return NextResponse.json({ status: 'error', message: 'This subcategory slug is already in use.' }, { status: 400 });
     }
-    return NextResponse.json({ status: 'error', message: 'Lỗi tạo danh mục con' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to create the subcategory.' }, { status: 500 });
   }
 }

@@ -7,7 +7,7 @@ import { checkRateLimit, recordFailedAttempt, resetRateLimit } from '@/lib/rateL
 
 function tooManyRequests(retryAfterSeconds: number) {
   return NextResponse.json(
-    { status: 'error', message: 'Quá nhiều lần đăng nhập sai. Vui lòng thử lại sau ít phút.' },
+    { status: 'error', message: 'Too many failed sign-in attempts. Please try again in a few minutes.' },
     { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
   );
 }
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { status: 'error', message: 'Vui lòng nhập đầy đủ username và password' },
+        { status: 'error', message: 'Enter your username and password.' },
         { status: 400 }
       );
     }
@@ -37,14 +37,14 @@ export async function POST(req: Request) {
       const result = recordFailedAttempt(rateLimitKey);
       if (result.limited) return tooManyRequests(result.retryAfterSeconds!);
       return NextResponse.json(
-        { status: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
+        { status: 'error', message: 'Incorrect username or password.' },
         { status: 401 }
       );
     }
 
     if (user.status === 'inactive') {
       return NextResponse.json(
-        { status: 'error', message: 'Tài khoản đã bị vô hiệu hóa' },
+        { status: 'error', message: 'Your account has been deactivated. Contact an administrator.' },
         { status: 403 }
       );
     }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       const result = recordFailedAttempt(rateLimitKey);
       if (result.limited) return tooManyRequests(result.retryAfterSeconds!);
       return NextResponse.json(
-        { status: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng' },
+        { status: 'error', message: 'Incorrect username or password.' },
         { status: 401 }
       );
     }
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { status: 'error', message: 'Đã xảy ra lỗi máy chủ nội bộ' },
+      { status: 'error', message: 'An internal server error occurred. Please try again.' },
       { status: 500 }
     );
   }

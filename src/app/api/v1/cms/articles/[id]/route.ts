@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { revalidatePublicArticles } from '@/lib/cache-revalidation';
+import { isArticleContentType } from '@/lib/article-content-types';
 
 // GET /api/v1/cms/articles/:id (Fetch single article for edit form)
 export async function GET(
@@ -44,6 +45,7 @@ export async function GET(
         categoryId: doc.category_id ? (doc.category_id as any)._id?.toString() || doc.category_id.toString() : null,
         subCategoryId: doc.sub_category_id ? (doc.sub_category_id as any)._id?.toString() || doc.sub_category_id.toString() : null,
         title: doc.title,
+        contentType: doc.content_type || null,
         slug: doc.slug,
         excerpt: doc.excerpt,
         content: doc.content,
@@ -99,6 +101,7 @@ export async function PUT(
     const body = await req.json();
     const {
       title,
+      contentType,
       slug,
       excerpt,
       content,
@@ -117,6 +120,11 @@ export async function PUT(
       affiliatePlacements,
     } = body;
 
+    if (contentType !== undefined && !isArticleContentType(contentType)) {
+      return NextResponse.json({ status: 'error', message: 'Content tag must be Review, Case Study, or Guide.' }, { status: 400 });
+    }
+
+    if (contentType !== undefined) existingArticle.content_type = contentType;
     if (title !== undefined) existingArticle.title = title;
     if (slug !== undefined) existingArticle.slug = slugify(slug);
     if (excerpt !== undefined) existingArticle.excerpt = excerpt;
@@ -148,6 +156,7 @@ export async function PUT(
       status: 'success',
       data: {
         id: existingArticle._id.toString(),
+        contentType: existingArticle.content_type || null,
         ...existingArticle.toObject(),
       },
     });

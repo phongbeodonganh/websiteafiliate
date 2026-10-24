@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
+import { ARTICLE_CONTENT_TYPES, type ArticleContentType } from '@/lib/article-content-types';
 
 // 1. User
 export interface IUser extends Document {
@@ -118,6 +119,7 @@ const BlacklistSchema = new Schema<IBlacklist>({
 
 // 5. Article
 export interface IArticle extends Document {
+  content_type?: ArticleContentType;
   author_id: mongoose.Types.ObjectId;
   category_id?: mongoose.Types.ObjectId;
   sub_category_id?: mongoose.Types.ObjectId;
@@ -143,6 +145,7 @@ export interface IArticle extends Document {
 }
 
 const ArticleSchema = new Schema<IArticle>({
+  content_type: { type: String, enum: ARTICLE_CONTENT_TYPES.map((type) => type.value) },
   author_id: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   category_id: { type: Schema.Types.ObjectId, ref: 'Category' },
   sub_category_id: { type: Schema.Types.ObjectId, ref: 'SubCategory' },

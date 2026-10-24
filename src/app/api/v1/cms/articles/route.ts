@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 import { slugify, isValidObjectId } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { revalidatePublicArticles } from '@/lib/cache-revalidation';
+import { isArticleContentType } from '@/lib/article-content-types';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
         subCategoryId: doc.sub_category_id ? (doc.sub_category_id as any)._id?.toString() || doc.sub_category_id.toString() : null,
         subCategoryName: (doc.sub_category_id as any)?.name || null,
         title: doc.title,
+        contentType: doc.content_type || null,
         slug: doc.slug,
         excerpt: doc.excerpt,
         content: doc.content,
@@ -76,6 +78,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const {
       title,
+      contentType,
       slug,
       excerpt,
       content,
@@ -99,6 +102,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: 'error', message: 'Title and Content are required' }, { status: 400 });
     }
 
+    if (contentType !== undefined && !isArticleContentType(contentType)) {
+      return NextResponse.json({ status: 'error', message: 'Content tag must be Review, Case Study, or Guide.' }, { status: 400 });
+    }
+
     await connectToDatabase();
     let finalSlug = slug ? slugify(slug) : slugify(title);
     const existing = await ArticleModel.findOne({ slug: finalSlug });
@@ -117,6 +124,7 @@ export async function POST(req: Request) {
       category_id: categoryId || undefined,
       sub_category_id: subCategoryId || undefined,
       title,
+      content_type: contentType,
       slug: finalSlug,
       excerpt: excerpt || '',
       content: sanitizeArticleContent(content),
@@ -141,6 +149,7 @@ export async function POST(req: Request) {
         status: 'success',
         data: {
           id: newArticle._id.toString(),
+          contentType: newArticle.content_type || null,
           publishedAt: newArticle.published_at || null,
           ...newArticle.toObject(),
         },

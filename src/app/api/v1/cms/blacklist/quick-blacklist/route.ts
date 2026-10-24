@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     // Extract domain & create Blacklist entry
     const { rootDomain, hostname } = extractDomainFromUrl(campaign.base_url);
     const domainToSave = rootDomain || hostname || campaign.base_url;
-    const finalReason = reason || 'Nền tảng lừa đảo / Không trả hoa hồng';
+    const finalReason = reason || 'Suspected fraud or unpaid commissions';
 
     await BlacklistModel.findOneAndUpdate(
       { extracted_domain: domainToSave },

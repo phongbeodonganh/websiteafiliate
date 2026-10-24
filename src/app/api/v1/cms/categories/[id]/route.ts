@@ -43,7 +43,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       },
     });
   } catch (error: any) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi cập nhật danh mục' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to update the category.' }, { status: 500 });
   }
 }
 
@@ -60,8 +60,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await CategoryModel.findByIdAndDelete(id);
     await SubCategoryModel.deleteMany({ category_id: id });
 
-    return NextResponse.json({ status: 'success', message: 'Đã xóa danh mục' });
+    return NextResponse.json({ status: 'success', message: 'Category deleted successfully.' });
   } catch (error) {
-    return NextResponse.json({ status: 'error', message: 'Lỗi xóa danh mục' }, { status: 500 });
+    return NextResponse.json({ status: 'error', message: 'Unable to delete the category.' }, { status: 500 });
   }
 }
