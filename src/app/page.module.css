@@ -279,7 +279,7 @@
   display: none !important;
 }
 
-.featuredCopy h1 {
+.featuredCopy h2 {
   font-size: clamp(38px, 5vw, 74px);
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -309,7 +309,7 @@
   color: #a3a3a3;
 }
 
-.featuredCopy h1 a,
+.featuredCopy h2 a,
 .latestItem h3 a,
 .hotItem h3 a,
 .editorialLead h3 a,
@@ -318,7 +318,7 @@
   text-decoration: none;
 }
 
-.featuredCopy h1 a:hover,
+.featuredCopy h2 a:hover,
 .latestItem h3 a:hover,
 .hotItem h3 a:hover,
 .editorialLead h3 a:hover,
@@ -1296,7 +1296,7 @@
     font-size: 88px;
   }
 
-  .featuredCopy h1 {
+  .featuredCopy h2 {
     font-size: clamp(32px, 9vw, 40px);
     line-height: 1.03;
     margin-bottom: 16px;
@@ -1902,7 +1902,7 @@
   z-index: auto;
 }
 
-.bentoLead .featuredCopy h1 {
+.bentoLead .featuredCopy h2 {
   font-size: clamp(30px, 3.1vw, 46px);
   letter-spacing: -0.035em;
   line-height: 1.12;
@@ -2497,7 +2497,7 @@
     padding: 24px 20px 0;
   }
 
-  .bentoLead .featuredCopy h1 {
+  .bentoLead .featuredCopy h2 {
     font-size: clamp(27px, 7vw, 38px);
   }
 
