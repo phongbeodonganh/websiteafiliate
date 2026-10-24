@@ -32,8 +32,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       status: 'success',
       message: result.alreadyActive
-        ? 'This email is already subscribed to the GoodPick Edit.'
-        : 'Your GoodPick email subscription is confirmed.',
+        ? 'This email is already subscribed to TheHavenDeals Edit.'
+        : 'Your TheHavenDeals email subscription is confirmed.',
       alreadyActive: result.alreadyActive,
     });
   } catch (error) {

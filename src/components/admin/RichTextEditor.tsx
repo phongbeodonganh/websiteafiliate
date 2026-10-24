@@ -52,6 +52,7 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   articleId?: string;
   affiliateLinks: AffiliateLinkOption[];
+  allowDirectLinks?: boolean;
 }
 
 function ToolbarButton({
@@ -82,12 +83,11 @@ function ToolbarButton({
   );
 }
 
-export default function RichTextEditor({ value, onChange, articleId, affiliateLinks }: RichTextEditorProps) {
+export default function RichTextEditor({ value, onChange, articleId, affiliateLinks, allowDirectLinks = false }: RichTextEditorProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [isCodeView, setIsCodeView] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
-  const [rawHtml, setRawHtml] = useState(value);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -110,7 +110,6 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      setRawHtml(html);
       onChange(html);
     },
     editorProps: {
@@ -192,22 +191,29 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    const href = url.trim();
+    if (!/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(href)) {
+      window.alert('Nhập URL http/https hợp lệ hoặc đường dẫn nội bộ.');
+      return;
+    }
+    if (editor.state.selection.empty && !editor.isActive('link')) {
+      const text = window.prompt('Chữ hiển thị của liên kết:', href);
+      if (!text?.trim()) return;
+      editor.chain().focus().insertContent({ type: 'text', text: text.trim(), marks: [{ type: 'link', attrs: { href } }] }).run();
+    } else editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
   };
 
   // Đồng bộ lại editor khi `value` bị set từ bên ngoài (ví dụ nạp content bài
   // cũ sau khi fetch xong, hoặc 1 tính năng khác set thẳng vào state content).
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value || '');
-      setRawHtml(value || '');
+      editor.commands.setContent(value || '', { emitUpdate: false });
     }
   }, [value, editor]);
 
   const handleRawHtmlChange = (val: string) => {
-    setRawHtml(val);
     onChange(val);
-    editor?.commands.setContent(val);
+    editor?.commands.setContent(val, { emitUpdate: false });
   };
 
   if (!editor) return null;
@@ -430,7 +436,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
       {isCodeView ? (
         <textarea
           rows={16}
-          value={rawHtml}
+          value={value}
           onChange={(e) => handleRawHtmlChange(e.target.value)}
           className="w-full bg-slate-950 p-4 text-xs text-amber-300 font-mono focus:outline-none leading-relaxed border-none shadow-inner resize-y"
           placeholder="Nhập HTML thô..."
@@ -452,6 +458,7 @@ export default function RichTextEditor({ value, onChange, articleId, affiliateLi
         onClose={() => setShowAffiliateModal(false)}
         affiliateLinks={affiliateLinks}
         articleId={articleId}
+        allowDirectLinks={allowDirectLinks}
         onInsert={(html) => {
           editor.chain().focus().insertContent(html).run();
         }}

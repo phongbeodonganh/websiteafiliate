@@ -10,7 +10,7 @@ interface BreakingNewsTickerProps {
 }
 
 export default function BreakingNewsTicker({
-  newsText = 'New buying guides and checked retailer offers are now available on GoodPick.',
+  newsText = 'New buying guides and checked retailer offers are now available on TheHavenDeals.',
   newsLink = '/article/case-study-faceless-youtube-automation-ai-avatars',
 }: BreakingNewsTickerProps) {
   return (

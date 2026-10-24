@@ -14,6 +14,7 @@ import {
   normalizeSiteUrl,
   sanitizeStoredJsonLd,
 } from "@/lib/seo";
+import { BRAND_ICON, BRAND_COLORS } from "@/lib/brand";
 import { sanitizeCssColor } from "@/lib/sanitize";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -53,9 +54,9 @@ export async function generateMetadata(): Promise<Metadata> {
         images: [ogImg],
       },
       icons: {
-        icon: sysSettings?.favicon_url || "/favicon/favicon.png",
-        shortcut: sysSettings?.favicon_url || "/favicon/favicon.png",
-        apple: sysSettings?.favicon_url || "/favicon/favicon.png",
+        icon: sysSettings?.favicon_url || BRAND_ICON,
+        shortcut: sysSettings?.favicon_url || BRAND_ICON,
+        apple: "/brand/apple-touch-icon.png",
       },
     };
   } catch {
@@ -81,9 +82,9 @@ export async function generateMetadata(): Promise<Metadata> {
         images: [DEFAULT_OG_IMAGE],
       },
       icons: {
-        icon: "/favicon/favicon.png",
-        shortcut: "/favicon/favicon.png",
-        apple: "/favicon/favicon.png",
+        icon: BRAND_ICON,
+        shortcut: BRAND_ICON,
+        apple: "/brand/apple-touch-icon.png",
       },
     };
   }
@@ -120,8 +121,8 @@ export default async function RootLayout({
   // isValidCssColor; this render boundary is belt-and-braces for historical
   // rows. Defaults match the previous || fallbacks so the happy path is
   // visually unchanged.
-  const primaryColor = sanitizeCssColor(sysSettings?.primary_color, "#111111");
-  const accentColor = sanitizeCssColor(sysSettings?.accent_color, "#000000");
+  const primaryColor = sanitizeCssColor(sysSettings?.primary_color, BRAND_COLORS.green);
+  const accentColor = sanitizeCssColor(sysSettings?.accent_color, BRAND_COLORS.gold);
   const customCss = sysSettings?.custom_css || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
   const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);

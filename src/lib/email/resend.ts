@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
+import { BRAND_NAME } from '../brand';
 
-const DEFAULT_EMAIL_FROM = 'GoodPick <hello@goodpick.eu>';
+const DEFAULT_EMAIL_FROM = 'TheHavenDeals <hello@goodpick.eu>';
 const DEFAULT_EMAIL_REPLY_TO = 'hello@goodpick.eu';
 
 export interface SendEmailInput {
@@ -25,7 +26,9 @@ export class EmailConfigurationError extends Error {
 
 function getEmailConfig() {
   const apiKey = process.env.RESEND_API?.trim();
-  const from = process.env.EMAIL_FROM?.trim() || DEFAULT_EMAIL_FROM;
+  const configuredFrom = process.env.EMAIL_FROM?.trim() || DEFAULT_EMAIL_FROM;
+  const mailbox = configuredFrom.match(/<([^>]+)>/)?.[1] || configuredFrom;
+  const from = `${BRAND_NAME} <${mailbox}>`;
   const replyTo = process.env.EMAIL_REPLY_TO?.trim() || DEFAULT_EMAIL_REPLY_TO;
 
   if (!apiKey) throw new EmailConfigurationError('RESEND_API is not configured');

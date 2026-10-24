@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import { useState, useEffect } from 'react';
-import { Newspaper, ShieldCheck, UserCheck, Menu, X, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck, UserCheck, Menu, X, ArrowUpRight } from 'lucide-react';
 
 interface PublicSiteSettings {
   accentColor?: string;
@@ -48,9 +49,7 @@ export default function Header() {
   }, []);
 
   const accentColor = siteSettings?.accentColor || '#f59e0b';
-  const logoUrl = siteSettings?.logoUrl || '';
   const bannerText = siteSettings?.bannerText || '';
-  const siteTitle = siteSettings?.siteTitle || 'GoodPick';
 
   return (
     <header
@@ -73,26 +72,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            {logoUrl ? (
-              <img src={logoUrl} alt={siteTitle} className="h-9 object-contain" />
-            ) : (
-              <>
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-950 font-bold text-lg shadow-lg group-hover:scale-105 transition-transform duration-200"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  <Newspaper className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-xl font-bold text-white">
-                    {siteTitle}
-                  </span>
-                  <span className="block text-[10px] uppercase tracking-widest font-semibold" style={{ color: accentColor }}>
-                    Institutional Insights & Review Deals
-                  </span>
-                </div>
-              </>
-            )}
+            <BrandLogo />
           </Link>
 
           {/* Navigation Desktop */}

@@ -9,7 +9,7 @@ import { getStoreCatalogue } from "@/lib/stores/public";
 import { createPageMetadata } from "@/lib/seo";
 import styles from "../marketplace-pages.module.css";
 
-export const metadata: Metadata = { ...createPageMetadata({ title: "Search deals and stores", description: "Search GoodPick coupon codes, stores and saving guides.", path: "/search" }), robots: { index: false, follow: true } };
+export const metadata: Metadata = { ...createPageMetadata({ title: "Search deals and stores", description: "Search TheHavenDeals coupon codes, stores and saving guides.", path: "/search" }), robots: { index: false, follow: true } };
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const params = await searchParams; const query = typeof params.q === "string" ? params.q.trim() : ""; const needle=query.toLowerCase();

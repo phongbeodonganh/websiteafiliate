@@ -111,11 +111,11 @@ export default function TechFinanceNewsClient({
   const activeQuery = searchParams.get("q")?.trim() || "";
   const insiderResult = searchParams.get("insider");
   const insiderMessage = insiderResult === 'confirmed'
-    ? 'Your GoodPick email subscription is confirmed.'
+    ? 'Your TheHavenDeals email subscription is confirmed.'
     : insiderResult === 'already-active'
-      ? 'This email is already subscribed to the GoodPick Edit.'
+      ? 'This email is already subscribed to TheHavenDeals Edit.'
     : insiderResult === 'unsubscribed'
-      ? 'You have been unsubscribed from the GoodPick Edit.'
+      ? 'You have been unsubscribed from TheHavenDeals Edit.'
       : insiderResult === 'invalid'
         ? 'This Insider link is invalid or has expired.'
         : '';
@@ -237,9 +237,9 @@ export default function TechFinanceNewsClient({
             </div>
           </div>
 
-          <aside className={styles.signalPanel} aria-label="GoodPick buying desk">
+          <aside className={styles.signalPanel} aria-label="TheHavenDeals buying desk">
             <div className={styles.signalPanelHeader}>
-              <span>GOODPICK / BUYING DESK</span>
+              <span>THEHAVENDEALS / BUYING DESK</span>
               <span className={styles.signalStatus}><i aria-hidden="true" /> Current edition</span>
             </div>
             <p className={styles.signalKicker}>What we track</p>
@@ -339,7 +339,7 @@ export default function TechFinanceNewsClient({
                 <h1 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h1>
                 <p className={styles.lede}>{featuredDescriptionFor(featured)}</p>
                 <p className={styles.meta}>
-                  By {featured.authorName || "GoodPick Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "BUYING GUIDE"}
+                  By {featured.authorName || "TheHavenDeals Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "BUYING GUIDE"}
                 </p>
                 <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <span aria-hidden="true">&rarr;</span></Link>
               </div>

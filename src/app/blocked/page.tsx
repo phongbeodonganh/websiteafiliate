@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic';
 // public site content is English). Blacklist-supplied data values themselves
 // always render verbatim — this fallback only applies when the DB reason is empty.
 const DEFAULT_BLOCK_REASON =
-  'Flagged by the GoodPick safety review — the destination may be unsafe or commercially unreliable.';
+  'Flagged by TheHavenDeals safety review — the destination may be unsafe or commercially unreliable.';
 
 type BlockedPageProps = {
   searchParams: Promise<{ ref?: string | string[] }>;
@@ -94,7 +94,7 @@ export default async function BlockedPage({ searchParams }: BlockedPageProps) {
 
   return (
     <main className="relative isolate grid min-h-svh place-items-center overflow-hidden bg-[#FFD978] p-4 text-[var(--editorial-ink)] sm:p-8">
-      {/* Flat poster backdrop shared with the public GoodPick surfaces. */}
+      {/* Flat poster backdrop shared with the public TheHavenDeals surfaces. */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10"

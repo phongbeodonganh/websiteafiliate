@@ -7,6 +7,7 @@ import StorefrontFooter from "@/components/storefront/StorefrontFooter";
 import ProductDetailClient, { OfferList } from "@/components/storefront/ProductDetailClient";
 import ProductCard from "@/components/storefront/ProductCard";
 import { getStorefrontProduct, getStorefrontProducts } from "@/lib/products/public";
+import { prepareAffiliateContent } from "@/lib/affiliate-content";
 import { normalizeSiteUrl, serializeJsonLd } from "@/lib/seo";
 import styles from "@/components/storefront/product-detail.module.css";
 import storefrontStyles from "@/components/storefront/storefront.module.css";
@@ -79,7 +80,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <main className={styles.content}>
         <section className={styles.decisionGrid} aria-label="Product fit and trade-offs">
           <div className={styles.painPanel} data-motion="fade"><CircleAlert size={24} /><p className={styles.miniLabel}>What to think about</p><h2>Do not buy on specifications alone.</h2><ul>{painPoints.map((item) => <li key={item}>{item}</li>)}</ul></div>
-          <div className={styles.solutionPanel} data-motion="fade"><Lightbulb size={24} /><p className={styles.miniLabel}>Where it fits</p><h2>Who is {product.name} right for?</h2><p>{product.description || product.shortDescription}</p></div>
+          <div className={styles.solutionPanel} data-motion="fade"><Lightbulb size={24} /><p className={styles.miniLabel}>Where it fits</p><h2>Who is {product.name} right for?</h2><p>{product.shortDescription}</p></div>
         </section>
 
         {benefits.length > 0 && <section className={styles.benefitSection} data-motion="fade"><div><p className={styles.miniLabel}>Core benefits</p><h2>What you actually get</h2></div><div className={styles.benefitGrid}>{benefits.map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, "0")}</span><strong>{item}</strong></div>)}</div></section>}
@@ -87,17 +88,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
         {(product.ratingCount > 0 || product.editorScore) && <section className={styles.socialProof} data-motion="scale">
           <div><Sparkles size={23} /><p className={styles.miniLabel}>Recorded signals</p><h2>Useful data, not invented praise.</h2></div>
           {product.ratingCount > 0 && <div className={styles.proofMetric}><Star size={22} fill="currentColor" /><strong>{product.rating.toFixed(1)}/5</strong><span>From {product.ratingCount.toLocaleString("en-GB")} recorded ratings</span></div>}
-          {product.editorScore && <div className={styles.proofMetric}><BadgeCheck size={22} /><strong>{product.editorScore.toFixed(1)}/10</strong><span>GoodPick editor score</span></div>}
+          {product.editorScore && <div className={styles.proofMetric}><BadgeCheck size={22} /><strong>{product.editorScore.toFixed(1)}/10</strong><span>TheHavenDeals editor score</span></div>}
         </section>}
 
         <div className={styles.contentGrid}>
           <div className={styles.mainContent}>
-            <section className={styles.section} data-motion="fade"><h2>The quick verdict</h2><p>{product.description || product.shortDescription}</p>{(product.pros.length > 0 || product.cons.length > 0) && <div className={styles.prosCons}><div className={styles.pros}><h3>Reasons to consider it</h3><ul>{product.pros.map((item) => <li key={item}>{item}</li>)}</ul></div><div className={styles.cons}><h3>Know before you buy</h3><ul>{product.cons.map((item) => <li key={item}>{item}</li>)}</ul></div></div>}</section>
+            <section className={styles.section} data-motion="fade"><h2>The quick verdict</h2><div className={styles.richContent} dangerouslySetInnerHTML={{ __html: prepareAffiliateContent(product.description || product.shortDescription, `/api/v1/public/products/redirect?product_id=${product.id}&placement=article_box`).html }} />{(product.pros.length > 0 || product.cons.length > 0) && <div className={styles.prosCons}><div className={styles.pros}><h3>Reasons to consider it</h3><ul>{product.pros.map((item) => <li key={item}>{item}</li>)}</ul></div><div className={styles.cons}><h3>Know before you buy</h3><ul>{product.cons.map((item) => <li key={item}>{item}</li>)}</ul></div></div>}</section>
             {product.offers.length > 0 && <section className={styles.section} data-motion="fade"><h2>Compare retailers</h2><p>Look beyond the headline price. Delivery, returns, warranty and seller status shape the real value.</p><OfferList product={product} /></section>}
             {(product.specs.length > 0 || product.material || product.originCountry || product.warrantyMonths) && <section className={styles.section} data-motion="fade"><h2>Product details</h2>{product.specs.map((group) => <div className={styles.specGroup} key={group.group}><h3>{group.group}</h3>{group.items.map((item) => <div className={styles.specRow} key={`${item.label}-${item.value}`}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div>)}{(product.material || product.originCountry || product.warrantyMonths) && <div className={styles.specGroup}><h3>Additional details</h3>{product.material && <div className={styles.specRow}><span>Material</span><strong>{product.material}</strong></div>}{product.originCountry && <div className={styles.specRow}><span>Country of origin</span><strong>{product.originCountry}</strong></div>}{product.warrantyMonths && <div className={styles.specRow}><span>Commercial warranty</span><strong>{product.warrantyMonths} months</strong></div>}</div>}</section>}
             {product.faq.length > 0 && <section className={`${styles.section} ${styles.faq}`} data-motion="fade"><h2>Frequently asked questions</h2>{product.faq.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</section>}
           </div>
-          <aside><div className={styles.sideNote}><BadgeCheck size={25} /><h3>Why is this a GoodPick?</h3><p>We assess practical use, compare available offers and state the trade-offs before sending you to a retailer.</p></div><p className={styles.disclosure}><ShieldCheck size={13} /> GoodPick may earn a commission from qualifying purchases. This does not change the price you pay or our editorial verdict.</p></aside>
+          <aside><div className={styles.sideNote}><BadgeCheck size={25} /><h3>Why we chose this product</h3><p>We assess practical use, compare available offers and state the trade-offs before sending you to a retailer.</p></div><p className={styles.disclosure}><ShieldCheck size={13} /> TheHavenDeals may earn a commission from qualifying purchases. This does not change the price you pay or our editorial verdict.</p></aside>
         </div>
       </main>
 

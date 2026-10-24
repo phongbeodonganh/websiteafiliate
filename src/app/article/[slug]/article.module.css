@@ -309,7 +309,7 @@
   white-space: pre;
 }
 .articleContent pre::before { background: #ff6b6b; box-shadow: 12px 0 #f6c85f, 24px 0 var(--article-mint); content: ''; height: 7px; left: 20px; position: absolute; top: 21px; width: 7px; }
-.articleContent pre::after { color: rgba(255, 255, 255, 0.32); content: 'GOODPICK / NOTES'; font-size: 8px; font-weight: 800; letter-spacing: 0.14em; position: absolute; right: 19px; top: 18px; }
+.articleContent pre::after { color: rgba(255, 255, 255, 0.32); content: 'THEHAVENDEALS / NOTES'; font-size: 8px; font-weight: 800; letter-spacing: 0.14em; position: absolute; right: 19px; top: 18px; }
 .articleContent code { background: var(--editorial-accent-soft); border: 1px solid rgba(25, 71, 209, 0.16); color: #1239ad; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.84em; padding: 0.15em 0.38em; }
 .articleContent pre code { background: transparent; border: 0; color: inherit; font-size: inherit; padding: 0; }
 

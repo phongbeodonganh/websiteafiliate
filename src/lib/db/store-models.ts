@@ -22,10 +22,19 @@ const StoreSchema = new Schema<StoredStore>({
     startsAt: String, expiresAt: String, checkedAt: String,
     active: { type: Boolean, default: true },
   }],
-  status: { type: String, enum: ["draft", "published", "archived"], default: "draft" },
+  status: { type: String, enum: ["draft", "published", "archived", "deleted"], default: "draft" },
   showOnHomepage: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
 }, { timestamps: true });
 
 StoreSchema.index({ status: 1, showOnHomepage: 1, sortOrder: 1 });
 export const StoreModel: Model<StoredStore> = mongoose.models.Store || mongoose.model<StoredStore>("Store", StoreSchema);
+
+// Separate counters also work for built-in stores without creating CMS replacements.
+interface StoreMetrics { slug: string; viewCount: number; clickCount: number }
+const StoreMetricsSchema = new Schema<StoreMetrics>({
+  slug: { type: String, required: true, unique: true },
+  viewCount: { type: Number, default: 0 },
+  clickCount: { type: Number, default: 0 },
+});
+export const StoreMetricsModel: Model<StoreMetrics> = mongoose.models.StoreMetrics || mongoose.model<StoreMetrics>("StoreMetrics", StoreMetricsSchema);

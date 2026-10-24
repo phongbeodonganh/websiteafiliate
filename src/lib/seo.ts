@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
+import { BRAND_DOMAIN, BRAND_NAME } from './brand';
 
-export const DEFAULT_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://goodpick.eu';
-export const DEFAULT_SITE_NAME = 'GoodPick';
+export const DEFAULT_SITE_URL = BRAND_DOMAIN;
+export const DEFAULT_SITE_NAME = BRAND_NAME;
 export const DEFAULT_DESCRIPTION =
   'Human-checked coupon codes, current store deals and honest saving guides for shoppers across Europe.';
 export const DEFAULT_OG_IMAGE =
@@ -59,7 +60,7 @@ export function createPageMetadata({
   path: string;
 }): Metadata {
   return {
-    title,
+    title: path === "/" ? `${BRAND_NAME} | ${title}` : title,
     description,
     alternates: { canonical: path },
     openGraph: {

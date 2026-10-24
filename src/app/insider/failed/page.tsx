@@ -3,7 +3,7 @@ import InsiderResult from '../InsiderResult';
 
 export const metadata: Metadata = {
   title: 'Insider confirmation failed',
-  description: 'This GoodPick subscription link could not be confirmed.',
+  description: 'This TheHavenDeals subscription link could not be confirmed.',
   robots: { index: false, follow: false },
 };
 

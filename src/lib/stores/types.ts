@@ -25,13 +25,15 @@ export type StoreRecord = {
   content: string;
   faqs: { question: string; answer: string }[];
   offers: StoreOffer[];
-  status: "draft" | "published" | "archived";
+  status: "draft" | "published" | "archived" | "deleted";
+  viewCount?: number;
+  clickCount?: number;
   showOnHomepage: boolean;
   sortOrder: number;
   updatedAt?: string;
 };
 
-export function isOfferActive(offer: StoreOffer, now = Date.now()) {
+export function isOfferActive(offer: Pick<StoreOffer, "active" | "startsAt" | "expiresAt">, now = Date.now()) {
   return offer.active
     && (!offer.startsAt || Date.parse(offer.startsAt) <= now)
     && (!offer.expiresAt || Date.parse(offer.expiresAt) > now);

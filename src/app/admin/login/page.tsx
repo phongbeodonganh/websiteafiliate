@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, User, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState('');
@@ -46,17 +47,7 @@ export default function AdminLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/20 group-hover:scale-105 transition-transform duration-200">
-              <span className="font-bold text-2xl">G</span>
-            </div>
-            <div className="text-left">
-              <span className="text-2xl font-bold tracking-tighter text-white block">
-                GOOD<span className="text-emerald-400 font-light">PICK</span> <span className="text-[9px] tracking-widest text-slate-500">CMS</span>
-              </span>
-              <span className="text-[10px] uppercase tracking-widest text-amber-400 font-semibold">
-                Trung tâm quản trị affiliate
-              </span>
-            </div>
+            <BrandLogo />
           </Link>
         </div>
 

@@ -3,10 +3,11 @@ import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 import { getAuthUser } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { StoreModel } from "@/lib/db/store-models";
-import { UserModel } from "@/lib/db/models";
+import { StoreModel, StoreMetricsModel } from "@/lib/db/store-models";
+import { UserModel, CategoryModel } from "@/lib/db/models";
+import { getCategory } from "@/lib/marketplace";
 import { normalizeStoreInput } from "./validation";
-import { getStoreRecords } from "./public";
+import { getStoreRecords, legacyStoreRecords } from "./public";
 
 function failure(message: string, status: number) {
   return NextResponse.json({ status: "error", message }, { status });
@@ -24,21 +25,33 @@ export async function handleStores(req: Request, id?: string) {
     // Re-check the current role, including tokens issued before a demotion.
     const account = await UserModel.findById(user.userId).select("role");
     if (account?.role !== "admin") return failure("Chỉ quản trị viên được quản lý store và coupon.", 403);
-    if (id && !/^[a-f\d]{24}$/i.test(id)) return failure("ID store không hợp lệ.", 400);
+    const legacy = id?.startsWith("legacy-") && req.method === "DELETE" ? legacyStoreRecords().find((store) => `legacy-${store.slug}` === id) : null;
+    if (id && !legacy && !/^[a-f\d]{24}$/i.test(id)) return failure("ID store không hợp lệ.", 400);
     await connectToDatabase();
     if (req.method === "GET") {
-      return NextResponse.json({ status: "success", data: await getStoreRecords() });
+      const metrics = await StoreMetricsModel.find().lean();
+      const counts = new Map(metrics.map((metric) => [metric.slug, metric]));
+      const data = (await getStoreRecords()).filter((store) => store.status !== "deleted").map((store) => ({
+        ...store, viewCount: counts.get(store.slug)?.viewCount || 0, clickCount: counts.get(store.slug)?.clickCount || 0,
+      }));
+      return NextResponse.json({ status: "success", data });
     }
-    const existing = id ? await StoreModel.findById(new Types.ObjectId(id)) : null;
+    const existing = legacy
+      ? await StoreModel.findOne({ slug: legacy.slug }) || new StoreModel(legacy)
+      : id ? await StoreModel.findById(new Types.ObjectId(id)) : null;
     if (id && !existing) return failure("Store không còn tồn tại.", 404);
     if (req.method === "DELETE" && existing) {
-      existing.status = "archived";
+      if (existing.status === "deleted") return failure("Store đã bị xoá.", 404);
+      // Keep a tombstone so built-in stores cannot reappear after deletion.
+      existing.status = new URL(req.url).searchParams.get("action") === "delete" ? "deleted" : "archived";
       await existing.save();
       invalidate(existing.slug);
-      return NextResponse.json({ status: "success", data: { id, status: "archived" } });
+      return NextResponse.json({ status: "success", data: { id: existing._id.toString(), status: existing.status } });
     }
     const normalized = normalizeStoreInput(await req.json());
     if (normalized.errors.length) return failure(normalized.errors.join(" · "), 400);
+    if (existing?.status === "deleted") return failure("Store đã bị xoá.", 404);
+    if (normalized.data.categorySlug && !getCategory(normalized.data.categorySlug) && !await CategoryModel.exists({ slug: normalized.data.categorySlug })) return failure("Danh mục không còn tồn tại. Hãy chọn lại danh mục.", 400);
     if (existing && normalized.data.slug !== existing.slug) return failure("Đường dẫn store đã lưu không thể thay đổi.", 400);
     const store = existing || new StoreModel();
     store.set(normalized.data);

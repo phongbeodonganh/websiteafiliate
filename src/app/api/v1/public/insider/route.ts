@@ -135,7 +135,7 @@ export async function POST(req: Request) {
       status: 'success',
       message: alreadyActive
         ? 'A confirmation check was sent. The link will show that your subscription is already active.'
-        : 'Please check your inbox and confirm your GoodPick deal alerts.',
+        : 'Please check your inbox and confirm your TheHavenDeals deal alerts.',
     });
   } catch (error) {
     console.error('Create Insider API error:', error);

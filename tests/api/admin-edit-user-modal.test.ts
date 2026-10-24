@@ -9,7 +9,7 @@
  *
  * This suite reads the admin page source and asserts:
  *   1. The modal block sits *after* the `const UsersView = () => (` marker and
- *      *before* the `const ArticlesView = () => (` marker (i.e. it is hosted by
+ *      *before* the `const LinksView = () => (` marker (i.e. it is hosted by
  *      the UsersView region).
  *   2. The modal block sits *before* the `const BlacklistView = () => {` marker
  *      (i.e. it has not been re-nested in BlacklistView).
@@ -39,16 +39,16 @@ describe('CR-02 — Edit-user modal is co-located inside UsersView', () => {
     expect(second).toBe(-1);
   });
 
-  it('the modal sits inside the UsersView region (after UsersView marker, before ArticlesView marker)', () => {
+  it('the modal sits inside the UsersView region (after UsersView marker, before LinksView marker)', () => {
     const usersStart = source.indexOf('const UsersView = () => (');
     expect(usersStart).toBeGreaterThan(-1);
-    const articlesStart = source.indexOf('const ArticlesView = () => (');
-    expect(articlesStart).toBeGreaterThan(-1);
+    const linksStart = source.indexOf('const LinksView = () => (');
+    expect(linksStart).toBeGreaterThan(-1);
     const modalIdx = source.indexOf('{showEditUserModal && editingUser && (');
     expect(modalIdx).toBeGreaterThan(-1);
 
     expect(modalIdx, 'modal is after UsersView marker').toBeGreaterThan(usersStart);
-    expect(modalIdx, 'modal is before ArticlesView marker').toBeLessThan(articlesStart);
+    expect(modalIdx, 'modal is before LinksView marker').toBeLessThan(linksStart);
   });
 
   it('the modal has not been re-nested inside BlacklistView', () => {
