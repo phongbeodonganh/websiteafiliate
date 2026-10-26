@@ -10,7 +10,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:admin-inputs": "playwright test",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:load": "node scripts/load-test/stress-test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1107.0",

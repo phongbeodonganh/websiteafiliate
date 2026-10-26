@@ -11,11 +11,14 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
       },
-      instances: 1,
-      exec_mode: 'fork',
+      // VPS có 2 vCPU: chạy cluster mode với 2 instances để dồn 100% CPU phục vụ Ads
+      instances: 2,
+      exec_mode: 'cluster',
       autorestart: true,
-      max_memory_restart: '600M',
+      max_memory_restart: '700M',
     },
+    // Đã tắt tạm insider cron để giải phóng CPU/RAM và MongoDB connection cho Ads peak time:
+    /*
     {
       name: 'websiteafiliate-insider-cron',
       script: './app/scripts/run-insider-digest.mjs',
@@ -29,5 +32,6 @@ module.exports = {
       autorestart: true,
       max_memory_restart: '100M',
     },
+    */
   ],
 };
