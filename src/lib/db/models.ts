@@ -66,6 +66,7 @@ const SubCategorySchema = new Schema<ISubCategory>({
 // 4. AffiliateLink
 export interface IAffiliateLink extends Document {
   name: string;
+  description?: string;
   base_url: string;
   product_url?: string;
   commission?: string;
@@ -80,6 +81,7 @@ export interface IAffiliateLink extends Document {
 
 const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   name: { type: String, required: true },
+  description: { type: String, default: '', maxlength: 300 },
   base_url: { type: String, required: true },
   product_url: { type: String, default: '' },
   commission: { type: String },

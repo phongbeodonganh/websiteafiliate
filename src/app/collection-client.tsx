@@ -10,13 +10,13 @@ import EditorialFooter from '@/components/EditorialFooter';
 import styles from './collection.module.css';
 
 export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category';
-type AffiliateSort = 'latest' | 'clicks' | 'commission' | 'cookie';
+type AffiliateSort = 'latest' | 'clicks';
 interface Article {
   id: string; title: string; slug: string; excerpt?: string; content?: string;
   thumbnailUrl?: string; viewCount: number; createdAt: string; categoryName?: string; authorName?: string;
 }
 interface Affiliate {
-  id: string; name: string; commission: string; cookie: string; isTopPick: boolean;
+  id: string; name: string; description?: string; isTopPick: boolean;
   clickCount?: number; click_count?: number; createdAt?: string;
 }
 interface Pagination { total: number; page: number; limit: number; totalPages: number; hasMore: boolean; }
@@ -153,7 +153,7 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
         <div className={styles.resultCount} aria-live="polite">{loadingInitial ? (isDeals ? 'Finding partner programmes…' : 'Finding your next read…') : error && count === 0 ? 'Browse the collection' : <><strong>{pagination.total.toLocaleString('en-GB')}</strong> {isDeals ? 'partner programmes' : 'stories'}{request.query && <> for “{request.query}”</>}</>}{request.query && <button type="button" onClick={clearSearch} aria-label="Clear search"><X size={15} /></button>}</div>
         <div className={styles.tools}>
           <form className={styles.search} onSubmit={submitSearch} role="search" aria-label="Search this collection"><Search size={16} aria-hidden="true" /><input aria-label={isDeals ? 'Search partner deals' : 'Search this collection'} value={search} onChange={event => setSearch(event.target.value)} placeholder={isDeals ? 'Find a partner…' : 'Search this collection…'} /><button type="submit" aria-label="Search"><ArrowRight size={16} /></button></form>
-          {isDeals && <label className={styles.sort}><SlidersHorizontal size={15} aria-hidden="true" /><select aria-label="Sort affiliate deals" value={request.sort} onChange={event => updateRequest({ sort: event.target.value as AffiliateSort, page: 1 })}><option value="latest">Latest added</option><option value="clicks">Most clicked</option><option value="commission">Highest commission</option><option value="cookie">Longest cookie window</option></select></label>}
+          {isDeals && <label className={styles.sort}><SlidersHorizontal size={15} aria-hidden="true" /><select aria-label="Sort affiliate deals" value={request.sort} onChange={event => updateRequest({ sort: event.target.value as AffiliateSort, page: 1 })}><option value="latest">Latest added</option><option value="clicks">Most clicked</option></select></label>}
         </div>
       </div>
       {loadingInitial ? <div className={styles.skeletonGrid} role="status"><span className={styles.srOnly}>Loading {title}</span>{Array.from({ length: 3 }, (_, i) => <div key={i} className={styles.skeleton} aria-hidden="true"><div /><span /><span /><span /></div>)}</div> : <>
@@ -173,9 +173,7 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
         </>}
         {isDeals && affiliates.length > 0 && <section aria-label="Partner programmes" className={styles.dealGrid}>{affiliates.map((affiliate, i) => <article key={affiliate.id} className={styles.deal} data-featured={affiliate.isTopPick || undefined} data-motion="rise" style={{ '--motion-delay': `${(i % 3) * 60}ms` } as CSSProperties}>
           <div className={styles.dealTop}><span className={styles.monogram} aria-hidden="true">{affiliate.name.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2).toUpperCase()}</span>{affiliate.isTopPick ? <span className={styles.topPick}><Star size={12} fill="currentColor" aria-hidden="true" />Top pick</span> : <span className={styles.partnerLabel}>Partner programme</span>}</div>
-          <h2>{affiliate.name}</h2><p className={styles.dealSubtitle}>Affiliate partner</p>
-          <dl className={styles.dealTerms}><div><dt>Commission</dt><dd>{affiliate.commission}</dd></div><div><dt>Cookie window</dt><dd>{affiliate.cookie}</dd></div></dl>
-          <div className={styles.dealMeta}><span><Eye size={13} aria-hidden="true" />{(affiliate.clickCount ?? affiliate.click_count ?? 0).toLocaleString('en-GB')} clicks</span>{affiliate.createdAt && <time dateTime={affiliate.createdAt}>Added {formatDate(affiliate.createdAt)}</time>}</div>
+          <h2>{affiliate.name}</h2>{affiliate.description && <p className={styles.dealSubtitle}>{affiliate.description}</p>}
           <a className={styles.dealCta} href={`/api/v1/public/tracking/redirect?affiliate_link_id=${affiliate.id}`} target="_blank" rel="noopener noreferrer nofollow sponsored" onClick={() => countClick(affiliate.id)} aria-label={`Explore ${affiliate.name} partner programme (opens in a new tab)`}>Explore programme <ArrowUpRight size={18} aria-hidden="true" /></a>
         </article>)}</section>}
         {count > 0 && <div className={styles.pagination}><p>Showing {count} of {pagination.total} {isDeals ? 'programmes' : 'stories'}</p>{pagination.hasMore && <button type="button" disabled={loading} onClick={() => updateRequest({ page: pagination.page + 1 })}>{loading ? <Loader2 size={17} className={styles.spin} /> : <ArrowDown size={17} />}{loading ? 'Loading more…' : isDeals ? 'Explore more partners' : 'Discover more stories'}</button>}<div className={styles.countTrack} aria-hidden="true"><span style={{ width: `${Math.min(100, count / Math.max(1, pagination.total) * 100)}%` }} /></div></div>}

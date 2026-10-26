@@ -1,13 +1,12 @@
 'use client';
 
-import { ArrowRight, Clock, ShieldCheck, Sparkles, Star, X } from 'lucide-react';
+import { ArrowRight, Sparkles, Star, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type AffiliateOffer = {
   id: string;
   name: string;
-  commission?: string;
-  cookie?: string;
+  description?: string;
 };
 
 type AffiliateRecommendationSheetProps = {
@@ -144,10 +143,7 @@ export default function AffiliateRecommendationSheet({
                 <span className="text-[9px] font-bold uppercase text-neutral-500">Sponsored</span>
               </div>
               <h3 className="mb-3 text-base font-bold text-black">{offer.name}</h3>
-              <div className="mb-4 space-y-2 text-xs text-neutral-600">
-                <p className="flex items-center gap-2"><ShieldCheck size={14} /> {offer.commission || 'Exclusive offer'}</p>
-                <p className="flex items-center gap-2"><Clock size={14} /> {offer.cookie || '30-day cookie'}</p>
-              </div>
+              {offer.description && <p className="mb-4 text-sm leading-relaxed text-neutral-600 break-words">{offer.description}</p>}
               <a
                 href={`/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${offer.id}`}
                 target="_blank"
