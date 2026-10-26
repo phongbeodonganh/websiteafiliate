@@ -1865,22 +1865,140 @@
 }
 
 .bentoLead {
+  background: var(--editorial-surface);
+  border-color: var(--editorial-divider);
+  color: var(--editorial-ink);
+  cursor: auto;
+  display: flex;
+  flex-direction: column;
   grid-column: span 8;
   grid-row: span 2;
-  min-height: 588px;
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.bentoLead .featuredMedia {
+  aspect-ratio: 16 / 9;
+  flex: 0 0 auto;
+  height: auto;
+  inset: auto;
+  min-height: 0;
+  position: relative;
+}
+
+.bentoLead .featuredMedia img {
+  object-fit: cover;
+  object-position: center;
 }
 
 .bentoLead .featuredCopy {
-  bottom: auto;
-  left: clamp(26px, 4vw, 58px);
-  max-width: min(620px, 78%);
-  top: 50%;
-  translate: 0 -46%;
+  inset: auto;
+  max-width: none;
+  padding: clamp(24px, 2.7vw, 40px) clamp(24px, 3vw, 44px) 0;
+  position: relative;
+  text-shadow: none;
+  translate: none;
+  z-index: auto;
 }
 
 .bentoLead .featuredCopy h1 {
-  font-size: clamp(36px, 4.1vw, 62px);
-  line-height: 1.04;
+  font-size: clamp(30px, 3.1vw, 46px);
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  margin: 14px 0 18px;
+  text-wrap: pretty;
+}
+
+.bentoLead .eyebrow {
+  color: var(--ed-verdict);
+}
+
+.bentoLead .lede {
+  color: var(--editorial-copy);
+  display: -webkit-box;
+  font-size: 16px;
+  line-height: 1.65;
+  max-width: 65ch;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.bentoLead .meta {
+  color: var(--editorial-muted);
+  display: block;
+  font-size: 10px;
+  line-height: 1.7;
+}
+
+.featuredFooter {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  margin-top: auto;
+  padding: 24px clamp(24px, 3vw, 44px) 28px;
+}
+
+.bentoLead .featuredRead {
+  align-self: auto;
+  border-bottom-color: var(--ed-verdict);
+  color: var(--editorial-ink);
+  margin-top: 0;
+  min-height: 44px;
+}
+
+.featuredRead svg {
+  height: 17px;
+  width: 17px;
+}
+
+.bentoLead .featuredControls {
+  inset: auto;
+  position: relative;
+  z-index: auto;
+}
+
+.bentoLead .featuredControls > button {
+  background: var(--editorial-surface);
+  border-color: var(--editorial-divider);
+  color: var(--editorial-ink);
+  height: 44px;
+  width: 44px;
+}
+
+.bentoLead .featuredControls > button:hover {
+  background: var(--ed-verdict);
+  border-color: var(--ed-verdict);
+  color: #ffffff;
+}
+
+.bentoLead .featuredDots button {
+  background: #a6b9b5;
+  height: 28px;
+  border-radius: 0;
+  background-clip: content-box;
+  padding: 11px 0;
+  width: 10px;
+}
+
+.bentoLead .featuredDots .featuredDotActive {
+  background-color: #c8dcd8;
+  width: 28px;
+}
+
+.bentoLead .featuredDots button.featuredDotActive::after {
+  background: var(--ed-verdict);
+  bottom: 11px;
+  top: 11px;
+}
+
+.bentoLead a:focus-visible,
+.bentoLead button:focus-visible {
+  outline: 2px solid var(--ed-verdict);
+  outline-offset: 4px;
 }
 
 .bentoCard {
@@ -1945,7 +2063,7 @@
 }
 
 .bentoSecondary .bentoCardMedia {
-  aspect-ratio: 16 / 7.2;
+  aspect-ratio: 16 / 9;
 }
 
 .bentoEditorialCard .bentoCardMedia {
@@ -1967,7 +2085,11 @@
 
 .bentoCardMedia img {
   transition: filter 380ms ease, transform 540ms cubic-bezier(0.16, 1, 0.3, 1) !important;
-  object-fit: contain !important;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
   background: #f0f0ee;
 }
 
@@ -2224,7 +2346,7 @@
   .bentoLead {
     grid-column: span 12;
     grid-row: span 1;
-    min-height: 620px;
+    min-height: 0;
   }
 
   .bentoSecondary {
@@ -2371,21 +2493,21 @@
     grid-row: span 1;
   }
 
-  .bentoLead {
-    min-height: 560px;
-  }
-
   .bentoLead .featuredCopy {
-    bottom: 80px;
-    left: 20px;
-    max-width: calc(100% - 40px);
-    position: absolute;
-    top: auto;
-    translate: none;
+    padding: 24px 20px 0;
   }
 
   .bentoLead .featuredCopy h1 {
-    font-size: clamp(30px, 9vw, 42px);
+    font-size: clamp(27px, 7vw, 38px);
+  }
+
+  .featuredFooter {
+    gap: 12px;
+    padding: 20px;
+  }
+
+  .bentoLead .lede {
+    font-size: 15px;
   }
 
   .bentoSecondary,
