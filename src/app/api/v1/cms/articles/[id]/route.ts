@@ -195,6 +195,7 @@ export async function DELETE(
     }
 
     await ArticleModel.findByIdAndDelete(id);
+    revalidateArticle(existingArticle.slug);
     revalidatePublicArticles();
     revalidateSitemap();
 

@@ -36,7 +36,7 @@ interface PopulatedAuthor { _id: Types.ObjectId; name?: string; username?: strin
 interface PopulatedCategory { _id: Types.ObjectId; name?: string; slug?: string; }
 interface PopulatedPlacement {
   position_label: string;
-  affiliate_link_id?: { _id: Types.ObjectId; name: string; commission?: string; cookie?: string };
+  affiliate_link_id?: { _id: Types.ObjectId; name: string; description?: string };
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ async function loadArticlePageData(slug: string): Promise<ArticlePageData | null
   const article = await ArticleModel.findOne({ slug, status: 'published' })
     .populate('author_id', 'name username avatar')
     .populate('category_id', 'name slug')
-    .populate('affiliate_placements.affiliate_link_id', 'name commission cookie');
+    .populate('affiliate_placements.affiliate_link_id', 'name description');
 
   if (!article) return null;
 
@@ -213,7 +213,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
         positionLabel: placement.position_label as string,
         link: {
           id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
-          commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
+          description: placement.affiliate_link_id!.description,
         },
       }))
   );
@@ -367,7 +367,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
                   articleId={articleId}
                   toolName={verdictPlacement.link.name}
                   affiliateLinkId={verdictPlacement.link.id}
-                  commission={verdictPlacement.link.commission}
+                  description={verdictPlacement.link.description}
                 />
               )}
 
