@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+// TEMP LOAD TEST: uncomment to restore per-request CSP nonces.
+// import { headers } from "next/headers";
 import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
@@ -103,7 +104,9 @@ export default async function RootLayout({
   // (set in src/proxy.ts) and stamp it onto its own inline bootstrap scripts —
   // otherwise statically-optimized routes (e.g. /admin, /admin/login) ship
   // those scripts with no nonce and the CSP in proxy.ts blocks them outright.
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  // TEMP LOAD TEST: restore together with the nonce CSP in src/proxy.ts.
+  // const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const nonce = undefined;
 
   let sysSettings;
   try {
