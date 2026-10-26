@@ -1,5 +1,6 @@
 "use client";
 
+import Select from "@/components/ui/Select";
 import { FormEvent, useState } from "react";
 import { Flag, Loader2, Send } from "lucide-react";
 import styles from "./CouponReportForm.module.css";
@@ -13,7 +14,7 @@ export default function CouponReportForm({ defaultStore = "" }: { defaultStore?:
   }
   return <form className={styles.form} onSubmit={submit}>
     <div className={styles.formHeading}><Flag/><div><h3>Report a coupon problem</h3><p>Your report enters the priority re-test queue.</p></div></div>
-    <div className={styles.fields}><label>Store name<input name="store" defaultValue={defaultStore} maxLength={120} placeholder="e.g. BeaverCraft" /></label><label>Coupon code<input name="code" maxLength={80} placeholder="e.g. SAVE10" /></label><label className={styles.wide}>TheHavenDeals page URL<input name="pageUrl" type="url" required maxLength={500} placeholder="https://…" /></label><label>What went wrong?<select name="reason" required defaultValue="not_applied"><option value="not_applied">Code was not applied</option><option value="expired">Code is expired</option><option value="wrong_discount">Discount amount is wrong</option><option value="other">Something else</option></select></label><label>Your email (optional)<input name="email" type="email" maxLength={254} placeholder="For a follow-up only" /></label><label className={styles.wide}>Extra detail<textarea name="details" maxLength={1000} rows={4} placeholder="What was in your basket and what message appeared?" /></label><label className={styles.honeypot} aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
+    <div className={styles.fields}><label>Store name<input name="store" defaultValue={defaultStore} maxLength={120} placeholder="e.g. BeaverCraft" /></label><label>Coupon code<input name="code" maxLength={80} placeholder="e.g. SAVE10" /></label><label className={styles.wide}>TheHavenDeals page URL<input name="pageUrl" type="url" required maxLength={500} placeholder="https://…" /></label><label>What went wrong?<Select name="reason" required defaultValue="not_applied"><option value="not_applied">Code was not applied</option><option value="expired">Code is expired</option><option value="wrong_discount">Discount amount is wrong</option><option value="other">Something else</option></Select></label><label>Your email (optional)<input name="email" type="email" maxLength={254} placeholder="For a follow-up only" /></label><label className={styles.wide}>Extra detail<textarea name="details" maxLength={1000} rows={4} placeholder="What was in your basket and what message appeared?" /></label><label className={styles.honeypot} aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
     <button type="submit" disabled={status.type==="loading"}>{status.type==="loading"?<Loader2 className={styles.spin}/>:<Send/>}{status.type==="loading"?"Sending report…":"Send priority report"}</button>
     {status.message&&<p className={status.type==="success"?styles.success:styles.error} role="status">{status.message}</p>}
   </form>;

@@ -151,9 +151,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {!query && !category && (
         <section className={discoveryStyles.hero} aria-labelledby="home-title">
-          <div className={discoveryStyles.heroCopy}>
+          <div className={discoveryStyles.heroCopy} data-motion="rise">
             <p className={discoveryStyles.eyebrow}><ShoppingBag size={15} aria-hidden="true" /> Everyday products. Thoughtful savings.</p>
-            <h1 id="home-title">Find your next<br /><span>good deals</span></h1>
+            <h1 id="home-title">Your next<br /><span>great find.</span></h1>
             <p>Little upgrades. Better everyday living. Discover store coupons and thoughtful product picks, all in one place.</p>
             <form action="/#deals" className={discoveryStyles.heroSearch} role="search" aria-label="Search deals and products">
               <Search size={19} aria-hidden="true" /><input name="q" aria-label="Search stores, products and coupons" placeholder="Search a store, product or coupon…" /><button type="submit">Find offers <ArrowRight size={16} aria-hidden="true" /></button>
@@ -162,7 +162,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className={discoveryStyles.heroAssurances}><span><ShieldCheck size={15} aria-hidden="true" /> Clear offer conditions</span><span><BadgeCheck size={15} aria-hidden="true" /> Independent buying guides</span></div>
             <p className={discoveryStyles.heroDisclosure}>We may earn a commission from retailer links, at no extra cost to you. <Link href="/disclosure">Learn more</Link></p>
           </div>
-          <div className={discoveryStyles.heroShowcase}>
+          <div className={discoveryStyles.heroShowcase} data-motion="scale">
             <ProductDecor />
             <HeroOfferCarousel deals={heroDeals} storeCount={publicStores.length} initialNow={offersReadAt} />
           </div>
@@ -185,7 +185,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       {homepageStores.length > 0 && (
-        <section className={storeStyles.spotlight} id="stores" aria-labelledby="stores-title" aria-roledescription="carousel">
+        <section className={storeStyles.spotlight} id="stores" aria-labelledby="stores-title" data-motion="rise">
           <div className={storeStyles.spotlightHeading}>
             <div>
               <p className={storeStyles.spotlightEyebrow}><Sparkles size={14} aria-hidden="true" /> The store spotlight</p>

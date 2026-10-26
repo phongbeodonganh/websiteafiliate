@@ -48,7 +48,7 @@
 .carouselControls button:hover:not(:disabled) { background: #0d766e; border-color: #0d766e; color: #fff; transform: translateY(-2px); }
 .carouselControls button:disabled { cursor: default; opacity: .4; }
 .carouselControls button:focus-visible { outline: 3px solid #0d766e; outline-offset: 3px; }
-.carouselList { display: grid; gap: 16px; grid-auto-columns: 188px; grid-auto-flow: column; list-style: none; margin: 0; overscroll-behavior-x: contain; overflow-x: auto; padding: 14px var(--shelf-gutter) 25px; scroll-padding-inline: var(--shelf-gutter); scroll-snap-type: x mandatory; scrollbar-color: #a6c3b1 transparent; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.carouselList { display: grid; gap: 16px; grid-auto-columns: calc((100% - 64px) / 5); grid-auto-flow: column; list-style: none; margin: 0; overscroll-behavior-x: contain; overflow-x: auto; padding: 14px var(--shelf-gutter) 25px; scroll-padding-inline: var(--shelf-gutter); scroll-snap-type: x mandatory; scrollbar-color: #a6c3b1 transparent; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
 .carouselList > li { min-width: 0; scroll-snap-align: start; }
 .carouselList::-webkit-scrollbar { height: 4px; }
 .carouselList::-webkit-scrollbar-thumb { background: #a6c3b1; border-radius: 100px; }
@@ -122,3 +122,9 @@
 .carouselList[data-sparse=true] { justify-content: safe center; }
 
 @media (max-width: 600px) { .spotlightSubtitle { display: block; } }
+
+.carousel { min-width: 0; }
+.carouselList:focus-visible { outline: 2px solid #0d766e; outline-offset: -3px; }
+@media (min-width: 601px) and (max-width: 1000px) {
+  .carouselList { grid-auto-columns: calc((100% - 32px) / 3); }
+}

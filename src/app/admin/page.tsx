@@ -1,5 +1,6 @@
 'use client';
 
+import Select from "@/components/ui/Select";
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -1116,7 +1117,7 @@ export default function AdminDashboardPage() {
             <p className="text-slate-400 text-sm">Dữ liệu tổng hợp từ Google Analytics 4 &amp; Search Console — {insightsDays} ngày gần nhất.</p>
           </div>
           <div className="flex items-center gap-3">
-            <select
+            <Select
               value={insightsDays}
               onChange={(e) => {
                 const days = Number(e.target.value);
@@ -1129,7 +1130,7 @@ export default function AdminDashboardPage() {
               <option value={7}>7 ngày qua</option>
               <option value={28}>28 ngày qua</option>
               <option value={90}>90 ngày qua</option>
-            </select>
+            </Select>
             <button
               onClick={() => loadInsightsData(true)}
               disabled={insightsLoading}
@@ -1424,7 +1425,7 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Vai trò</label>
-                <select
+                <Select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
@@ -1432,7 +1433,7 @@ export default function AdminDashboardPage() {
                   <option value="editor">Biên tập viên (quản lý nội dung riêng)</option>
                   <option value="author">Tác giả (tạo bài viết)</option>
                   <option value="admin">Quản trị viên (toàn quyền)</option>
-                </select>
+                </Select>
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button
@@ -1478,7 +1479,7 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1">Vai trò</label>
-                <select
+                <Select
                   value={editUserRole}
                   onChange={(e) => setEditUserRole(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
@@ -1486,18 +1487,18 @@ export default function AdminDashboardPage() {
                   <option value="editor">Biên tập viên (quản lý nội dung riêng)</option>
                   <option value="author">Tác giả (tạo bài viết)</option>
                   <option value="admin">Quản trị viên (toàn quyền)</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1">Trạng thái</label>
-                <select
+                <Select
                   value={editUserStatus}
                   onChange={(e) => setEditUserStatus(e.target.value === 'inactive' ? 'inactive' : 'active')}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="active">Đang hoạt động</option>
                   <option value="inactive">Tạm khóa</option>
-                </select>
+                </Select>
                 {editUserStatus === 'inactive' && (
                   <p className="mt-2 text-xs text-amber-400/80">
                     Tài khoản bị khóa sẽ mất quyền truy cập ngay từ yêu cầu tiếp theo.
@@ -2012,14 +2013,14 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Quy Tắc Đánh Chặn</label>
-                  <select
+                  <Select
                     value={blMatchType}
                     onChange={(e: any) => setBlMatchType(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
                   >
                     <option value="domain">Chặn Toàn Bộ Root Domain & Subdomain (Wildcard)</option>
                     <option value="exact_url">Chặn Chính Xác URL Này</option>
-                  </select>
+                  </Select>
                 </div>
                 <div className="pt-2 flex justify-end gap-3">
                   <button type="button" onClick={() => setShowAddBlacklistModal(false)} className="px-4 py-2 text-xs text-slate-400 hover:text-white">
@@ -2282,7 +2283,7 @@ export default function AdminDashboardPage() {
             <form onSubmit={handleSaveSubCategory} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Danh mục cha *</label>
-                <select
+                <Select
                   value={subCatParentId}
                   onChange={(e) => setSubCatParentId(e.target.value)}
                   required
@@ -2294,7 +2295,7 @@ export default function AdminDashboardPage() {
                       {c.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Tên danh mục phụ *</label>
@@ -2481,7 +2482,7 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Chế độ giao diện</label>
-                <select
+                <Select
                   value={settingsData?.themeMode || 'dark'}
                   onChange={(e) => setSettingsData({ ...settingsData, themeMode: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white"
@@ -2490,11 +2491,11 @@ export default function AdminDashboardPage() {
                   <option value="light">Sáng</option>
                   <option value="emerald">Xanh ngọc</option>
                   <option value="amber">Vàng hổ phách</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Phông chữ</label>
-                <select
+                <Select
                   value={settingsData?.fontFamily || 'Inter'}
                   onChange={(e) => setSettingsData({ ...settingsData, fontFamily: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white"
@@ -2503,7 +2504,7 @@ export default function AdminDashboardPage() {
                   <option value="Roboto">Roboto (không chân cổ điển)</option>
                   <option value="Outfit">Outfit (hình học hiện đại)</option>
                   <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
-                </select>
+                </Select>
               </div>
             </div>
           </div>
@@ -2642,7 +2643,7 @@ export default function AdminDashboardPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2">Ngôn ngữ (hreflang)</label>
-                <select
+                <Select
                   value={settingsData?.hreflang || 'en-US'}
                   onChange={(e) => setSettingsData({ ...settingsData, hreflang: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white"
@@ -2651,7 +2652,7 @@ export default function AdminDashboardPage() {
                   <option value="vi-VN">Tiếng Việt (vi-VN)</option>
                   <option value="ja-JP">Tiếng Nhật (ja-JP)</option>
                   <option value="de-DE">Tiếng Đức (de-DE)</option>
-                </select>
+                </Select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-2">Mã quốc gia mục tiêu</label>
