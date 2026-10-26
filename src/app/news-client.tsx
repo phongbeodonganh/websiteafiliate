@@ -328,53 +328,53 @@ export default function TechFinanceNewsClient({
                 if (!event.currentTarget.contains(event.relatedTarget)) setFeaturedPaused(false);
               }}
             >
-              <div className={styles.sectionRule} />
-              <div className={styles.featuredAccent} />
+              <div className={styles.featuredAccent} aria-hidden="true" />
               <Link className={styles.featuredMedia} href={articleHref(featured)} aria-label={`Read ${featured.title}`}>
                 <PublicArticleImage key={featured.id} src={imageFor(featured)} alt={featured.title} loading="eager" fetchPriority="high" />
               </Link>
-              <div className={styles.featuredShade} aria-hidden="true" />
               <div className={styles.featuredCopy} key={featured.id} aria-live="polite" aria-atomic="true">
                 <p className={styles.eyebrow}>{activeQuery ? "SEARCH RESULT" : "LATEST PUBLISHED"}</p>
-                <h2 id="featured-title"><Link className="card-stretched-link" href={articleHref(featured)}>{featured.title}</Link></h2>
+                <h2 id="featured-title"><Link href={articleHref(featured)}>{featured.title}</Link></h2>
                 <p className={styles.lede}>{featuredDescriptionFor(featured)}</p>
                 <p className={styles.meta}>
                   By {featured.authorName || "AIDEALSUK Team"} &middot; {formatDate(featured.createdAt) || relativeTime(featured.createdAt)} &middot; {readingTime(featured)} &middot; {featured.categoryName || "NEWS"}
                 </p>
-                <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <span aria-hidden="true">&rarr;</span></Link>
               </div>
-              {featuredArticles.length > 1 && (
-                <div className={styles.featuredControls} aria-label="Featured story controls">
-                  <button
-                    type="button"
-                    onClick={() => setFeaturedIndex((current) => (current - 1 + featuredArticles.length) % featuredArticles.length)}
-                    aria-label="Previous featured story"
-                    title="Previous story"
-                  >
-                    <ChevronLeft aria-hidden="true" />
-                  </button>
-                  <div className={styles.featuredDots}>
-                    {featuredArticles.map((article, index) => (
-                      <button
-                        type="button"
-                        key={article.id}
-                        className={index === activeFeaturedIndex ? styles.featuredDotActive : undefined}
-                        onClick={() => setFeaturedIndex(index)}
-                        aria-label={`Show featured story ${index + 1}`}
-                        aria-current={index === activeFeaturedIndex ? "true" : undefined}
-                      />
-                    ))}
+              <div className={styles.featuredFooter}>
+                <Link className={styles.featuredRead} href={articleHref(featured)}>Read full story <ArrowUpRight aria-hidden="true" /></Link>
+                {featuredArticles.length > 1 && (
+                  <div className={styles.featuredControls} aria-label="Featured story controls">
+                    <button
+                      type="button"
+                      onClick={() => setFeaturedIndex((current) => (current - 1 + featuredArticles.length) % featuredArticles.length)}
+                      aria-label="Previous featured story"
+                      title="Previous story"
+                    >
+                      <ChevronLeft aria-hidden="true" />
+                    </button>
+                    <div className={styles.featuredDots}>
+                      {featuredArticles.map((article, index) => (
+                        <button
+                          type="button"
+                          key={article.id}
+                          className={index === activeFeaturedIndex ? styles.featuredDotActive : undefined}
+                          onClick={() => setFeaturedIndex(index)}
+                          aria-label={`Show featured story ${index + 1}`}
+                          aria-current={index === activeFeaturedIndex ? "true" : undefined}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFeaturedIndex((current) => (current + 1) % featuredArticles.length)}
+                      aria-label="Next featured story"
+                      title="Next story"
+                    >
+                      <ChevronRight aria-hidden="true" />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setFeaturedIndex((current) => (current + 1) % featuredArticles.length)}
-                    aria-label="Next featured story"
-                    title="Next story"
-                  >
-                    <ChevronRight aria-hidden="true" />
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </section>
 
             {secondaryArticles.map(({ article, rank }, index) => (
