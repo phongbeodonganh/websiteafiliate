@@ -35,3 +35,20 @@ export function filterHomepageDeals(deals: HomepageDeal[], filters: DealFilters,
     return timestamp(b.checkedAt || b.updatedAt) - timestamp(a.checkedAt || a.updatedAt) || a.id.localeCompare(b.id);
   });
 }
+
+/** Deal one offer per merchant each round, retaining the selected order within stores. */
+export function interleaveStoreDeals(deals: HomepageDeal[]): HomepageDeal[] {
+  const stores = new Map<string, HomepageDeal[]>();
+  for (const deal of deals) {
+    const offers = stores.get(deal.storeSlug) ?? [];
+    offers.push(deal);
+    stores.set(deal.storeSlug, offers);
+  }
+  const result: HomepageDeal[] = [];
+  const groups = [...stores.values()];
+  const rounds = Math.max(0, ...groups.map(group => group.length));
+  for (let round = 0; round < rounds; round++) {
+    for (const group of groups) if (group[round]) result.push(group[round]);
+  }
+  return result;
+}

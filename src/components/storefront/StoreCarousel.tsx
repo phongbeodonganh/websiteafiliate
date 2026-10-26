@@ -15,7 +15,9 @@ function subscribeVisibility(callback: () => void) {
   return () => document.removeEventListener("visibilitychange", callback);
 }
 
-export default function StoreCarousel({ children, count }: { children: ReactNode; count: number }) {
+export default function StoreCarousel({ children, count, itemName = "stores", label = "Featured stores", className = "" }: {
+  children: ReactNode; count: number; itemName?: string; label?: string; className?: string;
+}) {
   const id = useId();
   const list = useRef<HTMLUListElement>(null);
   const reducedMotion = useSyncExternalStore(subscribeMotion, () => window.matchMedia(motionQuery).matches, () => true);
@@ -59,32 +61,53 @@ export default function StoreCarousel({ children, count }: { children: ReactNode
     if (!element) return;
     const resize = new ResizeObserver(measure);
     resize.observe(element);
+    // Convert a conventional mouse wheel into horizontal browsing. Let the page
+    // continue scrolling at either edge, and preserve native horizontal gestures.
+    let wheelEnd: number | undefined;
+    const wheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.shiftKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+      const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1);
+      const max = element.scrollWidth - element.clientWidth;
+      if ((delta > 0 && element.scrollLeft >= max - 2) || (delta < 0 && element.scrollLeft <= 2)) return;
+      event.preventDefault();
+      // Accumulate small trackpad/wheel deltas before snapping to a card.
+      // Mandatory snapping after each tiny delta would keep returning to the start.
+      window.clearTimeout(wheelEnd);
+      element.style.scrollSnapType = "none";
+      element.scrollLeft += delta;
+      wheelEnd = window.setTimeout(() => { element.style.scrollSnapType = ""; }, 180);
+    };
+    element.addEventListener("wheel", wheel, { passive: false });
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.3 });
     observer.observe(element);
-    return () => { resize.disconnect(); observer.disconnect(); };
+    return () => { resize.disconnect(); observer.disconnect(); element.removeEventListener("wheel", wheel); window.clearTimeout(wheelEnd); element.style.scrollSnapType = ""; };
   }, [measure, count]);
 
   useEffect(() => {
     if (!autoplay || reducedMotion || hovered || !inView || !pageVisible || !canScroll) return;
-    const timer = window.setInterval(() => advance(1), 4200);
+    const timer = window.setInterval(() => advance(1), 3000);
     return () => window.clearInterval(timer);
   }, [autoplay, reducedMotion, hovered, inView, pageVisible, canScroll, advance]);
 
-  return <div className={styles.carousel} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+  return <div className={`${styles.carousel} ${className}`} role="region" aria-label={label} aria-roledescription="carousel" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
     onFocusCapture={(event) => { if (!(event.target as HTMLElement).closest("[data-rotation-control]")) setAutoplay(false); }}>
     <div className={styles.carouselToolbar}>
-      <p><span className={styles.liveDot} aria-hidden="true" /> {count} stores to explore {canScroll && <span className={styles.carouselHint}>· Swipe or use the arrows</span>}</p>
+      <p><span className={styles.liveDot} aria-hidden="true" /> {count} {itemName} to explore {canScroll && <span className={styles.carouselHint}>· Scroll to explore</span>}</p>
       <div className={styles.carouselControls} data-scrollable={canScroll}>
         <button type="button" data-rotation-control aria-controls={id} disabled={!canScroll || reducedMotion}
           aria-label={reducedMotion ? "Automatic scrolling disabled by your motion preference" : autoplay ? "Pause automatic scrolling" : "Start automatic scrolling"}
           onClick={() => setAutoplay((current) => !current)}>
           {autoplay && !reducedMotion ? <Pause size={15} /> : <Play size={15} />}<span>{autoplay && !reducedMotion ? "Pause" : "Play"}</span>
         </button>
-        <button type="button" aria-label="Previous stores" aria-controls={id} disabled={!canScroll} onClick={() => { setAutoplay(false); advance(-1); }}><ArrowLeft size={19} /></button>
-        <button type="button" aria-label="Next stores" aria-controls={id} disabled={!canScroll} onClick={() => { setAutoplay(false); advance(1); }}><ArrowRight size={19} /></button>
+        <button type="button" aria-label={`Previous ${itemName}`} aria-controls={id} disabled={!canScroll} onClick={() => { setAutoplay(false); advance(-1); }}><ArrowLeft size={19} /></button>
+        <button type="button" aria-label={`Next ${itemName}`} aria-controls={id} disabled={!canScroll} onClick={() => { setAutoplay(false); advance(1); }}><ArrowRight size={19} /></button>
       </div>
     </div>
-    <ul id={id} ref={list} className={styles.carouselList} data-sparse={count <= 3} aria-label="Featured stores" onScroll={measure}
+    <ul id={id} ref={list} className={styles.carouselList} data-sparse={count <= 3} aria-label={label} tabIndex={0} onScroll={measure}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+        event.preventDefault(); setAutoplay(false); advance(event.key === "ArrowRight" ? 1 : -1);
+      }}
       onPointerDown={() => setAutoplay(false)} onWheel={() => setAutoplay(false)}>
       {children}
     </ul>

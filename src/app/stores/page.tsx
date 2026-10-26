@@ -1,3 +1,4 @@
+import Select from "@/components/ui/Select";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ChevronRight, Search, SlidersHorizontal, Store, TicketPercent, X } from "lucide-react";
@@ -72,9 +73,9 @@ export default async function StoresPage({ searchParams }: DirectoryProps) {
         <div className={styles.filterHeading}><div><p className={styles.eyebrow}>Make it your shortlist</p><h2 id="find-stores-heading">What are you looking for?</h2></div><SlidersHorizontal size={22} aria-hidden="true" /></div>
         <form action="/stores#find-stores" method="get" className={styles.filterForm} role="search" aria-label="Find and filter stores">
           <label className={styles.searchField}><span>Search stores</span><span className={styles.searchInput}><Search size={19} aria-hidden="true" /><input name="q" type="search" defaultValue={filters.q} placeholder="Try Anker, fashion or home essentials…" /></span></label>
-          <label><span>Category</span><select aria-label="Category" name="category" defaultValue={filters.category}><option value="">All categories</option>{categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></label>
-          <label><span>Offer type</span><select aria-label="Offer type" name="offer" defaultValue={filters.offer}><option value="all">All stores</option><option value="active">With active offers</option><option value="codes">With promo codes</option><option value="coupons">With coupons & deals</option></select></label>
-          <label><span>Sort by</span><select aria-label="Sort by" name="sort" defaultValue={filters.sort}><option value="popular">Most popular</option><option value="offers">Most active offers</option><option value="name">Store name A–Z</option></select></label>
+          <label><span>Category</span><Select aria-label="Category" name="category" defaultValue={filters.category}><option value="">All categories</option>{categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</Select></label>
+          <label><span>Offer type</span><Select aria-label="Offer type" name="offer" defaultValue={filters.offer}><option value="all">All stores</option><option value="active">With active offers</option><option value="codes">With promo codes</option><option value="coupons">With coupons & deals</option></Select></label>
+          <label><span>Sort by</span><Select aria-label="Sort by" name="sort" defaultValue={filters.sort}><option value="popular">Most popular</option><option value="offers">Most active offers</option><option value="name">Store name A–Z</option></Select></label>
           {filters.letter && <input type="hidden" name="letter" value={filters.letter} />}
           <button type="submit" className={styles.applyButton}>Find stores <ArrowRight size={17} aria-hidden="true" /></button>
         </form>

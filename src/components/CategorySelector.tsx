@@ -1,5 +1,6 @@
 'use client';
 
+import Select from "@/components/ui/Select";
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { ChevronDown, Layers, Check } from 'lucide-react';
@@ -66,7 +67,7 @@ export default function CategorySelector({ placement }: { placement: 'header' | 
     return (
       <div className="flex items-center gap-3">
         <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Category</span>
-        <select
+        <Select
           aria-label="Select a category"
           value={currentSlug}
           onChange={(e) => handleSelect(e.target.value)}
@@ -78,7 +79,7 @@ export default function CategorySelector({ placement }: { placement: 'header' | 
               {category.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
     );
   }

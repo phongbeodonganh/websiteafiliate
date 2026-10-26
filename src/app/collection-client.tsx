@@ -1,5 +1,6 @@
 'use client';
 
+import Select from "@/components/ui/Select";
 import Link from 'next/link';
 import { useEffect, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Clock3, Eye, Flame, Loader2, Search, SlidersHorizontal, Sparkles, Star, Tag, X } from 'lucide-react';
@@ -152,7 +153,7 @@ function CollectionView({ kind, categorySlug, categoryName, header, catalog }: {
         <div className={styles.resultCount} aria-live="polite">{loadingInitial ? (isDeals ? 'Finding partner programmes…' : 'Finding your next read…') : error && count === 0 ? 'Browse the collection' : <><strong>{pagination.total.toLocaleString('en-GB')}</strong> {isDeals ? 'partner programmes' : 'stories'}{request.query && <> for “{request.query}”</>}</>}{request.query && <button type="button" onClick={clearSearch} aria-label="Clear search"><X size={15} /></button>}</div>
         <div className={styles.tools}>
           <form className={styles.search} onSubmit={submitSearch} role="search" aria-label="Search this collection"><Search size={16} aria-hidden="true" /><input aria-label={isDeals ? 'Search partner deals' : 'Search this collection'} value={search} onChange={event => setSearch(event.target.value)} placeholder={isDeals ? 'Find a partner…' : 'Search this collection…'} /><button type="submit" aria-label="Search"><ArrowRight size={16} /></button></form>
-          {isDeals && <label className={styles.sort}><SlidersHorizontal size={15} aria-hidden="true" /><select aria-label="Sort affiliate deals" value={request.sort} onChange={event => updateRequest({ sort: event.target.value as AffiliateSort, page: 1 })}><option value="latest">Latest added</option><option value="clicks">Most clicked</option><option value="commission">Highest commission</option><option value="cookie">Longest cookie window</option></select></label>}
+          {isDeals && <label className={styles.sort}><SlidersHorizontal size={15} aria-hidden="true" /><Select aria-label="Sort affiliate deals" value={request.sort} onChange={event => updateRequest({ sort: event.target.value as AffiliateSort, page: 1 })}><option value="latest">Latest added</option><option value="clicks">Most clicked</option><option value="commission">Highest commission</option><option value="cookie">Longest cookie window</option></Select></label>}
         </div>
       </div>
       {loadingInitial ? <div className={styles.skeletonGrid} role="status"><span className={styles.srOnly}>Loading {title}</span>{Array.from({ length: 3 }, (_, i) => <div key={i} className={styles.skeleton} aria-hidden="true"><div /><span /><span /><span /></div>)}</div> : <>

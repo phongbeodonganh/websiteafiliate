@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectHomepageDeals, filterHomepageDeals } from "../../src/lib/homepage/deals";
+import { collectHomepageDeals, filterHomepageDeals, interleaveStoreDeals } from "../../src/lib/homepage/deals";
 import type { StoreRecord, StoreOffer } from "../../src/lib/stores/types";
 const now = Date.parse("2026-10-23T10:00:00Z");
 const offer = (overrides: Partial<StoreOffer> = {}): StoreOffer => ({ id: "offer", kind: "code", title: "Save on desk lamps", description: "Selected lights", saving: "10% off", code: "LIGHT10", destination: "https://example.com", terms: "", startsAt: "", expiresAt: "", checkedAt: "", active: true, ...overrides });
@@ -24,5 +24,24 @@ describe("homepage deal discovery", () => {
     const deals = collectHomepageDeals([store(), store({ slug: "checked", offers: [offer({ checkedAt: "2026-10-22T00:00:00Z", expiresAt: "2026-10-24T00:00:00Z" })] })], now);
     expect(filterHomepageDeals(deals, {}, now)[0].storeSlug).toBe("checked");
     expect(filterHomepageDeals(deals, {}, Date.parse("2026-10-25T00:00:00Z")).map(d=>d.storeSlug)).toEqual(["lamps"]);
+  });
+});
+
+
+describe("store variety on the homepage", () => {
+  it("interleaves uneven merchant groups without losing offers or changing their order within a store", () => {
+    const deals = collectHomepageDeals([
+      store({ offers: [offer({ id: "a1" }), offer({ id: "a2" }), offer({ id: "a3" })] }),
+      store({ slug: "second", offers: [offer({ id: "b1" }), offer({ id: "b2" })] }),
+      store({ slug: "third", offers: [offer({ id: "c1" })] }),
+    ], now);
+    const mixed = interleaveStoreDeals(deals);
+    expect(mixed.map(item => item.offerId)).toEqual(["a1", "b1", "c1", "a2", "b2", "a3"]);
+    expect(deals.map(item => item.offerId)).toEqual(["a1", "a2", "a3", "b1", "b2", "c1"]);
+  });
+  it("supports an empty result and a single store", () => {
+    expect(interleaveStoreDeals([])).toEqual([]);
+    const deals = collectHomepageDeals([store()], now);
+    expect(interleaveStoreDeals(deals)).toEqual(deals);
   });
 });

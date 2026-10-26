@@ -37,8 +37,8 @@
 .tabs button[aria-pressed=true] { background: #153e33; color: #fff; }
 .filters { align-items: end; display: grid; gap: 16px; grid-template-columns: 1.5fr 1fr 1fr; }
 .filters label { display: flex; flex-direction: column; font-size: 11px; font-weight: 750; gap: 8px; min-width: 0; }
-.filters select, .searchInput { background: #fbfcfa; border: 1px solid #d9e1dc; border-radius: 8px; color: #17211f; min-height: 46px; padding: 10px 12px; width: 100%; }
-.filters select { font-size: 13px; }
+.filters :is(select, [data-select-trigger]), .searchInput { background: #fbfcfa; border: 1px solid #d9e1dc; border-radius: 8px; color: #17211f; min-height: 46px; padding: 10px 12px; width: 100%; }
+.filters :is(select, [data-select-trigger]) { font-size: 13px; }
 .searchInput { align-items: center; display: flex; gap: 9px; }
 .searchInput svg { color: #64716c; flex-shrink: 0; }
 .searchInput input { background: transparent; border: 0; font-size: 13px; min-width: 0; width: 100%; }
@@ -115,7 +115,7 @@
   .tabs { gap: 6px; }
   .tabs button { font-size: 11px; padding-inline: 10px; }
   .filters { gap: 12px; }
-  .filters select { font-size: 12px; }
+  .filters :is(select, [data-select-trigger]) { font-size: 12px; }
   .filters label:last-child { grid-column: 1 / -1; }
   .dealGrid, .steps, .faqLayout { grid-template-columns: 1fr; }
   .dealCard { padding: 20px; }
@@ -131,7 +131,7 @@
 .heroSlide > a { align-self: center; justify-content: center; margin-top: 16px; max-width: 100%; text-align: center; }
 /* The fill animation drives rotation so the indicator and coupon stay in sync. */
 .heroOfferProgress { background: #ffffff26; border-radius: 100px; height: 4px; margin-top: 26px; overflow: hidden; }
-.heroOfferProgressFill { animation: heroOfferProgress 4s linear forwards; animation-play-state: paused; background: #d7f5ad; border-radius: inherit; display: block; height: 100%; transform: scaleX(0); transform-origin: left; }
+.heroOfferProgressFill { animation: heroOfferProgress 3s linear forwards; animation-play-state: paused; background: #d7f5ad; border-radius: inherit; display: block; height: 100%; transform: scaleX(0); transform-origin: left; }
 .heroOfferProgressFill[data-running=true] { animation-play-state: running; }
 @keyframes heroOfferProgress { to { transform: scaleX(1); } }
 @keyframes heroOfferIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -300,3 +300,67 @@
   .cameraTile { top: 8%; }
   .coffeeTile { top: 77%; }
 }
+
+/* A single offer shelf: compact merchant tickets, with the filters in its header. */
+.dealsFrame {
+  --shelf-gutter: 22px;
+  background: #f0f5ed;
+  border: 1px solid #d5e1d0;
+  border-radius: 24px;
+  box-shadow: 0 12px 36px -24px #164d3d40;
+  overflow: hidden;
+  padding-bottom: 22px;
+}
+.dealsFrame .filterPanel { background: #ffffffb3; border: 0; border-bottom: 1px solid #dce6d7; border-radius: 0; box-shadow: none; }
+.dealsFrame .resultLine { margin-inline: var(--shelf-gutter); }
+.offerCarousel > div:first-child { margin-top: 0; }
+.offerCarousel .dealCard { border-radius: 14px; height: 100%; padding: 16px; }
+.offerCarousel .dealCard::before { border-radius: 14px 14px 0 0; }
+.offerCarousel .dealStoreLink { align-items: center; border-bottom: 1px solid #edf1e9; gap: 10px; margin-bottom: 14px; padding-bottom: 12px; }
+.offerCarousel .dealStoreImage { height: 76px; max-width: 100%; }
+.offerCarousel .dealStoreImage img { height: auto; max-height: 76px; max-width: 140px; }
+.offerCarousel .dealStoreInitials { font-size: 24px; height: 70px; width: 76px; }
+.offerCarousel .storeName { font-size: 10px; letter-spacing: .04em; text-align: center; }
+.offerCarousel .cardTop { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+.offerCarousel .saving { font-size: clamp(21px, 1.8vw, 26px); line-height: 1.15; }
+.offerCarousel .kind { font-size: 9px; padding: 4px 6px; }
+.offerCarousel .dealCard h3 { font-size: 14px; line-height: 1.5; margin-block: 10px; }
+.offerCarousel .description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: 11px; margin-bottom: 8px; overflow: hidden; }
+.offerCarousel .dates { font-size: 9px; margin-block: 8px 12px; }
+.offerCarousel .cardActions { position: relative; }
+.offerCarousel .cardActions::before, .offerCarousel .cardActions::after { background: #f0f5ed; border: 1px solid #dfe6da; border-radius: 50%; content: ''; height: 12px; position: absolute; top: -7px; width: 12px; }
+.offerCarousel .cardActions::before { left: -23px; }
+.offerCarousel .cardActions::after { right: -23px; }
+.offerCarousel .shopButton { font-size: 11px; gap: 8px; padding-inline: 8px; }
+.offerCarousel .shopButton svg { flex: 0 0 auto; width: 14px; }
+.offerCarousel .codeRow { padding-left: 7px; }
+.offerCarousel .codeRow code { font-size: 11px; overflow-wrap: anywhere; }
+.offerCarousel .codeRow button { font-size: 10px; gap: 3px; padding-inline: 6px; }
+.dealsFrame .empty { margin: 0 var(--shelf-gutter); }
+
+/* The sweep follows the coupon edge; the rest of the page stays quiet. */
+.hero h1 span::after { animation: drawSavingLine .9s .35s both; transform-origin: left center; }
+.heroFeature::after { background: linear-gradient(105deg, transparent 35%, #ffffff0a 48%, #ffffff18 50%, transparent 65%); content: ''; inset: 0; pointer-events: none; position: absolute; transform: translateX(-130%); }
+.heroFeature:hover::after { animation: couponSweep 1s ease; }
+.heroLinks a svg, .shopButton svg, .shortcuts a svg { transition: transform .2s ease; }
+.heroLinks a:hover svg, .shopButton:hover svg { transform: translateX(3px); }
+.shortcuts a:hover svg { transform: translateY(-3px) rotate(-8deg); }
+.shortcuts a { min-height: 32px; }
+.landing a:focus-visible, .landing button:focus-visible, .landing summary:focus-visible { outline: 2px solid #0d766e; outline-offset: 4px; }
+@keyframes drawSavingLine { from { opacity: 0; transform: scaleX(0) rotate(-2deg); } to { opacity: 1; transform: scaleX(1) rotate(-2deg); } }
+@keyframes couponSweep { to { transform: translateX(130%); } }
+@media (max-width: 700px) {
+  .dealsFrame { --shelf-gutter: 14px; border-radius: 18px; padding-bottom: 16px; }
+  .offerCarousel ul { grid-auto-columns: min(76vw, 260px); }
+  .offerCarousel .saving { font-size: 25px; }
+  .offerCarousel .dealCard h3 { font-size: 15px; }
+  .offerCarousel .shopButton { font-size: 12px; }
+  .offerCarousel .dates { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero h1 span::after, .heroFeature:hover::after { animation: none; }
+  .heroLinks a svg, .shopButton svg, .shortcuts a svg { transition: none; }
+}
+
+.offerCarousel .cardActions { gap: 10px; }
+.offerCarousel .cardActions .dates { margin: 0; min-height: 32px; justify-content: flex-end; }
