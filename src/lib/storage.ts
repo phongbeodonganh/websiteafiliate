@@ -1,5 +1,6 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
+import { slugifyFileName } from './file-name';
 
 function getEnv(name: string): string {
   const value = process.env[name];
@@ -20,23 +21,41 @@ function getR2Client(): S3Client {
   });
 }
 
-function safeFileName(originalName: string): string {
-  const ext = originalName.includes('.') ? originalName.split('.').pop() : '';
-  const base = randomUUID();
-  return ext ? `${base}.${ext.toLowerCase().replace(/[^a-z0-9]/g, '')}` : base;
+function fileExtension(originalName: string): string {
+  const ext = originalName.includes('.') ? originalName.split('.').pop() || '' : '';
+  return ext.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+async function objectExists(client: S3Client, bucket: string, key: string): Promise<boolean> {
+  try {
+    await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function uploadFile(
   buffer: Buffer,
   originalName: string,
   contentType: string,
-  folder = 'uploads'
+  folder = 'uploads',
+  customName?: string
 ): Promise<string> {
   const bucket = getEnv('R2_BUCKET_NAME');
   const publicUrl = getEnv('R2_PUBLIC_URL').replace(/\/$/, '');
-  const key = `${folder}/${safeFileName(originalName)}`;
-
   const client = getR2Client();
+
+  // SEO-friendly name: admin-supplied > original file name > random id. R2 objects are
+  // served immutable, so never overwrite an existing key — add a short suffix instead.
+  const slug = slugifyFileName(customName || originalName) || randomUUID();
+  const ext = fileExtension(originalName);
+  const withExt = (name: string) => (ext ? `${name}.${ext}` : name);
+  let key = `${folder}/${withExt(slug)}`;
+  if (await objectExists(client, bucket, key)) {
+    key = `${folder}/${withExt(`${slug}-${randomUUID().slice(0, 6)}`)}`;
+  }
+
   await client.send(
     new PutObjectCommand({
       Bucket: bucket,
