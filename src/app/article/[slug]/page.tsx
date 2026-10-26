@@ -35,6 +35,9 @@ import styles from './article.module.css';
 
 interface ArticlePageProps { params: Promise<{ slug: string }>; }
 
+// ISR: Cache page for 1 hour so Next.js marks response as public cacheable
+export const revalidate = 3600;
+
 interface PopulatedAuthor { _id: Types.ObjectId; name?: string; username?: string; avatar?: string; }
 interface PopulatedCategory { _id: Types.ObjectId; name?: string; slug?: string; }
 interface PopulatedPlacement {
