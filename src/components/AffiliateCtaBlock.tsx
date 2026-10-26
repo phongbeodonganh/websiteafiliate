@@ -4,8 +4,7 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react';
 interface AffiliateCtaLink {
   id: string;
   name: string;
-  commission?: string;
-  cookie?: string;
+  description?: string;
 }
 
 interface AffiliateCtaBlockProps {
@@ -61,21 +60,7 @@ export default function AffiliateCtaBlock({ articleId, link, positionLabel }: Af
           {link.name}
         </h4>
 
-        {/* Deal specs — clean, no fake ratings */}
-        <div className="border-t border-b border-neutral-100 py-2.5 mb-4 space-y-1 text-xs text-neutral-600">
-          {link.commission && (
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
-              <span>Commission</span>
-              <strong className="text-black font-bold">{link.commission}</strong>
-            </div>
-          )}
-          {link.cookie && (
-            <div className="flex min-w-0 flex-wrap items-center justify-between gap-1">
-              <span>Cookie window</span>
-              <strong className="text-black font-semibold">{link.cookie}</strong>
-            </div>
-          )}
-        </div>
+        {link.description && <p className="mb-4 text-sm leading-relaxed text-neutral-600 break-words">{link.description}</p>}
       </div>
 
       {/* CTA with shimmer effect */}

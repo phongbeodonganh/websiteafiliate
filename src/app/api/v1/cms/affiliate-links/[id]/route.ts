@@ -20,7 +20,10 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, base_url, commission, cookie, is_top_pick, isTopPick } = body;
+    const { name, description, base_url, commission, cookie, is_top_pick, isTopPick } = body;
+    if (description !== undefined && (typeof description !== 'string' || description.trim().length > 300)) {
+      return NextResponse.json({ status: 'error', message: 'Short description must be text of at most 300 characters.' }, { status: 400 });
+    }
 
     await connectToDatabase();
     const link = await AffiliateLinkModel.findById(id);
@@ -40,6 +43,7 @@ export async function PUT(
     }
 
     if (name !== undefined) link.name = name;
+    if (description !== undefined) link.description = description.trim();
     if (base_url !== undefined) link.base_url = base_url;
     if (commission !== undefined) {
       link.commission = commission;
@@ -59,6 +63,7 @@ export async function PUT(
       data: {
         id: link._id.toString(),
         name: link.name,
+        description: link.description || '',
         baseUrl: link.base_url,
         base_url: link.base_url,
         commission: link.commission,

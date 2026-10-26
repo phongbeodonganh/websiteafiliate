@@ -8,7 +8,7 @@ interface EditorVerdictProps {
   pros?: string[];
   cons?: string[];
   affiliateLinkId: string;
-  commission?: string;
+  description?: string;
 }
 
 /**
@@ -26,7 +26,7 @@ export default function EditorVerdict({
   pros = [],
   cons = [],
   affiliateLinkId,
-  commission,
+  description,
 }: EditorVerdictProps) {
   const trackingUrl = `/api/v1/public/tracking/redirect?article_id=${articleId}&affiliate_link_id=${affiliateLinkId}`;
 
@@ -61,11 +61,7 @@ export default function EditorVerdict({
         </div>
       )}
 
-      {commission && (
-        <p style={{ fontSize: 12, color: 'var(--editorial-muted)', margin: '0 0 14px' }}>
-          Commission: <strong style={{ color: 'var(--editorial-ink)' }}>{commission}</strong>
-        </p>
-      )}
+      {description && <p className="mb-4 text-sm leading-relaxed text-neutral-600">{description}</p>}
 
       <a
         href={trackingUrl}

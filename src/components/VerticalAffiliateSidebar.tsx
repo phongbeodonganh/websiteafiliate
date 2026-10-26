@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Clock, Loader2, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, Loader2, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface AffiliateItem {
   id: string;
   name: string;
-  commission?: string;
-  cookie?: string;
+  description?: string;
 }
 
 interface VerticalAffiliateSidebarProps {
@@ -72,12 +71,7 @@ export default function VerticalAffiliateSidebar({ hideWhenEmpty = false, sticky
               <Star size={9} fill="currentColor" /> Pick #{index + 1}
             </div>
             <h3 className="mb-3 text-base font-bold leading-tight text-black transition-colors group-hover:text-[#0D766E]">{item.name}</h3>
-            <p className="mb-2 flex items-center gap-2 text-xs text-neutral-600">
-              <ShieldCheck size={13} /> {item.commission || 'Exclusive Offer'}
-            </p>
-            <p className="mb-4 flex items-center gap-2 text-xs text-neutral-600">
-              <Clock size={13} /> {item.cookie || '30 Days'}
-            </p>
+            {item.description && <p className="mb-4 text-sm leading-relaxed text-neutral-600 break-words">{item.description}</p>}
             <a
               href={`/api/v1/public/tracking/redirect?affiliate_link_id=${item.id}`}
               target="_blank"

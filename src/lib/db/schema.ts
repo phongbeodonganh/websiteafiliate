@@ -51,6 +51,7 @@ export interface IArticle extends Document {
 
 export interface IAffiliateLink extends Document {
   name: string;
+  description?: string;
   baseUrl: string;
   commission?: string;
   cookie?: string;
@@ -181,6 +182,7 @@ const ArticleSchema = new Schema<IArticle>(
 const AffiliateLinkSchema = new Schema<IAffiliateLink>(
   {
     name: { type: String, required: true },
+    description: { type: String, default: '', maxlength: 300 },
     baseUrl: { type: String, required: true },
     commission: { type: String },
     cookie: { type: String },

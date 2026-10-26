@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Award, Clock, ExternalLink, ShieldCheck, Star, Zap } from 'lucide-react';
+import { Award, ExternalLink, Star, Zap } from 'lucide-react';
 
 interface TopPick {
   id: string | number;
   name: string;
   baseUrl: string;
-  commission: string;
-  cookie: string;
+  description?: string;
 }
 
 interface TopPicksWidgetProps {
@@ -106,22 +105,7 @@ export default function TopPicksWidget({ variant = 'default', viewAllHref }: Top
                 {pick.name}
               </h3>
 
-              <div className="space-y-2 mb-6">
-                <div
-                  className={
-                    editorial
-                      ? 'flex max-w-full items-center gap-2 break-words text-xs text-[#85DDD5] font-semibold bg-[#85DDD5]/10 px-3 py-1 border border-[#85DDD5]/25'
-                      : 'flex max-w-full items-center gap-2 break-words text-xs text-emerald-700 font-semibold bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200/80'
-                  }
-                >
-                  <ShieldCheck size={14} className={editorial ? 'text-[#85DDD5]' : 'text-[#20C997]'} />
-                  {pick.commission || 'Exclusive Offer'}
-                </div>
-                <div className={`flex items-center gap-1.5 text-xs ${editorial ? 'text-white/45' : 'text-slate-500'}`}>
-                  <Clock size={12} className={editorial ? 'text-white/35' : 'text-slate-400'} /> Cookie Window:{' '}
-                  <span className={`font-medium ${editorial ? 'text-white/70' : 'text-slate-700'}`}>{pick.cookie || '30 Days'}</span>
-                </div>
-              </div>
+              {pick.description && <p className={`mb-6 text-sm leading-relaxed break-words ${editorial ? 'text-white/70' : 'text-slate-600'}`}>{pick.description}</p>}
             </div>
 
             <a

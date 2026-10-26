@@ -20,6 +20,7 @@ export async function GET(req: Request) {
       return {
         id: doc._id.toString(),
         name: doc.name,
+        description: doc.description || '',
         baseUrl: doc.base_url,
         base_url: doc.base_url,
         productUrl: doc.product_url || doc.base_url,
@@ -55,7 +56,11 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, base_url, baseUrl, product_url, productUrl, commission, cookie, is_top_pick, isTopPick } = body;
+    const { name, description, base_url, baseUrl, product_url, productUrl, commission, cookie, is_top_pick, isTopPick } = body;
+    if (description !== undefined && (typeof description !== 'string' || description.trim().length > 300)) {
+      return NextResponse.json({ status: 'error', message: 'Short description must be text of at most 300 characters.' }, { status: 400 });
+    }
+
     const finalBaseUrl = base_url || baseUrl;
     const finalProductUrl = product_url || productUrl || finalBaseUrl;
 
@@ -83,6 +88,7 @@ export async function POST(req: Request) {
     await connectToDatabase();
     const newLink = await AffiliateLinkModel.create({
       name,
+      description: description?.trim() || '',
       base_url: finalBaseUrl,
       product_url: finalProductUrl,
       commission: finalCommission,
@@ -98,6 +104,7 @@ export async function POST(req: Request) {
         data: {
           id: newLink._id.toString(),
           name: newLink.name,
+          description: newLink.description || '',
           baseUrl: newLink.base_url,
           base_url: newLink.base_url,
           productUrl: newLink.product_url,

@@ -356,6 +356,8 @@ export default function AdminDashboardPage() {
 
   // Affiliate Link Form State
   const [newAffName, setNewAffName] = useState('');
+  const [newAffDescription, setNewAffDescription] = useState('');
+  const [deletingArticleId, setDeletingArticleId] = useState<string | null>(null);
   const [newAffUrl, setNewAffUrl] = useState('');
   const [newAffProductUrl, setNewAffProductUrl] = useState('');
   const [newAffCommission, setNewAffCommission] = useState('15% / Sale');
@@ -1034,6 +1036,7 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           name: newAffName,
+          description: newAffDescription,
           base_url: newAffUrl,
           product_url: newAffProductUrl || newAffUrl,
           commission: newAffCommission,
@@ -1044,6 +1047,7 @@ export default function AdminDashboardPage() {
       if (res.ok && data.status === 'success') {
         void dialog.alert('Affiliate campaign added successfully.');
         setNewAffName('');
+        setNewAffDescription('');
         setNewAffUrl('');
         setNewAffProductUrl('');
         loadAllData();
@@ -1053,6 +1057,46 @@ export default function AdminDashboardPage() {
     } catch (err) {
       void dialog.alert('Unable to add the affiliate link.');
     }
+  };
+
+  const handleDeleteArticle = async (article: { id: string; title: string }) => {
+    if (deletingArticleId) return;
+    if (!(await dialog.confirm(`Delete “${article.title}”? This permanently removes the article from the website.`, { title: 'Delete article', confirmLabel: 'Delete article' }))) return;
+    setDeletingArticleId(article.id);
+    try {
+      const result = await cmsFetch(`/api/v1/cms/articles/${article.id}`, {
+        method: 'DELETE', token: localStorage.getItem('token'),
+      });
+      if (!result.ok) {
+        handleCmsFailure(result.status, result.message);
+        return;
+      }
+      setArticlesList((current) => current.filter((item) => item.id !== article.id));
+      showCmsToast('success', 'Article deleted.');
+      loadAllData();
+    } finally {
+      setDeletingArticleId(null);
+    }
+  };
+
+  const handleEditAffiliateDescription = async (link: { id: string; name: string; description?: string }) => {
+    const description = await dialog.prompt(`Describe ${link.name} in at most 300 characters. This description appears on the website.`, {
+      title: 'Edit short description', defaultValue: link.description || '', confirmLabel: 'Save description',
+    });
+    if (description === null) return;
+    if (description.trim().length > 300) {
+      showCmsToast('error', 'Short description must be at most 300 characters.');
+      return;
+    }
+    const result = await cmsFetch(`/api/v1/cms/affiliate-links/${link.id}`, {
+      method: 'PUT', token: localStorage.getItem('token'), body: { description: description.trim() },
+    });
+    if (!result.ok) {
+      handleCmsFailure(result.status, result.message);
+      return;
+    }
+    showCmsToast('success', 'Short description saved.');
+    loadAllData();
   };
 
   const handleDeleteAffiliateLink = async (id: number) => {
@@ -1919,6 +1963,16 @@ export default function AdminDashboardPage() {
                   >
                     <Edit size={16} />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteArticle(art)}
+                    disabled={deletingArticleId !== null}
+                    title="Delete Article"
+                    aria-label={`Delete article: ${art.title}`}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-xs text-rose-400 transition-colors hover:bg-rose-400/10 focus-visible:outline-2 focus-visible:outline-rose-400 disabled:opacity-40"
+                  >
+                    <Trash2 size={16} /> {deletingArticleId === art.id ? 'Deleting…' : 'Delete'}
+                  </button>
                 </td>
               </tr>
             ))}
@@ -2010,6 +2064,20 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        <div>
+          <label htmlFor="affiliate-description" className="mb-1 block text-xs text-slate-400">Short description</label>
+          <textarea
+            id="affiliate-description"
+            value={newAffDescription}
+            onChange={(e) => setNewAffDescription(e.target.value)}
+            maxLength={300}
+            rows={3}
+            placeholder="Briefly explain what this platform offers and who it is for."
+            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2 text-sm text-white"
+          />
+          <p className="mt-1 text-xs text-slate-500">Shown on public affiliate cards. {newAffDescription.length}/300 characters.</p>
+        </div>
+
         {affUrlBlacklistError?.isError && (
           <div className="text-xs text-rose-400 font-bold bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl flex items-start gap-2 animate-in fade-in">
             <AlertTriangle size={18} className="shrink-0 text-rose-400 mt-0.5" />
@@ -2058,6 +2126,7 @@ export default function AdminDashboardPage() {
                       </span>
                     )}
                   </div>
+                  <p className="mt-2 max-w-xs whitespace-normal break-words text-xs font-normal leading-relaxed text-slate-400">{link.description || 'No short description yet.'}</p>
                   {link.productUrl && (
                     <span className="text-[11px] text-cyan-400 font-mono truncate max-w-[180px] block opacity-80 mt-0.5">
                       🌐 {link.productUrl}
@@ -2097,6 +2166,9 @@ export default function AdminDashboardPage() {
                     title="Move to Blacklist"
                   >
                     <ShieldAlert size={14} /> Blacklist
+                  </button>
+                  <button type="button" onClick={() => handleEditAffiliateDescription(link)} className="inline-flex items-center gap-1.5 rounded-lg p-2 text-xs text-slate-400 hover:bg-white/10 hover:text-white" title="Edit short description" aria-label={`Edit description: ${link.name}`}>
+                    <Edit size={16} /> Description
                   </button>
                   <button onClick={() => handleDeleteAffiliateLink(link.id)} className="p-2 text-slate-400 hover:text-red-400" title="Delete Campaign">
                     <Trash2 size={16} />

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 type AffiliateOffer = {
   id: string;
   name: string;
+  description?: string;
   commission?: string;
   cookie?: string;
 };
@@ -93,6 +94,7 @@ export default function AffiliateRecommendationSheet({
               <span className="text-[9px] font-bold uppercase text-neutral-500">Sponsored</span>
             </div>
             <h3 className="mb-2 text-sm font-bold text-black sm:text-base">{offer.name}</h3>
+            {offer.description && <p className="mb-3 text-xs leading-relaxed text-neutral-600 break-words">{offer.description}</p>}
             <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-neutral-600">
               <p className="flex items-center gap-2"><ShieldCheck size={14} /> {offer.commission || 'Exclusive offer'}</p>
               <p className="flex items-center gap-2"><Clock size={14} /> {offer.cookie || '30-day cookie'}</p>

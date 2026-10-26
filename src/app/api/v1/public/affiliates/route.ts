@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
-import { AffiliateLinkModel, syncAffiliateNumericFields } from '@/lib/db/models';
-import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
+import { AffiliateLinkModel } from '@/lib/db/models';
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 9;
@@ -20,10 +19,6 @@ function getSortOption(sort: string, order: string | null): Record<string, 1 | -
   switch (sort) {
     case 'clicks':
       return { click_count: direction, created_at: -1, _id: -1 };
-    case 'commission':
-      return { commission_rate: direction, click_count: -1, created_at: -1, _id: -1 };
-    case 'cookie':
-      return { cookie_days: direction, click_count: -1, created_at: -1, _id: -1 };
     case 'oldest':
       return { created_at: 1, _id: 1 };
     case 'name':
@@ -42,7 +37,7 @@ export async function GET(req: Request) {
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const filter = query ? { name: { $regex: escapedQuery, $options: 'i' } } : {};
   const requestedSort = (searchParams.get('sort') || searchParams.get('sort_by') || 'latest').toLowerCase().trim();
-  const sort = ['clicks', 'commission', 'cookie', 'oldest', 'name', 'latest'].includes(requestedSort)
+  const sort = ['clicks', 'oldest', 'name', 'latest'].includes(requestedSort)
     ? requestedSort
     : 'latest';
   const order = searchParams.get('order')?.toLowerCase().trim() || null;
@@ -50,7 +45,6 @@ export async function GET(req: Request) {
 
   try {
     await connectToDatabase();
-    await syncAffiliateNumericFields();
 
     const [links, total] = await Promise.all([
       AffiliateLinkModel.find(filter).sort(sortOption).skip((page - 1) * limit).limit(limit),
@@ -62,10 +56,7 @@ export async function GET(req: Request) {
       data: links.map((link) => ({
         id: link._id.toString(),
         name: link.name,
-        commission: link.commission || 'Exclusive Offer',
-        commissionRate: link.commission_rate ?? parseCommissionRate(link.commission),
-        cookie: link.cookie || '30 Days',
-        cookieDays: link.cookie_days ?? parseCookieDays(link.cookie),
+        description: link.description || '',
         isTopPick: link.is_top_pick,
         clickCount: link.click_count || 0,
         click_count: link.click_count || 0,
