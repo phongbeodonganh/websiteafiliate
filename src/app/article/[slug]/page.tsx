@@ -2,10 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, BookOpen, CalendarDays, Clock3, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
-import { after } from 'next/server';
+// TEMP load test: uncomment to restore view counting.
+// import { after } from 'next/server';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
-import { headers } from 'next/headers';
+// TEMP load test: uncomment to restore view counting.
+// import { headers } from 'next/headers';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
 import AffiliateRecommendationSheet from '@/components/AffiliateRecommendationSheet';
@@ -23,7 +25,8 @@ import ArticleTableOfContents from '@/components/ArticleTableOfContents';
 import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
-import { recordView } from '@/lib/view-count';
+// TEMP load test: uncomment to restore view counting.
+// import { recordView } from '@/lib/view-count';
 import { buildFaqPageSchema, type FaqPair } from '@/lib/faq-jsonld';
 import { sortPlacementsByPosition, splitPlacementsByVerdict } from '@/lib/placement-order';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -185,13 +188,17 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   // IP+article dedupe. headers() must be called OUTSIDE the after() callback
   // (after.md §"In Server Components"). The IP extraction follows the same
   // last-hop XFF logic as getClientIp in src/lib/utils.ts (D-14, SEC-04).
-  const headersList = await headers();
-  const forwarded = headersList.get('x-forwarded-for');
-  const ip = forwarded
-    ? forwarded.split(',').pop()!.trim()
-    : headersList.get('x-real-ip') || '127.0.0.1';
-  const articleIdForView = (data.doc._id as Types.ObjectId).toString();
-  after(() => recordView(articleIdForView, ip));
+  // TEMP LOAD TEST: view counting is disabled. Uncomment this block and the
+  // three marked imports above to restore it after testing.
+  // RootLayout still reads headers() for the CSP nonce, so disabling this
+  // block alone does not switch this route to static HTML.
+  // const headersList = await headers();
+  // const forwarded = headersList.get('x-forwarded-for');
+  // const ip = forwarded
+  //   ? forwarded.split(',').pop()!.trim()
+  //   : headersList.get('x-real-ip') || '127.0.0.1';
+  // const articleIdForView = (data.doc._id as Types.ObjectId).toString();
+  // after(() => recordView(articleIdForView, ip));
 
   const doc = data.doc;
   const articleId = (doc._id as Types.ObjectId).toString();
