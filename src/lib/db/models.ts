@@ -260,7 +260,7 @@ export interface ISubscriber extends Document {
   confirmation_expires_at?: Date;
   confirmed_at?: Date;
   unsubscribed_at?: Date;
-  email_status?: 'sent' | 'opened';
+  email_status?: 'sent' | 'opened' | 'failed' | 'bounced' | 'complained' | 'suppressed';
   last_email_id?: string;
   opened_at?: Date;
   last_digest_at?: Date;
@@ -275,7 +275,11 @@ const SubscriberSchema = new Schema<ISubscriber>({
   confirmation_expires_at: { type: Date },
   confirmed_at: { type: Date },
   unsubscribed_at: { type: Date },
-  email_status: { type: String, enum: ['sent', 'opened'], default: 'sent' },
+  email_status: {
+    type: String,
+    enum: ['sent', 'opened', 'failed', 'bounced', 'complained', 'suppressed'],
+    default: 'sent',
+  },
   last_email_id: { type: String },
   opened_at: { type: Date },
   last_digest_at: { type: Date },

@@ -1,8 +1,8 @@
 import { Resend } from 'resend';
 import { BRAND_NAME } from '../brand';
 
-const DEFAULT_EMAIL_FROM = 'TheHavenDeals <hello@goodpick.eu>';
-const DEFAULT_EMAIL_REPLY_TO = 'hello@goodpick.eu';
+const DEFAULT_EMAIL_FROM = 'TheHavenDeals Insider <insider@aidealsuk.com>';
+const DEFAULT_EMAIL_REPLY_TO = 'support@aidealsuk.com';
 
 export interface SendEmailInput {
   to: string;

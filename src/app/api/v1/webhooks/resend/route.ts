@@ -3,14 +3,32 @@ import { Webhook } from 'svix';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubscriberModel } from '@/lib/db/models';
 
-interface ResendOpenedEvent {
-  type: 'email.opened';
+type ResendEmailEventType =
+  | 'email.opened'
+  | 'email.bounced'
+  | 'email.complained'
+  | 'email.failed'
+  | 'email.suppressed';
+
+interface ResendEmailEvent {
+  type: ResendEmailEventType;
   created_at: string;
   data: {
     email_id: string;
     to: string[];
+    bounce?: {
+      type?: 'Permanent' | 'Transient' | 'Undetermined';
+    };
   };
 }
+
+const TRACKED_EMAIL_EVENTS = new Set<ResendEmailEventType>([
+  'email.opened',
+  'email.bounced',
+  'email.complained',
+  'email.failed',
+  'email.suppressed',
+]);
 
 export async function POST(req: Request) {
   const secret = process.env.RESEND_WEBHOOK_SECRET?.trim();
@@ -32,32 +50,48 @@ export async function POST(req: Request) {
       'svix-id': svixId,
       'svix-timestamp': svixTimestamp,
       'svix-signature': svixSignature,
-    }) as ResendOpenedEvent | { type: string };
+    }) as ResendEmailEvent | { type: string };
 
-    if (event.type !== 'email.opened') {
+    if (!TRACKED_EMAIL_EVENTS.has(event.type as ResendEmailEventType)) {
       return NextResponse.json({ received: true });
     }
 
-    const openedEvent = event as ResendOpenedEvent;
-    const recipient = openedEvent.data.to[0]?.trim().toLowerCase();
+    const emailEvent = event as ResendEmailEvent;
+    const recipient = emailEvent.data.to[0]?.trim().toLowerCase();
     if (!recipient) {
       return NextResponse.json({ received: true });
     }
 
     await connectToDatabase();
+    const eventDate = new Date(emailEvent.created_at);
+    const isPermanentBounce = emailEvent.type === 'email.bounced'
+      && emailEvent.data.bounce?.type === 'Permanent';
+    const shouldUnsubscribe = isPermanentBounce
+      || emailEvent.type === 'email.complained'
+      || emailEvent.type === 'email.suppressed';
+    const emailStatus = emailEvent.type.replace('email.', '') as
+      'opened' | 'failed' | 'bounced' | 'complained' | 'suppressed';
     const subscriber = await SubscriberModel.findOneAndUpdate(
-      { email: recipient },
       {
-        email_status: 'opened',
-        opened_at: new Date(openedEvent.created_at),
-        last_email_id: openedEvent.data.email_id,
+        email: recipient,
+        ...(emailEvent.type === 'email.opened' ? { status: { $ne: 'unsubscribed' } } : {}),
       },
-      { new: true },
+      {
+        $set: {
+          email_status: emailStatus,
+          last_email_id: emailEvent.data.email_id,
+          ...(emailEvent.type === 'email.opened' ? { opened_at: eventDate } : {}),
+          ...(shouldUnsubscribe ? { status: 'unsubscribed', unsubscribed_at: eventDate } : {}),
+        },
+      },
+      { returnDocument: 'after' },
     );
 
-    console.log('Resend email opened:', {
-      emailId: openedEvent.data.email_id,
+    console.log('Resend email event:', {
+      type: emailEvent.type,
+      emailId: emailEvent.data.email_id,
       recipient,
+      unsubscribed: shouldUnsubscribe,
       subscriberUpdated: Boolean(subscriber),
     });
 
