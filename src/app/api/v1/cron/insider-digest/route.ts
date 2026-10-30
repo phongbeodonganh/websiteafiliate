@@ -1,18 +1,22 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { QueryFilter } from 'mongoose';
 import { NextResponse } from 'next/server';
-import { ArticleModel, SubscriberModel, type IArticle, type ISubscriber } from '@/lib/db/models';
+import { SubscriberModel, type ISubscriber } from '@/lib/db/models';
+import { ProductModel } from '@/lib/db/product-models';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { isEmailConfigured, sendEmailBatch } from '@/lib/email/mailer';
 import { RESEND_BATCH_SIZE } from '@/lib/email/resend';
+import { collectHomepageDeals } from '@/lib/homepage/deals';
 import {
   buildInsiderDigestEmail,
   getCurrentGmtPlus12Period,
   getPreviousGmtPlus12Period,
-  type InsiderDigestArticle,
+  type InsiderDigestCoupon,
+  type InsiderDigestProduct,
 } from '@/lib/insider/digest';
 import { ACTIVE_SUBSCRIBER_FILTER, getInsiderSiteUrl } from '@/lib/insider/subscribers';
 import { createInsiderToken } from '@/lib/insider/tokens';
+import { getPublishedStores } from '@/lib/stores/public';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,30 +37,70 @@ function parseLimit(name: string, fallback: number, maximum: number) {
   return Number.isFinite(value) ? Math.min(Math.max(value, 1), maximum) : fallback;
 }
 
-function summarizeArticle(article: {
-  excerpt?: string;
+function summarizeProduct(product: {
+  short_description?: string;
   meta_description?: string;
-  content?: string;
+  description?: string;
 }) {
-  const source = article.excerpt || article.meta_description || article.content || 'Read the full buying guide on TheHavenDeals.';
+  const source = product.short_description || product.meta_description || product.description || '';
   const plainText = source.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   return plainText.length > 220 ? `${plainText.slice(0, 217).trimEnd()}...` : plainText;
 }
 
-function toDigestArticle(article: {
-  title: string;
+function toDigestProduct(product: {
+  name: string;
   slug: string;
-  excerpt?: string;
+  short_description?: string;
   meta_description?: string;
-  content: string;
-  view_count: number;
-}): InsiderDigestArticle {
+  description?: string;
+  price?: number;
+  price_min?: number;
+  original_price?: number;
+  discount_percent?: number;
+  images?: { url?: string; alt?: string }[];
+  offers?: { status?: string; price?: number; original_price?: number }[];
+}): InsiderDigestProduct {
+  const price = Number(product.price_min || product.price || 0);
+  const cheapestOffer = (product.offers || [])
+    .filter((offer) => offer.status === 'active' && Number(offer.price) > 0)
+    .sort((a, b) => Number(a.price) - Number(b.price))[0];
   return {
-    title: article.title,
-    slug: article.slug,
-    summary: summarizeArticle(article),
-    viewCount: article.view_count || 0,
+    name: product.name,
+    slug: product.slug,
+    shortDescription: summarizeProduct(product),
+    imageUrl: product.images?.[0]?.url || undefined,
+    imageAlt: product.images?.[0]?.alt || product.name,
+    price,
+    originalPrice: Number(cheapestOffer?.original_price || product.original_price || 0) || undefined,
+    discountPercent: Number(product.discount_percent || 0),
   };
+}
+
+function savingPercent(value: string) {
+  const match = value.match(/(\d+(?:\.\d+)?)\s*%/);
+  return match ? Number(match[1]) : 0;
+}
+
+async function getDigestCoupons(limit: number): Promise<InsiderDigestCoupon[]> {
+  const stores = await getPublishedStores();
+  return collectHomepageDeals(stores)
+    .sort((a, b) => (
+      savingPercent(b.saving) - savingPercent(a.saving)
+      || Number(Boolean(b.code)) - Number(Boolean(a.code))
+      || (Date.parse(b.checkedAt || b.updatedAt) || 0) - (Date.parse(a.checkedAt || a.updatedAt) || 0)
+      || a.id.localeCompare(b.id)
+    ))
+    .slice(0, limit)
+    .map((deal) => ({
+      storeName: deal.storeName,
+      storeSlug: deal.storeSlug,
+      title: deal.title,
+      description: deal.description,
+      saving: deal.saving,
+      code: deal.code,
+      imageUrl: deal.storeImageUrl || undefined,
+      imageAlt: deal.storeImageAlt || deal.storeName,
+    }));
 }
 
 export async function POST(req: Request) {
@@ -77,36 +121,34 @@ export async function POST(req: Request) {
     const period = manualCurrentPeriod
       ? getCurrentGmtPlus12Period()
       : getPreviousGmtPlus12Period();
-    const latestLimit = parseLimit('INSIDER_DIGEST_LATEST_LIMIT', 5, 10);
-    const hottestLimit = parseLimit('INSIDER_DIGEST_HOTTEST_LIMIT', 3, 10);
-    const articleFilter: QueryFilter<IArticle> = {
-      status: 'published',
-      created_at: { $gte: period.start, $lt: period.end },
-    };
-    const hottestArticleFilter: QueryFilter<IArticle> = { status: 'published' };
+    const dealsLimit = parseLimit('INSIDER_DIGEST_DEALS_LIMIT', 10, 20);
+    const newestLimit = parseLimit('INSIDER_DIGEST_NEWEST_LIMIT', 10, 20);
+    const couponsLimit = parseLimit('INSIDER_DIGEST_COUPONS_LIMIT', 10, 20);
 
-    const [latestDocuments, hottestDocuments] = await Promise.all([
-      ArticleModel.find(articleFilter)
-        .sort({ created_at: -1 })
-        .limit(latestLimit)
-        .select('title slug excerpt meta_description content view_count'),
-      ArticleModel.find(hottestArticleFilter)
-        .sort({ view_count: -1, created_at: -1 })
-        .limit(hottestLimit)
-        .select('title slug excerpt meta_description content view_count'),
+    const [dealDocuments, newestDocuments, coupons] = await Promise.all([
+      ProductModel.find({ status: 'published', is_deal: true, discount_percent: { $gt: 0 } })
+        .sort({ discount_percent: -1, published_at: -1, created_at: -1, _id: -1 })
+        .limit(dealsLimit)
+        .select('name slug short_description description meta_description images price price_min original_price discount_percent offers'),
+      ProductModel.find({ status: 'published' })
+        .sort({ published_at: -1, created_at: -1, _id: -1 })
+        .limit(newestLimit)
+        .select('name slug short_description description meta_description images price price_min original_price discount_percent offers'),
+      getDigestCoupons(couponsLimit),
     ]);
-    const latest = latestDocuments.map((article) => toDigestArticle(article.toObject()));
-    const hottest = hottestDocuments.map((article) => toDigestArticle(article.toObject()));
+    const deals = dealDocuments.map((product) => toDigestProduct(product.toObject()));
+    const newest = newestDocuments.map((product) => toDigestProduct(product.toObject()));
 
-    if (latest.length === 0 && hottest.length === 0) {
+    if (deals.length === 0 && newest.length === 0 && coupons.length === 0) {
       return NextResponse.json({
         status: 'success',
-        data: { dayKey: period.dayKey, sent: 0, skipped: 'no_articles' },
+        data: { dayKey: period.dayKey, sent: 0, skipped: 'no_deals_or_products' },
       });
     }
 
     const siteName = process.env.EMAIL_SITE_NAME?.trim() || 'TheHavenDeals';
     const siteUrl = getInsiderSiteUrl();
+    const listId = `${siteName} Insider <insider.${new URL(siteUrl).hostname}>`;
     const dispatchKey = manualCurrentPeriod
       ? `manual-${randomUUID()}`
       : `scheduled-${period.dayKey}`;
@@ -139,12 +181,10 @@ export async function POST(req: Request) {
           siteName,
           siteUrl,
           dayKey: period.dayKey,
-          latest,
-          hottest,
+          deals,
+          newest,
+          coupons,
           unsubscribeUrl: unsubscribeUrl.toString(),
-          periodDescription: manualCurrentPeriod
-            ? 'the current GMT+12 day so far'
-            : 'the previous GMT+12 day',
         });
 
         return {
@@ -153,6 +193,7 @@ export async function POST(req: Request) {
           headers: {
             'List-Unsubscribe': `<${unsubscribeUrl.toString()}>`,
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            'List-ID': listId,
           },
         };
       });
@@ -195,8 +236,9 @@ export async function POST(req: Request) {
         dayKey: period.dayKey,
         periodStart: period.start.toISOString(),
         periodEnd: period.end.toISOString(),
-        latest: latest.length,
-        hottest: hottest.length,
+        deals: deals.length,
+        newest: newest.length,
+        coupons: coupons.length,
         sent,
         batches,
         mode: manualCurrentPeriod ? 'manual_current_day' : 'scheduled_previous_day',

@@ -22,54 +22,72 @@ describe('TheHavenDeals product digest', () => {
     expect(period.end.toISOString()).toBe('2026-08-31T10:30:00.000Z');
   });
 
-  it('renders latest, hottest, website and unsubscribe links as safe HTML', () => {
+  it('renders products, coupons, prices and links as safe HTML', () => {
     const email = buildInsiderDigestEmail({
       siteName: 'TheHavenDeals',
       siteUrl: 'https://thehavendeals.com',
       dayKey: '2026-08-31',
-      latest: [{
-        title: 'Latest <AI> story',
-        slug: 'latest-ai-story',
-        summary: 'A useful & concise summary.',
-        viewCount: 5,
+      deals: [{
+        name: 'Deal <Camera>',
+        slug: 'deal-camera',
+        shortDescription: 'A useful & compact camera.',
+        price: 79.99,
+        originalPrice: 99.99,
+        discountPercent: 20,
       }],
-      hottest: [{
-        title: 'Most read story',
-        slug: 'most-read-story',
-        summary: 'The hottest story today.',
-        viewCount: 100,
+      newest: [{
+        name: 'Newest product',
+        slug: 'newest-product',
+        shortDescription: 'Freshly published.',
+        price: 25,
+        discountPercent: 0,
+      }],
+      coupons: [{
+        storeName: 'Example & Co',
+        storeSlug: 'example-store',
+        title: 'Save <20%> today',
+        description: 'Selected products only.',
+        saving: '20% off',
+        code: 'SAVE20',
       }],
       unsubscribeUrl: 'https://thehavendeals.com/api/v1/public/insider/unsubscribe?token=test',
     });
 
-    expect(email.subject).toContain('2026-08-31');
-    expect(email.html).toContain('Latest &lt;AI&gt; story');
-    expect(email.html).not.toContain('Latest <AI> story');
-    expect(email.html).toContain('/article/latest-ai-story');
-    expect(email.html).toContain('/article/most-read-story');
+    expect(email.subject).toBe('TheHavenDeals Daily Edit — 2026-08-31');
+    expect(email.html).toContain('Deal &lt;Camera&gt;');
+    expect(email.html).not.toContain('Deal <Camera>');
+    expect(email.html).toContain('/products/deal-camera');
+    expect(email.html).toContain('/products/newest-product');
+    expect(email.html).toContain('/store/example-store');
+    expect(email.html).toContain('SAVE20');
+    expect(email.html).toContain('$79.99');
     expect(email.html).toContain('Unsubscribe');
     expect(email.text).toContain('https://thehavendeals.com');
   });
 
-  it('renders a hottest-only digest when there are no latest stories', () => {
+  it('omits empty product sections while retaining coupon deals', () => {
     const email = buildInsiderDigestEmail({
       siteName: 'TheHavenDeals',
       siteUrl: 'https://thehavendeals.com',
       dayKey: '2026-08-31',
-      latest: [],
-      hottest: [{
-        title: 'Still trending',
-        slug: 'still-trending',
-        summary: 'The most-read published story.',
-        viewCount: 200,
+      deals: [],
+      newest: [],
+      coupons: [{
+        storeName: 'Coupon Store',
+        storeSlug: 'coupon-store',
+        title: 'A live coupon',
+        description: 'Valid while active.',
+        saving: '15% off',
+        code: 'LIVE15',
       }],
       unsubscribeUrl: 'https://thehavendeals.com/unsubscribe',
     });
 
-    expect(email.html).not.toContain('>Latest guides</p>');
-    expect(email.html).toContain('>Most read</p>');
-    expect(email.html).toContain('Still trending');
-    expect(email.text).not.toContain('LATEST GUIDES\n');
-    expect(email.text).toContain('MOST READ\n');
+    expect(email.html).not.toContain('>Top 10 product deals</h2>');
+    expect(email.html).not.toContain('>Fresh on the shelf</h2>');
+    expect(email.html).toContain('>Top 10 coupon deals</h2>');
+    expect(email.html).toContain('A live coupon');
+    expect(email.text).not.toContain('Product price drops\n');
+    expect(email.text).toContain('Current store offers\n');
   });
 });

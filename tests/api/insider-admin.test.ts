@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Types } from 'mongoose';
 
 const emailMocks = vi.hoisted(() => ({
   sendEmailBatch: vi.fn(),
@@ -12,7 +11,8 @@ vi.mock('@/lib/email/mailer', () => ({
 }));
 
 import { signToken } from '@/lib/auth';
-import { ArticleModel, SubscriberModel, UserModel } from '@/lib/db/models';
+import { SubscriberModel, UserModel } from '@/lib/db/models';
+import { ProductModel } from '@/lib/db/product-models';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { POST as sendNowHandler } from '@/app/api/v1/cms/insider/send-now/route';
 import { POST as cronDigestHandler } from '@/app/api/v1/cron/insider-digest/route';
@@ -62,7 +62,7 @@ describe('POST /api/v1/cms/insider/send-now', () => {
     }
   });
 
-  it('sends hottest articles without latest articles and does not suppress the scheduled cron', async () => {
+  it('sends product deals, newest products and coupons without suppressing the scheduled cron', async () => {
     const previousSecret = process.env.INSIDER_CRON_SECRET;
     const previousTokenSecret = process.env.INSIDER_TOKEN_SECRET;
     process.env.INSIDER_CRON_SECRET = 'vitest-insider-cron-secret';
@@ -83,24 +83,50 @@ describe('POST /api/v1/cms/insider/send-now', () => {
         status: 'active',
         confirmed_at: new Date(),
       });
-      await ArticleModel.create({
-        author_id: new Types.ObjectId(),
-        title: 'Older but hottest article',
-        slug: 'older-but-hottest-article',
-        content: 'Still the most-read published story.',
+      await ProductModel.create({
+        name: 'Half-price test product',
+        slug: 'half-price-test-product',
+        sku: 'INSIDER-DEAL-1',
+        short_description: 'A product selected for the daily deals email.',
         status: 'published',
-        view_count: 999,
-        created_at: new Date('2020-01-01T00:00:00.000Z'),
+        is_deal: true,
+        price: 50,
+        original_price: 100,
       });
+      for (let discount = 1; discount <= 11; discount += 1) {
+        await ProductModel.create({
+          name: `Ranked deal ${discount}`,
+          slug: `ranked-deal-${discount}`,
+          sku: `INSIDER-RANK-${discount}`,
+          short_description: `Product with a ${discount}% saving.`,
+          status: 'published',
+          is_deal: true,
+          price: 100 - discount,
+          original_price: 100,
+        });
+      }
 
       const adminToken = signToken({ userId: admin._id.toString(), username: admin.username, role: 'admin' });
       const manualResponse = await sendNowHandler(requestWithToken(adminToken));
       const manualPayload = await manualResponse.json();
 
       expect(manualResponse.status).toBe(200);
-      expect(manualPayload.data.latest).toBe(0);
-      expect(manualPayload.data.hottest).toBe(1);
+      expect(manualPayload.data.deals).toBe(10);
+      expect(manualPayload.data.newest).toBe(10);
+      expect(manualPayload.data.coupons).toBeGreaterThan(0);
       expect(manualPayload.data.sent).toBe(1);
+      const firstMessage = (emailMocks.sendEmailBatch.mock.calls[0][0] as {
+        html: string;
+        subject: string;
+        headers: Record<string, string>;
+      }[])[0];
+      expect(firstMessage.html).toContain('/products/half-price-test-product');
+      expect(firstMessage.html).toContain('50% lower');
+      expect(firstMessage.html).toContain('Top 10 coupon deals');
+      expect(firstMessage.subject).toContain('Daily Edit');
+      expect(firstMessage.headers['List-Unsubscribe']).toMatch(/^<https?:\/\//);
+      expect(firstMessage.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+      expect(firstMessage.headers['List-ID']).toContain('TheHavenDeals Insider');
 
       const afterManual = await SubscriberModel.findById(subscriber._id).lean();
       expect(afterManual?.last_digest_key).toBeUndefined();
@@ -112,8 +138,9 @@ describe('POST /api/v1/cms/insider/send-now', () => {
       const cronPayload = await cronResponse.json();
 
       expect(cronResponse.status).toBe(200);
-      expect(cronPayload.data.latest).toBe(0);
-      expect(cronPayload.data.hottest).toBe(1);
+      expect(cronPayload.data.deals).toBe(10);
+      expect(cronPayload.data.newest).toBe(10);
+      expect(cronPayload.data.coupons).toBeGreaterThan(0);
       expect(cronPayload.data.sent).toBe(1);
       expect(emailMocks.sendEmailBatch).toHaveBeenCalledTimes(2);
 

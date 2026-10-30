@@ -86,18 +86,19 @@ JWT_SECRET="<dán-secret-vừa-sinh-ở-trên>"
 MONGODB_URI="mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/websiteafiliate?retryWrites=true&w=majority"
 NODE_ENV=production
 
-# Resend + AIDEALSUK Insider (see INSIDER_EMAIL_SETUP.md)
+# Resend + TheHavenDeals Insider (see INSIDER_EMAIL_SETUP.md)
 NEXT_PUBLIC_SITE_URL="https://aidealsuk.com"
-EMAIL_SITE_NAME="AIDEALSUK"
-EMAIL_FROM="AIDEALSUK Insider <insider@aidealsuk.com>"
+EMAIL_SITE_NAME="TheHavenDeals"
+EMAIL_FROM="TheHavenDeals Insider <insider@aidealsuk.com>"
 EMAIL_REPLY_TO="support@aidealsuk.com"
 RESEND_API="<Resend API key>"
 RESEND_WEBHOOK_SECRET="<Resend webhook signing secret>"
 INSIDER_TOKEN_SECRET="<random secret, at least 32 bytes>"
 INSIDER_CRON_SECRET="<different random secret, at least 32 bytes>"
 INSIDER_CONFIRM_TOKEN_TTL_HOURS=24
-INSIDER_DIGEST_LATEST_LIMIT=5
-INSIDER_DIGEST_HOTTEST_LIMIT=3
+INSIDER_DIGEST_DEALS_LIMIT=10
+INSIDER_DIGEST_NEWEST_LIMIT=10
+INSIDER_DIGEST_COUPONS_LIMIT=10
 
 # Cloudflare R2 (giống hệt giá trị trong .env.local ở máy local — bucket dùng chung)
 R2_ACCOUNT_ID="7929e845b9844a3cdb2cab8314760931"

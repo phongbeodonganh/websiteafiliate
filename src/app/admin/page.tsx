@@ -718,8 +718,8 @@ export default function AdminDashboardPage() {
       }
 
       const result = payload.data || {};
-      const text = result.skipped === 'no_articles'
-        ? 'Chưa có bài viết đã xuất bản để gửi trong bản tin.'
+      const text = result.skipped === 'no_deals_or_products'
+        ? 'Chưa có sản phẩm hoặc coupon deal đang hoạt động để gửi trong bản tin.'
         : result.sent === 0
           ? 'Không tìm thấy người nhận đang hoạt động khi bắt đầu gửi.'
           : `Đã gửi bản tin đến ${result.sent.toLocaleString()} người trong ${result.batches.toLocaleString()} đợt. Lịch gửi tự động tiếp theo vẫn hoạt động.`;
