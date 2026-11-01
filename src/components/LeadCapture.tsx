@@ -2,12 +2,20 @@
 
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2, AlertCircle, Loader2, Check, ShieldCheck, Mail } from 'lucide-react';
+import { isInsiderEnabled } from '@/lib/insider/feature';
+
+const INSIDER_ENABLED = isInsiderEnabled();
 
 interface LeadCaptureProps {
   variant?: 'default' | 'editorial';
 }
 
-export default function LeadCapture({ variant = 'editorial' }: LeadCaptureProps) {
+export default function LeadCapture(props: LeadCaptureProps) {
+  if (!INSIDER_ENABLED) return null;
+  return <EnabledLeadCapture {...props} />;
+}
+
+function EnabledLeadCapture({ variant = 'editorial' }: LeadCaptureProps) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);

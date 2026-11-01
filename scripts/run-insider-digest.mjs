@@ -36,12 +36,14 @@ const fileEnv = {
   ...readDotEnv(resolve(projectRoot, 'mongodb.env')),
 };
 const env = { ...fileEnv, ...process.env };
+const insiderFlag = env.NEXT_PUBLIC_INSIDER_ENABLED?.trim().toLowerCase();
+const insiderEnabled = !insiderFlag || !['0', 'false', 'no', 'off'].includes(insiderFlag);
 const cronSecret = env.INSIDER_CRON_SECRET?.trim();
 const port = env.PORT?.trim() || '3000';
 const endpoint = env.INSIDER_CRON_INTERNAL_URL?.trim()
   || `http://127.0.0.1:${port}/api/v1/cron/insider-digest`;
 
-if (!cronSecret) {
+if (insiderEnabled && !cronSecret) {
   console.error('Insider scheduler error: INSIDER_CRON_SECRET is not configured');
   process.exit(1);
 }
@@ -51,6 +53,11 @@ function wait(milliseconds) {
 }
 
 async function sendDigest(reason) {
+  if (!insiderEnabled) {
+    console.log(`Insider digest skipped (${reason}): NEXT_PUBLIC_INSIDER_ENABLED is disabled`);
+    return;
+  }
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { Authorization: `Bearer ${cronSecret}` },

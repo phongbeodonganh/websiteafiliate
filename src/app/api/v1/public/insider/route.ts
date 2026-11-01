@@ -5,6 +5,7 @@ import { isEmailConfigured } from '@/lib/email/mailer';
 import { sendInsiderConfirmationEmail } from '@/lib/email/welcome-email';
 import { getInsiderSiteUrl, unsubscribeInsider } from '@/lib/insider/subscribers';
 import { createInsiderToken } from '@/lib/insider/tokens';
+import { insiderDisabledResponse, isInsiderEnabled } from '@/lib/insider/feature';
 import { consumeRequest } from '@/lib/rateLimit';
 import { getClientIp } from '@/lib/utils';
 
@@ -31,6 +32,8 @@ function getConfirmationTtlMs() {
 }
 
 export async function POST(req: Request) {
+  if (!isInsiderEnabled()) return insiderDisabledResponse();
+
   try {
     // SEC-04: hard 429 at the top of the try block. The /subscribe alias
     // (src/app/api/v1/public/subscribe/route.ts) re-exports this POST, so the

@@ -88,6 +88,7 @@ NODE_ENV=production
 
 # Resend + TheHavenDeals Insider (see INSIDER_EMAIL_SETUP.md)
 NEXT_PUBLIC_SITE_URL="https://aidealsuk.com"
+NEXT_PUBLIC_INSIDER_ENABLED=true
 EMAIL_SITE_NAME="TheHavenDeals"
 EMAIL_FROM="TheHavenDeals Insider <insider@aidealsuk.com>"
 EMAIL_REPLY_TO="support@aidealsuk.com"
@@ -108,6 +109,14 @@ R2_SECRET_ACCESS_KEY="<copy từ .env.local local>"
 R2_ENDPOINT="https://7929e845b9844a3cdb2cab8314760931.r2.cloudflarestorage.com"
 R2_PUBLIC_URL="https://media.aidealsuk.com"
 ```
+
+`NEXT_PUBLIC_INSIDER_ENABLED` là feature flag duy nhất cho giao diện đăng ký
+public, trang quản lý subscriber, các API Insider và digest scheduler. Biến
+này mặc định bật khi không khai báo; đặt thành `false` để tắt. Sau khi
+đổi giá trị, cần build và restart lại ứng dụng Next.js vì biến
+`NEXT_PUBLIC_` được nhúng vào frontend trong lúc build. Link hủy đăng ký và
+webhook bounce/complaint vẫn hoạt động khi flag tắt để người nhận cũ
+luôn có thể opt-out.
 
 > Lưu ý: `JWT_SECRET` này **phải khác** secret đang dùng ở máy dev local — nếu trùng, ai có secret dev cũng ký được token hợp lệ trên production.
 >

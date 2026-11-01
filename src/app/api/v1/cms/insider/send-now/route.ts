@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/auth';
 import { POST as runInsiderDigest } from '@/app/api/v1/cron/insider-digest/route';
+import { insiderDisabledResponse, isInsiderEnabled } from '@/lib/insider/feature';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,8 @@ export async function POST(req: Request) {
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
+
+  if (!isInsiderEnabled()) return insiderDisabledResponse();
 
   const cronSecret = process.env.INSIDER_CRON_SECRET?.trim();
   if (!cronSecret) {

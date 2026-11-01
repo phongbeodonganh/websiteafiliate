@@ -2,12 +2,15 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubscriberModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { insiderDisabledResponse, isInsiderEnabled } from '@/lib/insider/feature';
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthUser(req);
   if (!user || user.role !== 'admin') {
     return NextResponse.json({ status: 'error', message: '403 Forbidden' }, { status: 403 });
   }
+
+  if (!isInsiderEnabled()) return insiderDisabledResponse();
 
   const { id } = await params;
 

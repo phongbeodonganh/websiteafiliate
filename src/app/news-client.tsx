@@ -11,9 +11,11 @@ import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
 import EditorialBackdrop from "@/components/EditorialBackdrop";
 import PublicArticleImage, { ARTICLE_PLACEHOLDER } from "@/components/PublicArticleImage";
+import { isInsiderEnabled } from "@/lib/insider/feature";
 import styles from "./page.module.css";
 
 const fallbackImage = ARTICLE_PLACEHOLDER;
+const INSIDER_ENABLED = isInsiderEnabled();
 
 export type Article = {
   id: string;
@@ -210,7 +212,7 @@ export default function TechFinanceNewsClient({
       <EditorialBackdrop section="NEWSROOM" />
       <EditorialHeader initialSearchQuery={activeQuery} />
 
-      {insiderMessage && (
+      {INSIDER_ENABLED && insiderMessage && (
         <p className={styles.statusMessage} role="status" aria-live="polite">{insiderMessage}</p>
       )}
 
@@ -441,7 +443,7 @@ export default function TechFinanceNewsClient({
         <CategoryArticleSections />
       </div>
 
-      <section className={styles.conversionZone} aria-labelledby="conversion-title" data-motion="rise">
+      {INSIDER_ENABLED && <section className={styles.conversionZone} aria-labelledby="conversion-title" data-motion="rise">
         <div className={styles.conversionHeading}>
           <p className={styles.heroEyebrow}>Go deeper. Spend smarter.</p>
           <h2 id="conversion-title">THE INSIDER DESK</h2>
@@ -455,7 +457,7 @@ export default function TechFinanceNewsClient({
             <LeadCapture variant="editorial" />
           </div>
         </div>
-      </section>
+      </section>}
 
       <EditorialFooter />
     </main>

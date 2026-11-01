@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, UserModel, ClickLogModel, SubscriberModel, ProductModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { ACTIVE_SUBSCRIBER_FILTER } from '@/lib/insider/subscribers';
+import { isInsiderEnabled } from '@/lib/insider/feature';
 
 interface PopulatedAuthor {
   _id?: { toString(): string };
@@ -126,7 +127,9 @@ export async function GET(req: Request) {
         .slice(0, 5);
     }
 
-    const totalSubscribers = await SubscriberModel.countDocuments(ACTIVE_SUBSCRIBER_FILTER);
+    const totalSubscribers = isInsiderEnabled()
+      ? await SubscriberModel.countDocuments(ACTIVE_SUBSCRIBER_FILTER)
+      : 0;
 
     // Physical-product operating metrics. Authors/editors only see products
     // created by their own account, matching the CMS product ownership rules.

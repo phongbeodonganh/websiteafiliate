@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import InsiderResult from '../InsiderResult';
+import { isInsiderEnabled } from '@/lib/insider/feature';
 
 export const metadata: Metadata = {
   title: 'Insider confirmed',
@@ -14,6 +16,10 @@ type SuccessPageProps = {
 export default async function InsiderSuccessPage({ searchParams }: SuccessPageProps) {
   const { status: rawStatus } = await searchParams;
   const status = typeof rawStatus === 'string' ? rawStatus : 'confirmed';
+
+  // Keep the unsubscribe receipt reachable for recipients of older emails,
+  // while hiding the rest of the Insider UI when the feature is disabled.
+  if (!isInsiderEnabled() && status !== 'unsubscribed') notFound();
 
   if (status === 'unsubscribed') {
     return (

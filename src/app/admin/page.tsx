@@ -9,6 +9,7 @@ import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import ProductManager from '@/components/admin/ProductManager';
 import StoreManager from '@/components/admin/StoreManager';
 import AffiliateDashboard from '@/components/admin/AffiliateDashboard';
+import { isInsiderEnabled } from '@/lib/insider/feature';
 import {
   LayoutDashboard,
   Link as LinkIcon,
@@ -59,6 +60,7 @@ import {
 // truth for which tabs only an admin may see. Every backing route keeps its 403 —
 // this set is a UI contract, not the access control.
 const ADMIN_ONLY_TABS = new Set(['stores', 'insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
+const INSIDER_ENABLED = isInsiderEnabled();
 const roleLabel = (role: string) => role === 'admin' ? 'Quản trị viên' : role === 'editor' ? 'Biên tập viên' : 'Tác giả';
 
 // Reusable Luxury Button Component
@@ -445,7 +447,7 @@ export default function AdminDashboardPage() {
       .then((r) => r.json())
       .then((d) => d.status === 'success' && setBlacklistList(d.data));
 
-    if (currentUser?.role === 'admin') {
+    if (INSIDER_ENABLED && currentUser?.role === 'admin') {
       loadSubscribersData(token);
     }
   };
@@ -762,7 +764,7 @@ export default function AdminDashboardPage() {
     if (activeTab === 'users' && currentUser?.role === 'admin') {
       loadUsersData();
     }
-    if (activeTab === 'subscribers' && currentUser?.role === 'admin') {
+    if (INSIDER_ENABLED && activeTab === 'subscribers' && currentUser?.role === 'admin') {
       loadSubscribersData();
     }
     if (activeTab === 'insights' && currentUser?.role === 'admin') {
@@ -2961,7 +2963,7 @@ export default function AdminDashboardPage() {
     if (activeTab === 'products') return <ProductManager categories={categoriesList} />;
     if (activeTab === 'stores' && currentUser.role === 'admin') return <StoreManager categories={categoriesList} />;
     if (activeTab === 'insights' && currentUser.role === 'admin') return <InsightsView />;
-    if (activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
+    if (INSIDER_ENABLED && activeTab === 'subscribers' && currentUser.role === 'admin') return <SubscribersView />;
     // CategoriesView is declared inside this dashboard and reads the parent's form
     // state. Calling it as a render helper keeps the modal inputs mounted while a
     // keystroke updates that state; rendering <CategoriesView /> would create a new
@@ -3039,7 +3041,7 @@ export default function AdminDashboardPage() {
                 <>
                   <NavItem id="insights" icon={TrendingUp} label="Phân tích SEO" requiredRole="admin" />
                   <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">Vận hành hệ thống</div>
-                  <NavItem id="subscribers" icon={Mail} label="Người đăng ký" requiredRole="admin" />
+                  {INSIDER_ENABLED && <NavItem id="subscribers" icon={Mail} label="Người đăng ký" requiredRole="admin" />}
                   <NavItem id="categories" icon={FolderTree} label="Danh mục sản phẩm" requiredRole="admin" />
                   <NavItem id="users" icon={Users} label="Tài khoản & phân quyền" requiredRole="admin" />
                   <NavItem id="blacklist" icon={ShieldAlert} label="An toàn liên kết" requiredRole="admin" />

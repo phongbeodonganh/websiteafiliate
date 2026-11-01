@@ -16,6 +16,7 @@ import {
 } from '@/lib/insider/digest';
 import { ACTIVE_SUBSCRIBER_FILTER, getInsiderSiteUrl } from '@/lib/insider/subscribers';
 import { createInsiderToken } from '@/lib/insider/tokens';
+import { insiderDisabledResponse, isInsiderEnabled } from '@/lib/insider/feature';
 import { getPublishedStores } from '@/lib/stores/public';
 
 export const runtime = 'nodejs';
@@ -111,6 +112,7 @@ export async function POST(req: Request) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
   }
+  if (!isInsiderEnabled()) return insiderDisabledResponse();
   if (!isEmailConfigured()) {
     return NextResponse.json({ status: 'error', message: 'Email service is not configured' }, { status: 503 });
   }

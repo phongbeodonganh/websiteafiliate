@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { confirmInsider, getInsiderSiteUrl } from '@/lib/insider/subscribers';
+import { insiderDisabledResponse, isInsiderEnabled } from '@/lib/insider/feature';
 
 function redirectToResult(result: 'confirmed' | 'already-active' | 'invalid') {
   const path = result === 'invalid' ? '/insider/failed' : '/insider/success';
@@ -9,6 +10,8 @@ function redirectToResult(result: 'confirmed' | 'already-active' | 'invalid') {
 }
 
 export async function GET(req: Request) {
+  if (!isInsiderEnabled()) return insiderDisabledResponse();
+
   const token = new URL(req.url).searchParams.get('token');
   if (!token) return redirectToResult('invalid');
 
@@ -22,6 +25,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!isInsiderEnabled()) return insiderDisabledResponse();
+
   try {
     const body = await req.json().catch(() => null) as { token?: unknown } | null;
     if (typeof body?.token !== 'string' || !body.token) {

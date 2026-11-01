@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import InsiderResult from '../InsiderResult';
+import { isInsiderEnabled } from '@/lib/insider/feature';
 
 export const metadata: Metadata = {
   title: 'Insider confirmation failed',
@@ -8,6 +10,8 @@ export const metadata: Metadata = {
 };
 
 export default function InsiderFailedPage() {
+  if (!isInsiderEnabled()) notFound();
+
   return (
     <InsiderResult
       tone="failed"
