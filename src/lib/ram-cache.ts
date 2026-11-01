@@ -20,6 +20,11 @@ const state = globalThis.publicRamCache ?? {
 
 globalThis.publicRamCache = state;
 
+export function isRamCacheEnabled() {
+  const value = process.env.RAM_CACHE_ENABLED?.trim().toLowerCase();
+  return value === undefined || !["0", "false", "off", "no"].includes(value);
+}
+
 /**
  * Process-local cache-aside storage. Values must be plain, immutable data.
  * Concurrent misses for the same key share one database load.
@@ -31,7 +36,7 @@ export async function readThroughRamCache<T>(
 ): Promise<T> {
   // Integration tests often mutate MongoDB directly instead of going through
   // the CMS write paths. Bypass process state so each test observes its fixture.
-  if (process.env.NODE_ENV === "test") return loader();
+  if (process.env.NODE_ENV === "test" || !isRamCacheEnabled()) return loader();
 
   const cached = state.entries.get(key);
   if (cached && (options.maxAgeMs === undefined || Date.now() - cached.loadedAt <= options.maxAgeMs)) {
@@ -57,12 +62,22 @@ export async function readThroughRamCache<T>(
 
 /** Replace a snapshot after the database write has succeeded. */
 export function setRamCache<T>(key: string, value: T): T {
+  if (!isRamCacheEnabled()) return value;
   state.entries.set(key, { value, loadedAt: Date.now() });
   return value;
 }
 
+/** Update an existing snapshot without forcing a database load on cache miss. */
+export function updateRamCache<T>(key: string, updater: (current: T) => T): T | undefined {
+  if (!isRamCacheEnabled()) return undefined;
+  const cached = state.entries.get(key);
+  if (!cached) return undefined;
+  return setRamCache(key, updater(cached.value as T));
+}
+
 /** Reload a complete snapshot and atomically swap it into RAM. */
-export async function refreshRamCache<T>(key: string, loader: () => Promise<T>): Promise<T> {
+export async function refreshRamCache<T>(key: string, loader: () => Promise<T>): Promise<T | undefined> {
+  if (!isRamCacheEnabled()) return undefined;
   try {
     const value = await loader();
     return setRamCache(key, value);
@@ -78,6 +93,7 @@ export function invalidateRamCache(key: string) {
 }
 
 export function getRamCacheSnapshot() {
+  if (!isRamCacheEnabled()) return [];
   return [...state.entries.entries()].map(([key, entry]) => ({
     key,
     loadedAt: new Date(entry.loadedAt).toISOString(),

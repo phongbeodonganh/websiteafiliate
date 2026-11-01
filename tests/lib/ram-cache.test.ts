@@ -4,13 +4,15 @@ import {
   readThroughRamCache,
   refreshRamCache,
   setRamCache,
+  updateRamCache,
 } from "@/lib/ram-cache";
 
-const keys = ["test:dedupe", "test:evict"];
+const keys = ["test:dedupe", "test:evict", "test:update"];
 
 describe("process-local RAM cache", () => {
   beforeEach(() => {
     vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("RAM_CACHE_ENABLED", "true");
     keys.forEach(invalidateRamCache);
   });
 
@@ -43,5 +45,29 @@ describe("process-local RAM cache", () => {
     const loader = vi.fn(async () => ({ version: 2 }));
     await expect(readThroughRamCache("test:evict", loader)).resolves.toEqual({ version: 2 });
     expect(loader).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates a loaded snapshot without another database read", async () => {
+    setRamCache("test:update", { count: 1 });
+    updateRamCache<{ count: number }>("test:update", (current) => ({ count: current.count + 1 }));
+    const loader = vi.fn(async () => ({ count: 99 }));
+
+    await expect(readThroughRamCache("test:update", loader)).resolves.toEqual({ count: 2 });
+    expect(loader).not.toHaveBeenCalled();
+  });
+
+  it("bypasses reads, writes, updates, and refreshes when disabled", async () => {
+    vi.stubEnv("RAM_CACHE_ENABLED", "false");
+    setRamCache("test:update", { count: 1 });
+    expect(updateRamCache<{ count: number }>("test:update", (current) => ({ count: current.count + 1 }))).toBeUndefined();
+
+    const readLoader = vi.fn(async () => ({ count: 2 }));
+    await readThroughRamCache("test:update", readLoader);
+    await readThroughRamCache("test:update", readLoader);
+    expect(readLoader).toHaveBeenCalledTimes(2);
+
+    const refreshLoader = vi.fn(async () => ({ count: 3 }));
+    await expect(refreshRamCache("test:update", refreshLoader)).resolves.toBeUndefined();
+    expect(refreshLoader).not.toHaveBeenCalled();
   });
 });

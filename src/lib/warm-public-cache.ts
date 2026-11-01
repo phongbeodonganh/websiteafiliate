@@ -5,8 +5,15 @@ import { refreshProductCache } from "@/lib/products/public";
 import { refreshPublicSettingsCache, refreshPublicTaxonomyCache } from "@/lib/public-data-cache";
 import { refreshStorefrontCategoriesCache } from "@/lib/storefront-categories";
 import { refreshStoreRecordsCache } from "@/lib/stores/public";
+import { refreshStoreMetricsCache } from "@/lib/stores/metrics";
+import { isRamCacheEnabled } from "@/lib/ram-cache";
 
 export async function warmPublicRamCache() {
+  if (!isRamCacheEnabled()) {
+    console.info("[ram-cache] disabled by RAM_CACHE_ENABLED");
+    return;
+  }
+
   const startedAt = Date.now();
   const results = await Promise.allSettled([
     refreshPublicSettingsCache(),
@@ -14,6 +21,7 @@ export async function warmPublicRamCache() {
     refreshHomepageArticlesCache(),
     refreshStorefrontCategoriesCache(),
     refreshStoreRecordsCache(),
+    refreshStoreMetricsCache(),
     refreshProductCache(),
   ]);
 

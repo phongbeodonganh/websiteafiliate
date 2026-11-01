@@ -1,9 +1,10 @@
 import "server-only";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { StoreModel, StoreMetricsModel } from "@/lib/db/store-models";
+import { StoreModel } from "@/lib/db/store-models";
 import { readThroughRamCache, refreshRamCache } from "@/lib/ram-cache";
 import { MARKETPLACE_STORES, getDealsForStore, getStore, type MarketplaceStore, type MarketplaceDeal } from "@/lib/marketplace";
 import { isOfferActive, type StoreRecord } from "./types";
+import { getStoreMetricSnapshot } from "./metrics";
 
 const STORE_RECORDS_KEY = "public:store-records";
 
@@ -62,9 +63,12 @@ export async function getDiscoverableStores(): Promise<StoreRecord[]> {
   const stores = await getPublishedStores();
   if (!stores.length) return stores;
   try {
-    const metrics = await StoreMetricsModel.find({ slug: { $in: stores.map((store) => store.slug) } }).lean();
-    const bySlug = new Map(metrics.map((metric) => [metric.slug, metric]));
-    return stores.map((store) => ({ ...store, clickCount: bySlug.get(store.slug)?.clickCount || 0, viewCount: bySlug.get(store.slug)?.viewCount || 0 }));
+    const metrics = await getStoreMetricSnapshot();
+    return stores.map((store) => ({
+      ...store,
+      clickCount: metrics[store.slug]?.clickCount || 0,
+      viewCount: metrics[store.slug]?.viewCount || 0,
+    }));
   } catch {
     // A metrics outage should not hide the actual store catalogue.
     return stores;
