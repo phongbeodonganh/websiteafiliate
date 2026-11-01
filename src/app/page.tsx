@@ -45,6 +45,7 @@ import { isInsiderEnabled } from "@/lib/insider/feature";
 import styles from "@/components/storefront/storefront.module.css";
 
 const INSIDER_ENABLED = isInsiderEnabled();
+const HERO_DEAL_LIMIT = 8;
 
 interface HomePageProps {
   searchParams: Promise<{ q?: string | string[]; category?: string | string[] }>;
@@ -76,12 +77,22 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const category = typeof params.category === "string" ? params.category : "";
-  const storefrontCategories = await getStorefrontCategories();
+  const productsPromise = getStorefrontProducts({ query, category, limit: 60, demoFallback: true });
+  const allProductsPromise = query || category
+    ? getStorefrontProducts({ limit: 60, demoFallback: true })
+    : productsPromise;
+  const guidesPromise = getHomepageArticles()
+    .then((data) => data.latest.slice(0, 3))
+    .catch(() => [] as HomepageArticle[]);
+
+  const [storefrontCategories, products, allProducts, guides, publicStores] = await Promise.all([
+    getStorefrontCategories(),
+    productsPromise,
+    allProductsPromise,
+    guidesPromise,
+    getDiscoverableStores(),
+  ]);
   const categoryBySlug = new Map(storefrontCategories.map((item) => [item.slug, item]));
-  const products = await getStorefrontProducts({ query, category, limit: 60, demoFallback: true });
-  const allProducts = query || category
-    ? await getStorefrontProducts({ limit: 60, demoFallback: true })
-    : products;
   const featuredList = [
     ...allProducts.filter((product) => product.featured),
     ...allProducts.filter((product) => !product.featured),
@@ -90,13 +101,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .filter((product) => product.ratingCount > 0)
     .sort((a, b) => b.ratingCount - a.ratingCount)
     .slice(0, 3);
-
-  let guides: HomepageArticle[] = [];
-  try {
-    guides = (await getHomepageArticles()).latest.slice(0, 3);
-  } catch {
-    // Product discovery remains available when editorial content is unavailable.
-  }
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -111,7 +115,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   const filteredCategory = storefrontCategories.find((item) => item.slug === category);
-  const publicStores = await getDiscoverableStores();
   const homepageStores = filterStoreDirectory(publicStores, { q: query, category })
     .filter((store) => category || query || store.showOnHomepage)
     .slice(0, category || query ? 60 : 15);
@@ -123,13 +126,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const featuredDeals = filterHomepageDeals(homepageDeals, { sort: "popular" }, offersReadAt);
   // Show one offer per store first, then cycle through the remaining offers.
   const firstOffers = new Set<string>();
-  const heroDeals = [...featuredDeals.filter((deal) => {
+  const heroDeals = featuredDeals.filter((deal) => {
     if (firstOffers.has(deal.storeSlug)) return false;
     firstOffers.add(deal.storeSlug);
     return true;
-  })];
-  const featuredIds = new Set(heroDeals.map((deal) => deal.id));
-  heroDeals.push(...featuredDeals.filter((deal) => !featuredIds.has(deal.id)));
+  }).slice(0, HERO_DEAL_LIMIT);
+  if (heroDeals.length < HERO_DEAL_LIMIT) {
+    const featuredIds = new Set(heroDeals.map((deal) => deal.id));
+    heroDeals.push(...featuredDeals
+      .filter((deal) => !featuredIds.has(deal.id))
+      .slice(0, HERO_DEAL_LIMIT - heroDeals.length));
+  }
   const dealCategories = [...new Set(homepageDeals.map((deal) => deal.categorySlug).filter(Boolean))]
     .map((slug) => ({ slug, name: categoryBySlug.get(slug)?.name || getCategory(slug)?.name || slug.replace(/-/g, " ") }));
   if (category && !dealCategories.some((item) => item.slug === category)) {

@@ -10,6 +10,8 @@ import StoreCarousel from "./StoreCarousel";
 import DealStoreImage from "./DealStoreImage";
 import styles from "./homepage-discovery.module.css";
 
+const DEAL_PAGE_SIZE = 12;
+
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
@@ -53,27 +55,40 @@ export default function HomepageDeals({ deals, categories, initialNow, initialQu
   const [category, setCategory] = useState(initialCategory);
   const [kind, setKind] = useState("");
   const [sort, setSort] = useState("latest");
+  const [visibleCount, setVisibleCount] = useState(DEAL_PAGE_SIZE);
   // Expire displayed offers even when a visitor leaves the homepage open.
   const [now, setNow] = useState(initialNow);
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 60000); return () => window.clearInterval(timer); }, []);
   const filtered = filterHomepageDeals(deals, { q: query, category, kind, sort }, now);
   const results = category ? filtered : interleaveStoreDeals(filtered);
-  const reset = () => { setQuery(""); setCategory(""); setKind(""); setSort("latest"); };
+  const visibleResults = results.slice(0, visibleCount);
+  const updateFilter = (setter: (value: string) => void, value: string) => {
+    setter(value);
+    setVisibleCount(DEAL_PAGE_SIZE);
+  };
+  const reset = () => {
+    setQuery("");
+    setCategory("");
+    setKind("");
+    setSort("latest");
+    setVisibleCount(DEAL_PAGE_SIZE);
+  };
   return <section className={styles.section} id="deals" aria-labelledby="deals-title">
     <div className={styles.sectionHeading}><div><p className={styles.eyebrow}><TicketPercent size={15} aria-hidden="true" /> Your next saving</p><h2 id="deals-title">Good deals. Less searching.</h2><p>Browse active store offers, copy a code and check the final price at checkout.</p></div><Link href="/stores?offer=active">Explore stores with offers <ArrowRight size={16} aria-hidden="true" /></Link></div>
     <div className={styles.dealsFrame}>
     <div className={styles.filterPanel}>
-      <div className={styles.tabs} role="group" aria-label="Filter by offer type">{[["", "All offers"], ["code", "Promo codes"], ["coupon", "Coupon"]].map(([value, label]) => <button key={value} type="button" aria-pressed={kind === value} onClick={() => setKind(value)}>{label}</button>)}</div>
+      <div className={styles.tabs} role="group" aria-label="Filter by offer type">{[["", "All offers"], ["code", "Promo codes"], ["coupon", "Coupon"]].map(([value, label]) => <button key={value} type="button" aria-pressed={kind === value} onClick={() => updateFilter(setKind, value)}>{label}</button>)}</div>
       <div className={styles.filters}>
-        <label className={styles.searchLabel}><span>Find an offer</span><span className={styles.searchInput}><Search size={17} aria-hidden="true" /><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Store, product or coupon…" /></span></label>
-        <label><span>Category</span><Select value={category} onChange={(e) => setCategory(e.target.value)}><option value="">All categories</option>{categories.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}</Select></label>
-        <label><span>Sort offers</span><Select value={sort} onChange={(e) => setSort(e.target.value)}><option value="latest">Recently checked / updated</option><option value="popular">Most clicked stores</option><option value="ending">Ending soon</option></Select></label>
+        <label className={styles.searchLabel}><span>Find an offer</span><span className={styles.searchInput}><Search size={17} aria-hidden="true" /><input type="search" value={query} onChange={(e) => updateFilter(setQuery, e.target.value)} placeholder="Store, product or coupon…" /></span></label>
+        <label><span>Category</span><Select value={category} onChange={(e) => updateFilter(setCategory, e.target.value)}><option value="">All categories</option>{categories.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}</Select></label>
+        <label><span>Sort offers</span><Select value={sort} onChange={(e) => updateFilter(setSort, e.target.value)}><option value="latest">Recently checked / updated</option><option value="popular">Most clicked stores</option><option value="ending">Ending soon</option></Select></label>
       </div>
     </div>
-    <div className={styles.resultLine}><p role="status" aria-live="polite">{results.length} active {results.length === 1 ? "offer" : "offers"}</p>{(query || category || kind || sort !== "latest") && <button type="button" onClick={reset}>Clear filters</button>}</div>
-    {results.length ? <StoreCarousel key={`${query}:${category}:${kind}:${sort}`} count={results.length} itemName="offers" label="Active store offers" className={styles.offerCarousel}>
-      {results.map((deal) => <li key={deal.id}><DealCard deal={deal} /></li>)}
+    <div className={styles.resultLine}><p role="status" aria-live="polite">Showing {visibleResults.length} of {results.length} active {results.length === 1 ? "offer" : "offers"}</p>{(query || category || kind || sort !== "latest") && <button type="button" onClick={reset}>Clear filters</button>}</div>
+    {results.length ? <StoreCarousel key={`${query}:${category}:${kind}:${sort}:${visibleCount}`} count={visibleResults.length} itemName="offers" label="Active store offers" className={styles.offerCarousel}>
+      {visibleResults.map((deal) => <li key={deal.id}><DealCard deal={deal} /></li>)}
     </StoreCarousel> : <div className={styles.empty}><TicketPercent size={30} aria-hidden="true" /><h3>No matching offers right now.</h3><p>Try another store or category. New offers will appear here when available.</p><button type="button" onClick={reset}>Reset filters</button><Link href="/stores">Browse all stores <ArrowRight size={15} aria-hidden="true" /></Link></div>}
+    {visibleResults.length < results.length && <button type="button" className={styles.loadMore} onClick={() => setVisibleCount((count) => count + DEAL_PAGE_SIZE)}>Show more offers <ArrowRight size={15} aria-hidden="true" /></button>}
     </div>
     <p className={styles.offerNote}>Offers can change. Check exclusions, delivery costs and the final total before paying. <Link href="/how-we-verify-coupons">How we check coupons</Link></p>
   </section>;
