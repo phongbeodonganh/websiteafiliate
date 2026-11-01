@@ -1,6 +1,8 @@
-import { cache } from 'react';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel } from '@/lib/db/models';
+import { readThroughRamCache, refreshRamCache } from '@/lib/ram-cache';
+
+const STOREFRONT_CATEGORIES_KEY = 'public:storefront-categories';
 
 export interface StorefrontCategory {
   id: string;
@@ -20,26 +22,34 @@ export const DEFAULT_STOREFRONT_CATEGORIES = [
   { name: 'Outdoors', slug: 'outdoor', description: 'Gear for time outside', imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=720&q=82', order: 5 },
 ] as const;
 
-export const getStorefrontCategories = cache(async (): Promise<StorefrontCategory[]> => {
+async function loadStorefrontCategories(): Promise<StorefrontCategory[]> {
+  await connectToDatabase();
+  const categories = await CategoryModel.find({ show_on_homepage: true })
+    .sort({ nav_order: 1, created_at: 1 })
+    .select('name slug description homepage_image_url nav_order')
+    .lean();
+  return categories.map((category) => ({
+    id: category._id.toString(),
+    name: category.name,
+    slug: category.slug,
+    description: category.description || '',
+    imageUrl: category.homepage_image_url || '',
+    order: category.nav_order || 0,
+  }));
+}
+
+export async function getStorefrontCategories() {
   try {
-    await connectToDatabase();
-    const categories = await CategoryModel.find({ show_on_homepage: true })
-      .sort({ nav_order: 1, created_at: 1 })
-      .select('name slug description homepage_image_url nav_order')
-      .lean();
-    return categories.map((category) => ({
-      id: category._id.toString(),
-      name: category.name,
-      slug: category.slug,
-      description: category.description || '',
-      imageUrl: category.homepage_image_url || '',
-      order: category.nav_order || 0,
-    }));
+    return await readThroughRamCache(STOREFRONT_CATEGORIES_KEY, loadStorefrontCategories);
   } catch (error) {
     console.error('Unable to load storefront categories:', error);
     return [];
   }
-});
+}
+
+export function refreshStorefrontCategoriesCache() {
+  return refreshRamCache(STOREFRONT_CATEGORIES_KEY, loadStorefrontCategories);
+}
 
 export async function syncDefaultStorefrontCategories() {
   await connectToDatabase();
@@ -63,6 +73,8 @@ export async function syncDefaultStorefrontCategories() {
       createdCategories += 1;
     }
   }
+
+  await refreshStorefrontCategoriesCache();
 
   return { createdCategories, updatedCategories };
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
-import { connectToDatabase } from "@/lib/db/mongodb";
-import { SettingModel } from "@/lib/db/models";
+import { getPublicSettings } from "@/lib/public-data-cache";
 import PublicMotion from "@/components/PublicMotion";
 import ScrollToTop from "@/components/ScrollToTop";
 import {
@@ -19,9 +18,8 @@ import { sanitizeCssColor } from "@/lib/sanitize";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    await connectToDatabase();
-    const sysSettings = await SettingModel.findOne();
-    const siteTitle = sysSettings?.site_title || DEFAULT_SITE_NAME;
+    const sysSettings = await getPublicSettings();
+    const siteTitle = sysSettings?.siteTitle || DEFAULT_SITE_NAME;
     const desc = sysSettings?.metaDescription || DEFAULT_DESCRIPTION;
     const ogImg = normalizeHttpUrl(sysSettings?.ogImageUrl, DEFAULT_OG_IMAGE);
     const baseUrl = normalizeSiteUrl(sysSettings?.canonicalUrl);
@@ -54,8 +52,8 @@ export async function generateMetadata(): Promise<Metadata> {
         images: [ogImg],
       },
       icons: {
-        icon: sysSettings?.favicon_url || BRAND_ICON,
-        shortcut: sysSettings?.favicon_url || BRAND_ICON,
+        icon: sysSettings?.faviconUrl || BRAND_ICON,
+        shortcut: sysSettings?.faviconUrl || BRAND_ICON,
         apple: "/brand/apple-touch-icon.png",
       },
     };
@@ -104,14 +102,13 @@ export default async function RootLayout({
 
   let sysSettings;
   try {
-    await connectToDatabase();
-    sysSettings = await SettingModel.findOne();
+    sysSettings = await getPublicSettings();
   } catch { }
 
-  const geoRegion = sysSettings?.geo_region_name || "EU";
-  const geoPlace = sysSettings?.geo_placename || "Europe";
-  const lat = sysSettings?.geo_latitude ?? 50.8503;
-  const lng = sysSettings?.geo_longitude ?? 4.3517;
+  const geoRegion = sysSettings?.geoRegionName || "EU";
+  const geoPlace = sysSettings?.geoPlacename || "Europe";
+  const lat = sysSettings?.geoLatitude ?? 50.8503;
+  const lng = sysSettings?.geoLongitude ?? 4.3517;
   // SEC-03 / CONCERNS #11 (plan 06 Task 4): route the stored admin color
   // reads through sanitizeCssColor before the <style> interpolation below.
   // A dirty stored value (one written before this phase's validator, or a
@@ -121,9 +118,9 @@ export default async function RootLayout({
   // isValidCssColor; this render boundary is belt-and-braces for historical
   // rows. Defaults match the previous || fallbacks so the happy path is
   // visually unchanged.
-  const primaryColor = sanitizeCssColor(sysSettings?.primary_color, BRAND_COLORS.green);
-  const accentColor = sanitizeCssColor(sysSettings?.accent_color, BRAND_COLORS.gold);
-  const customCss = sysSettings?.custom_css || "";
+  const primaryColor = sanitizeCssColor(sysSettings?.primaryColor, BRAND_COLORS.green);
+  const accentColor = sanitizeCssColor(sysSettings?.accentColor, BRAND_COLORS.gold);
+  const customCss = sysSettings?.customCss || "";
   const schemaJsonld = sysSettings?.schemaJsonld || "";
   const safeSchemaJsonld = sanitizeStoredJsonLd(schemaJsonld);
   const gaId = sysSettings?.googleAnalyticsId || "";

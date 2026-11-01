@@ -1,9 +1,11 @@
 import "server-only";
-import { cache } from "react";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { StoreModel, StoreMetricsModel } from "@/lib/db/store-models";
+import { readThroughRamCache, refreshRamCache } from "@/lib/ram-cache";
 import { MARKETPLACE_STORES, getDealsForStore, getStore, type MarketplaceStore, type MarketplaceDeal } from "@/lib/marketplace";
 import { isOfferActive, type StoreRecord } from "./types";
+
+const STORE_RECORDS_KEY = "public:store-records";
 
 // Keep existing stores and coupons until an admin saves a managed replacement.
 // Reads do not seed or mutate the database.
@@ -22,7 +24,7 @@ export function legacyStoreRecords(): StoreRecord[] {
   }));
 }
 
-export const getStoreRecords = cache(async (): Promise<StoreRecord[]> => {
+async function loadStoreRecords(): Promise<StoreRecord[]> {
   await connectToDatabase();
   const docs = await StoreModel.find().sort({ sortOrder: 1, name: 1 }).lean();
   const records: StoreRecord[] = docs.map((doc) => ({
@@ -35,7 +37,15 @@ export const getStoreRecords = cache(async (): Promise<StoreRecord[]> => {
   const managed = new Set(records.map((store) => store.slug));
   return [...records, ...legacyStoreRecords().filter((store) => !managed.has(store.slug))]
     .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
-});
+}
+
+export function getStoreRecords() {
+  return readThroughRamCache(STORE_RECORDS_KEY, loadStoreRecords);
+}
+
+export function refreshStoreRecordsCache() {
+  return refreshRamCache(STORE_RECORDS_KEY, loadStoreRecords);
+}
 
 export async function getPublishedStores() {
   try {
@@ -48,7 +58,7 @@ export async function getPublishedStores() {
   }
 }
 
-export const getDiscoverableStores = cache(async (): Promise<StoreRecord[]> => {
+export async function getDiscoverableStores(): Promise<StoreRecord[]> {
   const stores = await getPublishedStores();
   if (!stores.length) return stores;
   try {
@@ -59,7 +69,7 @@ export const getDiscoverableStores = cache(async (): Promise<StoreRecord[]> => {
     // A metrics outage should not hide the actual store catalogue.
     return stores;
   }
-});
+}
 
 // Existing coupon search/category surfaces use the same publication and expiry
 // rules as store pages, while retaining their original card presentation.

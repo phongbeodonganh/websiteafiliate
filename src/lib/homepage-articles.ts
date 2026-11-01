@@ -1,9 +1,11 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { ArticleModel } from "@/lib/db/models";
+import { readThroughRamCache, refreshRamCache } from "@/lib/ram-cache";
 import { escapeRegExp } from "@/lib/utils";
+
+const HOMEPAGE_ARTICLES_KEY = "public:homepage-articles";
 
 export type HomepageArticle = {
   id: string;
@@ -88,15 +90,13 @@ async function loadHomepageArticles(query?: string): Promise<HomepageArticleData
   return { latest, popular, editorial };
 }
 
-const getCachedHomepageArticles = unstable_cache(
-  () => loadHomepageArticles(),
-  ["homepage-public-articles"],
-  { tags: ["public-articles"], revalidate: 60 },
-);
+export function refreshHomepageArticlesCache() {
+  return refreshRamCache(HOMEPAGE_ARTICLES_KEY, () => loadHomepageArticles());
+}
 
 export function getHomepageArticles(query = "") {
   const normalizedQuery = query.trim();
   return normalizedQuery
     ? loadHomepageArticles(normalizedQuery)
-    : getCachedHomepageArticles();
+    : readThroughRamCache(HOMEPAGE_ARTICLES_KEY, () => loadHomepageArticles(), { maxAgeMs: 60_000 });
 }

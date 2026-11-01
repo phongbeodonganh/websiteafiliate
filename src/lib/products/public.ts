@@ -1,11 +1,11 @@
 import "server-only";
 
-import { cache } from "react";
 import { connectToDatabase } from "@/lib/db/mongodb";
-import { CategoryModel } from "@/lib/db/models";
 import { ProductModel, type IProduct } from "@/lib/db/product-models";
-import { escapeRegExp } from "@/lib/utils";
+import { readThroughRamCache, refreshRamCache } from "@/lib/ram-cache";
 import type { Marketplace } from "@/lib/marketplaces";
+
+const PRODUCT_CATALOG_KEY = "public:product-catalog";
 
 export type StorefrontOffer = {
   id: string;
@@ -370,32 +370,41 @@ function serializeProduct(input: unknown): StorefrontProduct {
   };
 }
 
+async function loadPublishedProducts(): Promise<StorefrontProduct[]> {
+  await connectToDatabase();
+  const docs = await ProductModel.find({ status: "published" })
+    .populate("brand_id", "name slug")
+    .populate("category_id", "name slug")
+    .sort({ is_featured: -1, is_deal: -1, discount_percent: -1, published_at: -1 })
+    .lean();
+  return docs.map(serializeProduct);
+}
+
+function getPublishedProductsFromRam() {
+  return readThroughRamCache(PRODUCT_CATALOG_KEY, loadPublishedProducts);
+}
+
+export function refreshProductCache() {
+  return refreshRamCache(PRODUCT_CATALOG_KEY, loadPublishedProducts);
+}
+
 export async function getStorefrontProducts(options: { query?: string; category?: string; limit?: number; demoFallback?: boolean } = {}) {
   const { query = "", category = "", limit = 24, demoFallback = false } = options;
+  const safeLimit = Math.min(Math.max(limit, 1), 60);
   try {
-    await connectToDatabase();
-    const filter: Record<string, unknown> = { status: "published" };
-    if (query.trim()) {
-      const regex = new RegExp(escapeRegExp(query.trim().slice(0, 100)), "i");
-      filter.$or = [{ name: regex }, { short_description: regex }, { sku: regex }];
-    }
-    if (category) {
-      const categoryRecord = await CategoryModel.findOne({ slug: category }).select("_id").lean();
-      filter.category_id = categoryRecord?._id || null;
-    }
-    const docs = await ProductModel.find(filter)
-      .populate("brand_id", "name slug")
-      .populate("category_id", "name slug")
-      .sort({ is_featured: -1, is_deal: -1, discount_percent: -1, published_at: -1 })
-      .limit(Math.min(Math.max(limit, 1), 60))
-      .lean();
-    let products = docs.map(serializeProduct);
-    const queryReturnedProducts = products.length > 0;
-    if (category) products = products.filter((product) => product.categorySlug === category);
-    if (products.length) return products;
+    const catalog = await getPublishedProductsFromRam();
+    const normalizedQuery = query.trim().slice(0, 100).toLocaleLowerCase();
+    const products = catalog.filter((product) => {
+      if (category && product.categorySlug !== category) return false;
+      if (!normalizedQuery) return true;
+      return `${product.name} ${product.shortDescription} ${product.sku}`
+        .toLocaleLowerCase()
+        .includes(normalizedQuery);
+    });
+
+    if (catalog.length > 0) return products.slice(0, safeLimit);
     // Demo cards are only a first-run canvas. Once the catalog contains real
     // published products, an empty filter/search should remain an honest empty state.
-    if (queryReturnedProducts || ((query || category) && await ProductModel.exists({ status: "published" }))) return [];
   } catch (error) {
     console.error("Unable to load storefront products:", error);
   }
@@ -405,21 +414,17 @@ export async function getStorefrontProducts(options: { query?: string; category?
     const matchesCategory = !category || product.categorySlug === category;
     const haystack = `${product.name} ${product.shortDescription} ${product.category}`.toLowerCase();
     return matchesCategory && (!query || haystack.includes(query.toLowerCase()));
-  }).slice(0, limit);
+  }).slice(0, safeLimit);
 }
 
-export const getStorefrontProduct = cache(async (slug: string): Promise<StorefrontProduct | null> => {
+export async function getStorefrontProduct(slug: string): Promise<StorefrontProduct | null> {
   try {
-    await connectToDatabase();
-    const doc = await ProductModel.findOne({ slug, status: "published" })
-      .populate("brand_id", "name slug")
-      .populate("category_id", "name slug")
-      .lean();
-    if (doc) return serializeProduct(doc);
+    const product = (await getPublishedProductsFromRam()).find((item) => item.slug === slug);
+    if (product) return product;
   } catch (error) {
     console.error("Unable to load product:", error);
   }
   return DEMO_PRODUCTS.find((product) => product.slug === slug) || null;
-});
+}
 
 export { DEMO_PRODUCTS };
