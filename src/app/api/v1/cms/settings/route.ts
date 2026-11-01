@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { SettingModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { isValidCssColor } from '@/lib/sanitize';
+import { setPublicSettingsFromDocument } from '@/lib/public-data-cache';
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
@@ -198,6 +199,7 @@ export async function PUT(req: Request) {
 
     await currentSettings.save();
     const doc = currentSettings.toObject();
+    setPublicSettingsFromDocument(doc);
 
     // Same masked-hint contract as GET (never echo the raw stored key).
     const geminiApiKeyHint: string | undefined =

@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel, SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { syncTaxonomyRamCaches } from '@/lib/cache-write-sync';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthUser(req);
@@ -33,6 +34,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (navOrder !== undefined && Number.isFinite(Number(navOrder))) cat.nav_order = Number(navOrder);
 
     await cat.save();
+    await syncTaxonomyRamCaches();
     revalidatePath('/');
 
     return NextResponse.json({
@@ -67,6 +69,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await connectToDatabase();
     await CategoryModel.findByIdAndDelete(id);
     await SubCategoryModel.deleteMany({ category_id: id });
+    await syncTaxonomyRamCaches();
     revalidatePath('/');
 
     return NextResponse.json({ status: 'success', message: 'Đã xóa danh mục' });

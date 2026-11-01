@@ -8,6 +8,7 @@ import { UserModel, CategoryModel } from "@/lib/db/models";
 import { getCategory } from "@/lib/marketplace";
 import { normalizeStoreInput } from "./validation";
 import { getStoreRecords, legacyStoreRecords } from "./public";
+import { syncStoreRamCache } from "@/lib/cache-write-sync";
 
 function failure(message: string, status: number) {
   return NextResponse.json({ status: "error", message }, { status });
@@ -45,6 +46,7 @@ export async function handleStores(req: Request, id?: string) {
       // Keep a tombstone so built-in stores cannot reappear after deletion.
       existing.status = new URL(req.url).searchParams.get("action") === "delete" ? "deleted" : "archived";
       await existing.save();
+      await syncStoreRamCache();
       invalidate(existing.slug);
       return NextResponse.json({ status: "success", data: { id: existing._id.toString(), status: existing.status } });
     }
@@ -56,6 +58,7 @@ export async function handleStores(req: Request, id?: string) {
     const store = existing || new StoreModel();
     store.set(normalized.data);
     await store.save();
+    await syncStoreRamCache();
     invalidate(store.slug);
     return NextResponse.json({ status: "success", data: { ...store.toObject(), id: store._id.toString() } }, { status: existing ? 200 : 201 });
   } catch (error) {

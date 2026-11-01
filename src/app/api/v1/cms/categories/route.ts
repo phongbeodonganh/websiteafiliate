@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { CategoryModel, SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { syncTaxonomyRamCaches } from '@/lib/cache-write-sync';
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
       show_on_homepage: Boolean(showOnHomepage),
       nav_order: Number.isFinite(Number(navOrder)) ? Number(navOrder) : 0,
     });
+    await syncTaxonomyRamCaches();
     revalidatePath('/');
 
     return NextResponse.json({

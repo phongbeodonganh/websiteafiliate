@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/lib/db/mongodb";
 import { BrandModel, ProductModel, type IProduct } from "@/lib/db/product-models";
 import { normalizeProductInput } from "@/lib/products/validation";
 import { slugify } from "@/lib/utils";
+import { syncProductRamCache } from "@/lib/cache-write-sync";
 
 function adminProduct(doc: HydratedDocument<IProduct>) {
   const value = doc.toObject();
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       currency: "USD",
     });
     await product.save();
+    await syncProductRamCache();
     revalidatePath("/");
     revalidatePath(`/products/${product.slug}`);
     revalidatePath("/sitemap.xml");

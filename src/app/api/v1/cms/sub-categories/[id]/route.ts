@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { syncTaxonomyRamCaches } from '@/lib/cache-write-sync';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthUser(req);
@@ -36,6 +37,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (metaDescription !== undefined) subCat.meta_description = metaDescription;
 
     await subCat.save();
+    await syncTaxonomyRamCaches();
 
     return NextResponse.json({
       status: 'success',
@@ -66,6 +68,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     await connectToDatabase();
     await SubCategoryModel.findByIdAndDelete(id);
+    await syncTaxonomyRamCaches();
     return NextResponse.json({ status: 'success', message: 'Đã xóa danh mục con' });
   } catch (error) {
     return NextResponse.json({ status: 'error', message: 'Lỗi xóa danh mục con' }, { status: 500 });

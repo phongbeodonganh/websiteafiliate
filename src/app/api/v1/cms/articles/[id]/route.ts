@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 import { slugify } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { revalidatePublicArticles, revalidateArticle, revalidateSitemap } from '@/lib/cache-revalidation';
+import { syncArticleRamCaches } from '@/lib/cache-write-sync';
 
 // GET /api/v1/cms/articles/:id (Fetch single article for edit form)
 export async function GET(
@@ -142,6 +143,7 @@ export async function PUT(
     existingArticle.updated_at = new Date();
 
     await existingArticle.save();
+    await syncArticleRamCaches();
     revalidatePublicArticles();
     revalidateArticle(existingArticle.slug);
     revalidateSitemap();
@@ -186,6 +188,7 @@ export async function DELETE(
     }
 
     await ArticleModel.findByIdAndDelete(id);
+    await syncArticleRamCaches();
     revalidatePublicArticles();
     revalidateSitemap();
 

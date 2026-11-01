@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/auth';
 import { slugify, isValidObjectId } from '@/lib/utils';
 import { sanitizeArticleContent } from '@/lib/sanitize';
 import { revalidatePublicArticles, revalidateArticle, revalidateSitemap } from '@/lib/cache-revalidation';
+import { syncArticleRamCaches } from '@/lib/cache-write-sync';
 
 // GET /api/v1/cms/articles - Fetch articles with Role-based Data Isolation
 export async function GET(req: Request) {
@@ -133,6 +134,8 @@ export async function POST(req: Request) {
       faq_schema: Array.isArray(faqSchema) ? faqSchema : [],
       affiliate_placements: Array.isArray(affiliatePlacements) ? affiliatePlacements : [],
     });
+
+    await syncArticleRamCaches();
 
     revalidatePublicArticles();
     revalidateArticle(finalSlug);

@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/lib/db/mongodb";
 import { BrandModel, ProductModel, type IProduct } from "@/lib/db/product-models";
 import { normalizeProductInput } from "@/lib/products/validation";
 import { slugify } from "@/lib/utils";
+import { syncProductRamCache } from "@/lib/cache-write-sync";
 
 const canEdit = (user: { userId: string | number; role: string }, product: HydratedDocument<IProduct>) => user.role === "admin" || product.author_id?.toString() === String(user.userId);
 const output = (doc: HydratedDocument<IProduct>) => { const value = doc.toObject(); return { ...value, id: value._id.toString(), _id: value._id.toString(), author_id: value.author_id?.toString() }; };
@@ -54,6 +55,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
     product.set(normalized.data);
     await product.save();
+    await syncProductRamCache();
     revalidatePath("/");
     revalidatePath(`/products/${previousSlug}`);
     revalidatePath(`/products/${product.slug}`);
@@ -77,6 +79,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (!canEdit(user, product)) return NextResponse.json({ status: "error", message: "Bạn không có quyền xóa sản phẩm này." }, { status: 403 });
   const slug = product.slug;
   await product.deleteOne();
+  await syncProductRamCache();
   revalidatePath("/");
   revalidatePath(`/products/${slug}`);
   revalidatePath("/sitemap.xml");

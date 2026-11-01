@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { SubCategoryModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
+import { syncTaxonomyRamCaches } from '@/lib/cache-write-sync';
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       meta_title: metaTitle,
       meta_description: metaDescription,
     });
+    await syncTaxonomyRamCaches();
 
     return NextResponse.json({
       status: 'success',
