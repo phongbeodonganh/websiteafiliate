@@ -41,7 +41,10 @@ import { getHomepageArticles, type HomepageArticle } from "@/lib/homepage-articl
 import { getStorefrontProducts } from "@/lib/products/public";
 import { getStorefrontCategories } from "@/lib/storefront-categories";
 import { createPageMetadata, normalizeSiteUrl, serializeJsonLd } from "@/lib/seo";
+import { isInsiderEnabled } from "@/lib/insider/feature";
 import styles from "@/components/storefront/storefront.module.css";
+
+const INSIDER_ENABLED = isInsiderEnabled();
 
 interface HomePageProps {
   searchParams: Promise<{ q?: string | string[]; category?: string | string[] }>;
@@ -333,7 +336,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div></div>
           </section>
 
-          <div id="newsletter"><StorefrontNewsletter /></div>
+          {INSIDER_ENABLED && <div id="newsletter"><StorefrontNewsletter /></div>}
         </>
       )}
 

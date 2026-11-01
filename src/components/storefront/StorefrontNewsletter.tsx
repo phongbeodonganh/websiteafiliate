@@ -2,11 +2,18 @@
 
 import { FormEvent, useState } from "react";
 import { CheckCircle2, Loader2, Mail, Sparkles, TriangleAlert } from "lucide-react";
+import { isInsiderEnabled } from "@/lib/insider/feature";
 import styles from "./storefront.module.css";
 
 type FormState = { type: "idle" | "loading" | "success" | "error"; message: string };
+const INSIDER_ENABLED = isInsiderEnabled();
 
 export default function StorefrontNewsletter() {
+  if (!INSIDER_ENABLED) return null;
+  return <EnabledStorefrontNewsletter />;
+}
+
+function EnabledStorefrontNewsletter() {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<FormState>({ type: "idle", message: "" });
 

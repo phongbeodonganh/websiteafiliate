@@ -1,7 +1,10 @@
 import BrandLogo from "@/components/BrandLogo";
 import Link from "next/link";
 import { BadgeCheck, Mail } from "lucide-react";
+import { isInsiderEnabled } from "@/lib/insider/feature";
 import styles from "./storefront.module.css";
+
+const INSIDER_ENABLED = isInsiderEnabled();
 
 export default function StorefrontFooter() {
   return (
@@ -30,12 +33,12 @@ export default function StorefrontFooter() {
           <Link href="/contact">Contact</Link>
           <Link href="/disclosure">Affiliate disclosure</Link>
         </div>
-        <div className={styles.footerNewsletter}>
+        {INSIDER_ENABLED && <div className={styles.footerNewsletter}>
           <Mail size={20} />
           <strong>One useful buying email.</strong>
           <p>New picks, meaningful price drops and no inbox clutter.</p>
           <Link href="/#newsletter">Join the weekly shortlist</Link>
-        </div>
+        </div>}
       </div>
       <div className={styles.footerDisclosure}>
         <strong>Affiliate disclosure:</strong> TheHavenDeals may earn a commission when you use selected retailer links. You pay no extra, and a commercial relationship never changes our editorial verdict.

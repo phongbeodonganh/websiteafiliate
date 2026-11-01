@@ -6,6 +6,9 @@ import { useState, useEffect, KeyboardEvent, Suspense, useRef } from 'react';
 import { ArrowLeft, Search, Home, LogOut, ShieldCheck, Menu, X, Sparkles, TrendingUp, Compass, Mail } from 'lucide-react';
 import CategorySelector from '@/components/CategorySelector';
 import BrandLogo from '@/components/BrandLogo';
+import { isInsiderEnabled } from '@/lib/insider/feature';
+
+const INSIDER_ENABLED = isInsiderEnabled();
 
 interface EditorialHeaderProps {
   initialSearchQuery?: string;
@@ -253,7 +256,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           <CategorySelector placement="header" />
 
           {/* Subscribe CTA Button */}
-          <button
+          {INSIDER_ENABLED && <button
             type="button"
             onClick={handleSubscribeClick}
             className="flex items-center gap-2 bg-[#0D766E] hover:bg-[#0a625c] text-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer border border-[#0D766E]/60 hover:border-[#0D766E] hover:shadow-[0_0_16px_rgba(13,118,110,0.2)] shrink-0"
@@ -261,7 +264,7 @@ function HeaderContent({ initialSearchQuery = '' }: EditorialHeaderProps) {
           >
             <Mail size={14} />
             <span>Subscribe</span>
-          </button>
+          </button>}
 
           {user ? (
             <div className="flex items-center gap-2 border-l border-white/[0.08] pl-3">
