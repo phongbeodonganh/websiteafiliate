@@ -1,12 +1,12 @@
-const DISABLED_VALUES = new Set(['0', 'false', 'no', 'off']);
+const ENABLED_VALUES = new Set(['1', 'true', 'yes', 'on']);
 
 /**
  * Shared Insider feature flag for browser and server code.
- * Missing values preserve the existing enabled behaviour.
+ * Missing or unrecognized values fail closed and keep Insider disabled.
  */
 export function isInsiderEnabled() {
   const value = process.env.NEXT_PUBLIC_INSIDER_ENABLED;
-  return !value || !DISABLED_VALUES.has(value.trim().toLowerCase());
+  return Boolean(value && ENABLED_VALUES.has(value.trim().toLowerCase()));
 }
 
 export function insiderDisabledResponse() {

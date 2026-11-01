@@ -37,7 +37,7 @@ const fileEnv = {
 };
 const env = { ...fileEnv, ...process.env };
 const insiderFlag = env.NEXT_PUBLIC_INSIDER_ENABLED?.trim().toLowerCase();
-const insiderEnabled = !insiderFlag || !['0', 'false', 'no', 'off'].includes(insiderFlag);
+const insiderEnabled = ['1', 'true', 'yes', 'on'].includes(insiderFlag);
 const cronSecret = env.INSIDER_CRON_SECRET?.trim();
 const port = env.PORT?.trim() || '3000';
 const endpoint = env.INSIDER_CRON_INTERNAL_URL?.trim()

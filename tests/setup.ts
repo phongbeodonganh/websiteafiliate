@@ -4,6 +4,8 @@
 // xong), lúc đó auth.ts/mongodb.ts đã đọc xong env cũ (undefined) mất rồi.
 process.env.JWT_SECRET =
   process.env.JWT_SECRET || 'vitest-only-test-secret-never-used-outside-tests';
+process.env.NEXT_PUBLIC_INSIDER_ENABLED =
+  process.env.NEXT_PUBLIC_INSIDER_ENABLED || 'true';
 
 import { afterAll, afterEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';

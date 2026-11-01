@@ -111,9 +111,10 @@ R2_PUBLIC_URL="https://media.aidealsuk.com"
 ```
 
 `NEXT_PUBLIC_INSIDER_ENABLED` là feature flag duy nhất cho giao diện đăng ký
-public, trang quản lý subscriber, các API Insider và digest scheduler. Biến
-này mặc định bật khi không khai báo; đặt thành `false` để tắt. Sau khi
-đổi giá trị, cần build và restart lại ứng dụng Next.js vì biến
+public (bao gồm ô nhập email), trang quản lý subscriber, các API Insider và
+digest scheduler. Biến này mặc định tắt khi không khai báo; chỉ đặt thành
+`true` mới bật. Sau khi đổi giá trị, cần build và restart lại ứng dụng
+Next.js vì biến
 `NEXT_PUBLIC_` được nhúng vào frontend trong lúc build. Link hủy đăng ký và
 webhook bounce/complaint vẫn hoạt động khi flag tắt để người nhận cũ
 luôn có thể opt-out.

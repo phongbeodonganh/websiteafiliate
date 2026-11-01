@@ -16,14 +16,14 @@ afterEach(() => {
 });
 
 describe('Insider feature flag', () => {
-  it('preserves the existing enabled behaviour when the variable is omitted', () => {
+  it('fails closed when the variable is omitted', () => {
     delete process.env.NEXT_PUBLIC_INSIDER_ENABLED;
-    expect(isInsiderEnabled()).toBe(true);
+    expect(isInsiderEnabled()).toBe(false);
   });
 
-  it.each(['false', '0', 'off', 'no', ' FALSE '])('treats %j as disabled', (value) => {
+  it.each(['true', '1', 'on', 'yes', ' TRUE '])('treats %j as enabled', (value) => {
     process.env.NEXT_PUBLIC_INSIDER_ENABLED = value;
-    expect(isInsiderEnabled()).toBe(false);
+    expect(isInsiderEnabled()).toBe(true);
   });
 
   it('blocks signup, confirmation and an authorized digest before doing work', async () => {
