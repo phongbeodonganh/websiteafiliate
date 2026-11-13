@@ -61,6 +61,7 @@ import { GET as subCatsGET, POST as subCatsPOST } from '@/app/api/v1/cms/sub-cat
 import { PUT as subCatPUT, DELETE as subCatDELETE } from '@/app/api/v1/cms/sub-categories/[id]/route';
 import { GET as subscribersGET } from '@/app/api/v1/cms/subscribers/route';
 import { DELETE as subscriberDELETE } from '@/app/api/v1/cms/subscribers/[id]/route';
+import { GET as trafficConfigGET, PUT as trafficConfigPUT } from '@/app/api/v1/cms/traffic/config/route';
 import { POST as uploadPOST } from '@/app/api/v1/cms/upload/route';
 import { GET as usersGET, POST as usersPOST } from '@/app/api/v1/cms/users/route';
 import { PUT as userPUT, DELETE as userDELETE } from '@/app/api/v1/cms/users/[id]/route';
@@ -214,6 +215,10 @@ const ROUTES: RouteEntry[] = [
   // subscribers (admin-only GET → 403; admin-only DELETE → 403)
   { verb: 'GET', routeFile: 'src/app/api/v1/cms/subscribers/route.ts', path: '/api/v1/cms/subscribers', expectedNoAuthStatus: 403, hasParamsArg: false, handler: subscribersGET },
   { verb: 'DELETE', routeFile: 'src/app/api/v1/cms/subscribers/[id]/route.ts', path: '/api/v1/cms/subscribers/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 403, hasParamsArg: true, handler: subscriberDELETE },
+
+  // traffic config: separated admin guard (insights-style) — `if (!user) 401` then `if (role!=='admin') 403`
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/config/route.ts', path: '/api/v1/cms/traffic/config', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficConfigGET },
+  { verb: 'PUT', routeFile: 'src/app/api/v1/cms/traffic/config/route.ts', path: '/api/v1/cms/traffic/config', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficConfigPUT },
 
   // upload → 401
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/upload/route.ts', path: '/api/v1/cms/upload', expectedNoAuthStatus: 401, hasParamsArg: false, handler: uploadPOST },
