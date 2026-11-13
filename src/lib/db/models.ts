@@ -298,6 +298,16 @@ export interface ISetting extends Document {
   // settings singleton can exist without it; env GEMINI_API_KEY stays primary.
   // Never returned raw by GET /api/v1/cms/settings — masked hint only.
   gemini_api_key?: string;
+  // Traffic tab credentials (Phase 06 / TRF-01). Optional; DB is primary and
+  // env (TABAPI_KEY, SERPAPI_KEY, WHOIS_API_KEY, SE_RANKING_API_KEY,
+  // TRUSTPILOT_SCRAPER_URL, TRAFFIC_MONTHS) is the fallback. Never returned
+  // raw by GET /api/v1/cms/traffic/config — masked hint only.
+  traffic_tabapi_key?: string;
+  traffic_serpapi_key?: string;
+  traffic_whois_api_key?: string;
+  traffic_seranking_api_key?: string;
+  traffic_trustpilot_scraper_url?: string;
+  traffic_months?: number;
   geo_latitude?: number;
   geo_longitude?: number;
   geo_region_name?: string;
@@ -334,6 +344,15 @@ const SettingSchema = new Schema<ISetting>({
   // as the final fallback in the Gemini key precedence chain after
   // request userApiKey and env GEMINI_API_KEY.
   gemini_api_key: { type: String },
+  // Phase 06 / TRF-01: traffic credentials (see interface comment above).
+  // Written by the admin-only traffic/config PUT (empty string clears);
+  // read only as masked hints by GET. traffic_months defaults to 3.
+  traffic_tabapi_key: { type: String },
+  traffic_serpapi_key: { type: String },
+  traffic_whois_api_key: { type: String },
+  traffic_seranking_api_key: { type: String },
+  traffic_trustpilot_scraper_url: { type: String },
+  traffic_months: { type: Number, default: 3 },
   geo_latitude: { type: Number, default: 40.7128 },
   geo_longitude: { type: Number, default: -74.0060 },
   geo_region_name: { type: String, default: 'US-NY' },
