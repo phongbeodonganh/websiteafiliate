@@ -148,10 +148,25 @@ Plans:
 
 **Plans**: TBD
 
+### Phase 6: Traffic Intelligence Tab (traffic-web integration) *(INSERTED — new feature scope, approved 2026-11-13)*
+
+**Goal**: An admin opens one Traffic tab in the CMS and manages everything the standalone traffic-web app does: enters the traffic-web API keys (TabAPI, SerpApi, WhoisXML, SE Ranking, Trustpilot scraper URL), tracks a persistent list of domains with "Add & run", reads a List-Domain table of core traffic metrics, and opens a detail view per domain (core TabAPI report + click-to-load Whois/Trustpilot/SE Ranking/Google Ads/Referring-sites panels) — modeled on the Affiora guide List Domain UX. Data logic is ported from `D:\affiliate\traffic-web` (dependency-free libs + types); traffic-web itself is not modified.
+**Depends on**: Phase 2 (admin shell + auth + settings pattern). Independent of Phases 3–5; may execute in parallel.
+**Requirements**: TRF-01, TRF-02, TRF-03, TRF-04, TRF-05 (new — see phase plan for definitions)
+**Success Criteria** (what must be TRUE):
+
+  1. In the Traffic tab, an admin can enter and save all five traffic-web credentials plus `TRAFFIC_MONTHS` (3–12); GET returns only masked values, credentials live server-side (DB primary, env fallback), and the route is admin-only (401/403 enforced)
+  2. An admin types a domain or URL, clicks "Thêm & chạy", and the domain appears in the List table with visits/month, global rank, country rank, bounce rate, pages/visit, top country, MoM trend and last-updated — or a Vietnamese error if TabAPI fails
+  3. The tracked domain list persists in MongoDB across restarts; "Làm mới" forces a re-fetch and delete removes the domain
+  4. Clicking "Chi tiết" opens a modal with the full core report (6 metric cards, monthly history, traffic sources, top countries, keywords, AI referrals) and five click-to-load extended panels that show a "chưa cấu hình key" state when their key is absent
+  5. `npm run lint`, `npm test` and `npm run build` stay green; every new CMS route is covered by the parameterized 401/403 auth gate inventory
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 (Phase 6 independent of 3–5)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -160,6 +175,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. SEO/GEO & Performance Hardening | 2/4 | In progress (Wave 1 done) | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
+| 6. Traffic Intelligence Tab (INSERTED) | 0/? | Not started | - |
 
 ---
 

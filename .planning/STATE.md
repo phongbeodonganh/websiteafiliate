@@ -116,6 +116,10 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-01: article page data wrapped in React.cache() (per-request dedup between generateMetadata and page body = one DB hit) + unstable_cache() (cross-request cache with per-slug tag article-slug, 60s revalidate); fallback try/catch for vitest without Next runtime (PERF-01, D-04/D-05/D-06/D-07)
 - [Phase 03]: 03-02: legacy /bai-viet/ switched to permanentRedirect (308); /?q= search URLs produce noindex metadata via conditional generateMetadata; sitemap/robots switched from force-dynamic to ISR revalidate=3600; list API responses strip content field with excerpt fallback from stripped HTML; Cache-Control: public s-maxage=60 on 3 public GET endpoints (SEO-01/SEO-03/PERF-01, D-08/D-10/D-11/D-12/D-13)
 
+### Roadmap Evolution
+
+- Phase 6 added (2026-11-13): Traffic Intelligence Tab (traffic-web integration) — INSERTED feature scope, admin-only Traffic tab with API-key management, persistent domain list, Add & run, List table + detail modal (core + 5 extended panels). Depends on Phase 2 only; independent of Phases 3–5.
+
 ### Pending Todos
 
 None yet.
