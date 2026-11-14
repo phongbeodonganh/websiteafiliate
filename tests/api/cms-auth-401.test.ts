@@ -65,6 +65,14 @@ import { GET as trafficConfigGET, PUT as trafficConfigPUT } from '@/app/api/v1/c
 import { GET as trafficDomainsGET, POST as trafficDomainsPOST } from '@/app/api/v1/cms/traffic/domains/route';
 import { GET as trafficDomainGET, DELETE as trafficDomainDELETE } from '@/app/api/v1/cms/traffic/domains/[id]/route';
 import { POST as trafficDomainRefreshPOST } from '@/app/api/v1/cms/traffic/domains/[id]/refresh/route';
+import { GET as trafficWhoisGET } from '@/app/api/v1/cms/traffic/whois/route';
+import { GET as trafficWhoisHistoryGET } from '@/app/api/v1/cms/traffic/whois/history/route';
+import { GET as trafficTrustpilotGET } from '@/app/api/v1/cms/traffic/trustpilot/route';
+import { GET as trafficReferringSitesGET } from '@/app/api/v1/cms/traffic/referring-sites/route';
+import { GET as trafficSeRankingAdsGET } from '@/app/api/v1/cms/traffic/seranking/ads/route';
+import { GET as trafficSeRankingCompetitorsGET } from '@/app/api/v1/cms/traffic/seranking/competitors/route';
+import { GET as trafficAdsGET } from '@/app/api/v1/cms/traffic/ads/route';
+import { GET as trafficAdsDetailGET } from '@/app/api/v1/cms/traffic/ads/detail/route';
 import { POST as uploadPOST } from '@/app/api/v1/cms/upload/route';
 import { GET as usersGET, POST as usersPOST } from '@/app/api/v1/cms/users/route';
 import { PUT as userPUT, DELETE as userDELETE } from '@/app/api/v1/cms/users/[id]/route';
@@ -229,6 +237,16 @@ const ROUTES: RouteEntry[] = [
   { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/domains/[id]/route.ts', path: '/api/v1/cms/traffic/domains/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: trafficDomainGET },
   { verb: 'DELETE', routeFile: 'src/app/api/v1/cms/traffic/domains/[id]/route.ts', path: '/api/v1/cms/traffic/domains/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: trafficDomainDELETE },
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/traffic/domains/[id]/refresh/route.ts', path: '/api/v1/cms/traffic/domains/' + DUMMY_OBJECT_ID + '/refresh', expectedNoAuthStatus: 401, hasParamsArg: true, handler: trafficDomainRefreshPOST },
+
+  // traffic provider panels (whois/trustpilot/referring-sites/seranking/ads): separated admin guard, 401 on missing token
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/whois/route.ts', path: '/api/v1/cms/traffic/whois', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficWhoisGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/whois/history/route.ts', path: '/api/v1/cms/traffic/whois/history', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficWhoisHistoryGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/trustpilot/route.ts', path: '/api/v1/cms/traffic/trustpilot', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficTrustpilotGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/referring-sites/route.ts', path: '/api/v1/cms/traffic/referring-sites', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficReferringSitesGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/seranking/ads/route.ts', path: '/api/v1/cms/traffic/seranking/ads', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficSeRankingAdsGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/seranking/competitors/route.ts', path: '/api/v1/cms/traffic/seranking/competitors', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficSeRankingCompetitorsGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/ads/route.ts', path: '/api/v1/cms/traffic/ads', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficAdsGET },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/ads/detail/route.ts', path: '/api/v1/cms/traffic/ads/detail', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficAdsDetailGET },
 
   // upload → 401
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/upload/route.ts', path: '/api/v1/cms/upload', expectedNoAuthStatus: 401, hasParamsArg: false, handler: uploadPOST },
