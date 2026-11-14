@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: V5.2
-current_phase: 06
-current_phase_name: Traffic Intelligence Tab (traffic-web integration)
+current_phase: 03
+current_phase_name: SEO/GEO & Performance Hardening
 status: executing
-stopped_at: Plan 06-02 complete (Phase 6 fully executed) — next: /gsd-verify-work or milestone close
-last_updated: "2026-11-14T10:15:00.000Z"
+stopped_at: Phase 06 executed + verified (179 tests green, VERIFICATION 3 PASS / 2 manual-UAT pending) — resuming Phase 03 Wave 2
+last_updated: "2026-11-14T11:05:00.000Z"
 last_activity: 2026-11-14
-last_activity_desc: Plan 06-02 complete (Traffic tab UI: settings card, Add & run + List-Domain table, detail modal + 5 click-to-load panels)
+last_activity_desc: Phase 06 complete — traffic-web integration (backend + admin UI), 06-VERIFICATION.md written
 state_head: 032c6ac
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 22
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 06 (Traffic Intelligence Tab — traffic-web integration) — EXECUTING
-Plan: 2 of 2 (06-01 and 06-02 both complete; Phase 6 fully executed)
-Status: Executing Phase 06 — all plans done; next step is /gsd-verify-work (manual UAT deferred: needs live TabAPI credential)
-Last activity: 2026-11-14 — Plan 06-02 complete (Traffic tab UI: credential settings, Add & run + List-Domain table, detail modal + 5 click-to-load panels)
+Phase: 03 (SEO/GEO & Performance Hardening) — EXECUTING (Wave 2 pending: 03-03, 03-04)
+Interlude completed: Phase 06 (Traffic Intelligence Tab) — fully executed 2026-11-14, 06-VERIFICATION.md: SC1/SC3/SC5 PASS, SC2/SC4 present-but-behavior-unverified (manual UAT needs a live TabAPI credential — see deferred-items.md #3/#4)
+Status: Resuming Phase 03 Wave 2
+Last activity: 2026-11-14 — Phase 06 complete (traffic backend + admin Traffic tab)
 
 Progress: [█████████░] 91%
 
@@ -129,6 +129,7 @@ Recent decisions affecting current work:
 ### Roadmap Evolution
 
 - Phase 6 added (2026-11-13): Traffic Intelligence Tab (traffic-web integration) — INSERTED feature scope, admin-only Traffic tab with API-key management, persistent domain list, Add & run, List table + detail modal (core + 5 extended panels). Depends on Phase 2 only; independent of Phases 3–5.
+- Phase 6 complete (2026-11-14): 2/2 plans, 179 tests green, build clean. Key decisions: [06-01] ported traffic-web libs take credentials/fetch as parameters — zero process.env reads outside credentials.ts; PUT config clears all in-memory traffic caches (cache-not-keyed-by-key anti-pattern fixed); [06-02] repo has no jsdom/DOM test infra — component tests are source-contract + pure-helper unit tests; TrafficDomain stores the full report so detail reads are DB-only (credit-free). Manual UAT with a live TabAPI key deferred (deferred-items #3/#4).
 
 ### Pending Todos
 

@@ -16,6 +16,7 @@ This is a **brownfield hardening roadmap**, not a build-from-scratch plan. The V
 - [ ] **Phase 3: SEO/GEO & Performance Hardening** - Accurate view counts, cached public reads, crawl-clean URLs, verified tracking pipeline
 - [ ] **Phase 4: V5.2 Presentation & Brand Alignment** - Bento 7:5 hero, Breaking News ticker, V5.2 palette, settings-driven aidealsuk.com branding (D-003), branded 404/error pages
 - [ ] **Phase 5: Production Readiness** - Modular admin, single canonical schema layer, regression test net, deploy health check + rollback, error monitoring
+- [x] **Phase 6: Traffic Intelligence Tab (traffic-web integration)** *(INSERTED)* - Admin-only Traffic tab: credential management, persistent domain list with Add & run, List-Domain table, detail modal with 5 extended panels (completed 2026-11-14; manual UAT with live TabAPI key deferred)
 
 ## Phase Details
 
@@ -177,7 +178,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 (Phase 6 indepe
 | 3. SEO/GEO & Performance Hardening | 2/4 | In progress (Wave 1 done) | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
-| 6. Traffic Intelligence Tab (INSERTED) | 2/2 | In progress (plans done — pending verify-work/milestone close) | - |
+| 6. Traffic Intelligence Tab (INSERTED) | 2/2 | Complete (manual UAT with live TabAPI key deferred) | 2026-11-14 |
 
 ---
 
