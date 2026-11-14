@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: V5.2
-current_phase: 03
-current_phase_name: SEO/GEO & Performance Hardening
+current_phase: 06
+current_phase_name: Traffic Intelligence Tab (traffic-web integration)
 status: executing
-stopped_at: Plan 03-02 complete, Wave 1 done, proceeding to Wave 2
-last_updated: "2026-09-24T08:35:00.000Z"
-last_activity: 2026-09-24
-last_activity_desc: Plan 03-02 complete (crawl hygiene + list API perf)
-state_head: deb7f1f
+stopped_at: Plan 06-01 complete, proceeding to 06-02
+last_updated: "2026-11-14T03:10:00.000Z"
+last_activity: 2026-11-14
+last_activity_desc: Plan 06-01 complete (traffic-web backend port + 11 CMS traffic routes)
+state_head: ee809f9
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 0
-  total_plans: 20
-  completed_plans: 18
+  total_plans: 22
+  completed_plans: 19
 ---
 
 # Project State
@@ -27,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 
 ## Current Position
 
-Phase: 03 (SEO/GEO & Performance Hardening) — EXECUTING
-Plan: 2 of 4 (03-01, 03-02 complete)
-Status: Executing Phase 03 — Wave 1 complete
-Last activity: 2026-09-24 — Plan 03-02 complete (crawl hygiene + list API perf)
+Phase: 06 (Traffic Intelligence Tab — traffic-web integration) — EXECUTING
+Plan: 2 of 2 (06-01 complete; 06-02 UI plan next)
+Status: Executing Phase 06 — backend done, UI remaining
+Last activity: 2026-11-14 — Plan 06-01 complete (traffic-web data layer port + credentials + TrafficDomain + 11 CMS traffic routes)
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 86%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: —
 - Total execution time: —
 
@@ -74,6 +74,7 @@ Progress: [██████░░░░] 60%
 | Phase 02 P07 | 33min | 2 tasks | 4 files |
 | Phase 02 P08 | 84min | 2 tasks | 5 files |
 | Phase 03 P02 | 20min | 3 tasks | 13 files |
+| Phase 06 P01 | 75min | 4 tasks | 43 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,10 @@ Recent decisions affecting current work:
 - [Phase 03]: 03-01: view counting replaced read-modify-write article.save() with after() fire-and-forget + ArticleModel.updateOne $inc atomic increment + consumeDedupe 60s rolling window — five rapid views from same IP within window increment exactly 1; ObjectId guard prevents CastError into after handler (PERF-02, D-01/D-02/D-03)
 - [Phase 03]: 03-01: article page data wrapped in React.cache() (per-request dedup between generateMetadata and page body = one DB hit) + unstable_cache() (cross-request cache with per-slug tag article-slug, 60s revalidate); fallback try/catch for vitest without Next runtime (PERF-01, D-04/D-05/D-06/D-07)
 - [Phase 03]: 03-02: legacy /bai-viet/ switched to permanentRedirect (308); /?q= search URLs produce noindex metadata via conditional generateMetadata; sitemap/robots switched from force-dynamic to ISR revalidate=3600; list API responses strip content field with excerpt fallback from stripped HTML; Cache-Control: public s-maxage=60 on 3 public GET endpoints (SEO-01/SEO-03/PERF-01, D-08/D-10/D-11/D-12/D-13)
+- [Phase 06]: 06-01: separated admin guard (401 no-token / 403 non-admin, insights-style) on all 11 traffic routes; all 16 traffic verbs pinned in the cms-auth-401 fs-glob inventory — no silent public route drift
+- [Phase 06]: 06-01: credential resolution centralized in src/lib/traffic/credentials.ts (DB primary, env fallback); routes never read process.env for provider keys (grep-verified) — keys never leave the server, GET config returns masked ••••••last4 only
+- [Phase 06]: 06-01: error envelope on traffic routes = { status:'error', error:{code,message}, message } — preserves traffic-web error codes (invalid_domain/missing_api_key/insufficient_credits) + Vietnamese messages while matching the repo cms envelope
+- [Phase 06]: 06-01: TrafficDomain upsert-by-domain for Add & run (duplicate updates, never duplicates); refresh uses getTraffic force:true (bypasses cache read); upstream failure persists lastError and keeps the previous report intact; GET /domains returns full stored reports without pagination (admin scale is tens of domains)
 
 ### Roadmap Evolution
 
@@ -142,6 +147,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-09-22T10:23:31.774Z
-Stopped at: Phase 03 context gathered
-Resume file: .planning/phases/03-seo-geo-performance-hardening/03-CONTEXT.md
+Last session: 2026-11-14T03:10:00.000Z
+Stopped at: Plan 06-01 complete (traffic backend: ported libs, credentials, TrafficDomain, 11 CMS routes) — 134 tests green, build green
+Resume file: .planning/phases/06-traffic-intelligence-tab-traffic-web-integration/06-01-SUMMARY.md
