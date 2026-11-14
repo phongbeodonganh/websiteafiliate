@@ -35,7 +35,7 @@ interface PopulatedCategory { _id: Types.ObjectId; name?: string; slug?: string;
 interface PopulatedSubCategory { _id: Types.ObjectId; name?: string; slug?: string; }
 interface PopulatedPlacement {
   position_label: string;
-  affiliate_link_id?: { _id: Types.ObjectId; name: string; commission?: string; cookie?: string };
+  affiliate_link_id?: { _id: Types.ObjectId; name: string; description?: string; commission?: string; cookie?: string };
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
@@ -87,7 +87,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       .populate('author_id', 'name username avatar')
       .populate('category_id', 'name slug')
       .populate('sub_category_id', 'name slug')
-      .populate('affiliate_placements.affiliate_link_id', 'name commission cookie'),
+      .populate('affiliate_placements.affiliate_link_id', 'name description commission cookie'),
     SettingModel.findOne(),
   ]);
   if (!article) notFound();
@@ -123,6 +123,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
       positionLabel: placement.position_label as string,
       link: {
         id: placement.affiliate_link_id!._id.toString(), name: placement.affiliate_link_id!.name,
+        description: placement.affiliate_link_id!.description,
         commission: placement.affiliate_link_id!.commission, cookie: placement.affiliate_link_id!.cookie,
       },
     }));
@@ -302,7 +303,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
                   articleId={articleId}
                   toolName={verdictPlacement.link.name}
                   affiliateLinkId={verdictPlacement.link.id}
-                  commission={verdictPlacement.link.commission}
+                  description={verdictPlacement.link.description}
                 />
               )}
 

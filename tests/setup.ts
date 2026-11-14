@@ -9,7 +9,9 @@ import { afterAll, afterEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
-const mongod = await MongoMemoryServer.create();
+const mongod = await MongoMemoryServer.create({
+  instance: { launchTimeout: 30_000 },
+});
 process.env.MONGODB_URI = mongod.getUri();
 
 afterEach(async () => {
