@@ -76,7 +76,7 @@ export function PanelError({ message, onRetry }: { message: string; onRetry: () 
 export function PanelMissingKey() {
   return (
     <p className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 text-sm text-amber-400">
-      Chưa cấu hình key — vào Cấu hình API
+      Chưa cấu hình key — vào tab Quản lý cấu hình
     </p>
   );
 }

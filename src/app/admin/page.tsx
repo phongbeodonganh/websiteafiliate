@@ -36,6 +36,7 @@ import {
   CheckCircle2,
   CircleDashed,
   Globe,
+  KeyRound,
   Search,
   ChevronRight,
   Image as ImageIcon,
@@ -288,6 +289,8 @@ export default function AdminDashboardPage() {
   const [trafficRows, setTrafficRows] = useState<TrafficRow[]>([]);
   const [trafficLoading, setTrafficLoading] = useState(false);
   const [trafficDetailRow, setTrafficDetailRow] = useState<TrafficRow | null>(null);
+  // In-page sub-tabs: 'domains' (main data table) vs 'config' (credential management).
+  const [trafficSubTab, setTrafficSubTab] = useState<'domains' | 'config'>('domains');
   // Subscribers Leads State
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
   const [subscribersStats, setSubscribersStats] = useState<any>({ totalSubscribers: 0, countToday: 0, countThisWeek: 0 });
@@ -1647,57 +1650,84 @@ export default function AdminDashboardPage() {
     );
   };
 
-  // Traffic Intelligence View (Phase 06): credential settings + domain list +
-  // detail modal. Data fetching is delegated to the traffic components; this
-  // renderer stays thin and only owns the config/domains state.
+  // Traffic Intelligence View (Phase 06): credential settings live in a dedicated
+  // "Quản lý cấu hình" sub-tab; the domains list + detail modal stay on the
+  // default "Domains" sub-tab. Data fetching is delegated to the traffic
+  // components; this renderer stays thin and only owns the config/domains state.
   const renderTrafficView = () => {
     const tabApiMissing = Boolean(trafficConfig && trafficConfig.missing.includes('TABAPI_KEY'));
+    const trafficSubTabs: Array<{ id: 'domains' | 'config'; label: string; icon: typeof Globe }> = [
+      { id: 'domains', label: 'Domains', icon: Globe },
+      { id: 'config', label: 'Quản lý cấu hình', icon: KeyRound },
+    ];
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="flex justify-between items-end">
+        <div className="flex flex-wrap justify-between items-end gap-4">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">Traffic Intelligence</h2>
             <p className="text-slate-400 text-sm">
               Theo dõi traffic ước tính, thứ hạng và nguồn truy cập của các domain (dữ liệu TabAPI).
             </p>
           </div>
+          <div className="flex items-center gap-1.5 rounded-2xl bg-slate-900/50 border border-slate-800 p-1.5" role="tablist" aria-label="Traffic Intelligence tabs">
+            {trafficSubTabs.map(({ id, label, icon: SubTabIcon }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={trafficSubTab === id}
+                onClick={() => setTrafficSubTab(id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  trafficSubTab === id
+                    ? 'bg-gradient-to-r from-amber-200 to-yellow-500 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.25)]'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <SubTabIcon size={14} /> {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <TrafficSettingsCard config={trafficConfig} onSaved={setTrafficConfig} onToast={showCmsToast} />
+        {trafficSubTab === 'config' ? (
+          <TrafficSettingsCard config={trafficConfig} onSaved={setTrafficConfig} onToast={showCmsToast} />
+        ) : (
+          <>
+            {tabApiMissing && (
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex items-start gap-4">
+                <AlertTriangle size={24} className="text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white font-semibold mb-1">
+                    Chưa cấu hình TabAPI key — nhập trong tab Quản lý cấu hình để sử dụng
+                  </p>
+                  <p className="text-slate-400 text-sm">
+                    TabAPI là nguồn dữ liệu chính cho traffic, thêm &amp; chạy và làm mới domain.
+                  </p>
+                </div>
+              </div>
+            )}
 
-        {tabApiMissing && (
-          <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex items-start gap-4">
-            <AlertTriangle size={24} className="text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-white font-semibold mb-1">
-                Chưa cấu hình TabAPI key — nhập trong phần Cấu hình để sử dụng
-              </p>
-              <p className="text-slate-400 text-sm">
-                TabAPI là nguồn dữ liệu chính cho traffic, thêm &amp; chạy và làm mới domain.
-              </p>
-            </div>
-          </div>
-        )}
+            <TrafficDomainsTable
+              rows={trafficRows}
+              loading={trafficLoading}
+              onAdded={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
+              onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
+              onDeleted={(id) => setTrafficRows((prev) => prev.filter((r) => r.id !== id))}
+              onOpenDetail={setTrafficDetailRow}
+              onToast={showCmsToast}
+            />
 
-        <TrafficDomainsTable
-          rows={trafficRows}
-          loading={trafficLoading}
-          onAdded={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
-          onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
-          onDeleted={(id) => setTrafficRows((prev) => prev.filter((r) => r.id !== id))}
-          onOpenDetail={setTrafficDetailRow}
-          onToast={showCmsToast}
-        />
-
-        {trafficDetailRow && (
-          <TrafficDetailModal
-            key={trafficDetailRow.id}
-            row={trafficDetailRow}
-            config={trafficConfig}
-            onClose={() => setTrafficDetailRow(null)}
-            onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
-            onToast={showCmsToast}
-          />
+            {trafficDetailRow && (
+              <TrafficDetailModal
+                key={trafficDetailRow.id}
+                row={trafficDetailRow}
+                config={trafficConfig}
+                onClose={() => setTrafficDetailRow(null)}
+                onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
+                onToast={showCmsToast}
+              />
+            )}
+          </>
         )}
       </div>
     );
