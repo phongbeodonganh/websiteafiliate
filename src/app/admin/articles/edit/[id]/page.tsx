@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { articlePath } from '@/lib/routes';
 import {
   PenTool,
   Brain,
@@ -70,6 +71,8 @@ export default function EditArticleStudioPage() {
   const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState('');
+  const selectedCategory = categoriesList.find((category) => category.id === selectedCategoryId);
+  const selectedSubCategory = selectedCategory?.subCategories.find((subCategory) => subCategory.id === selectedSubCategoryId);
 
   // Affiliate Links & Placements
   const [affiliateLinks, setAffiliateLinks] = useState<AffiliateLinkItem[]>([]);
@@ -318,7 +321,7 @@ export default function EditArticleStudioPage() {
 
         <div className="flex items-center space-x-3">
           <Link
-            href={`/article/${slug}`}
+            href={articlePath({ slug, categorySlug: selectedCategory?.slug, subCategorySlug: selectedSubCategory?.slug })}
             target="_blank"
             className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
           >

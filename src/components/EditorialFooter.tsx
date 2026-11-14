@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import CategorySelector from '@/components/CategorySelector';
 import ScrollToTop from '@/components/ScrollToTop';
+import { categoryPath } from '@/lib/routes';
 
 const BRAND = 'AIDEALSUK';
 const YEAR = new Date().getFullYear();
@@ -30,7 +31,7 @@ function loadCategories() {
  * Unified editorial footer used across every public-facing route:
  *   - /  (home)
  *   - /latest | hottest | editorial-picks | affiliates | category/[slug]
- *   - /article/[slug]
+ *   - /[categorySlug]/[subCategorySlug]/[slug]
  *
  * Provides trust signals (About / Privacy / Terms / Contact), category
  * navigation, social placeholders, and a copyright line.
@@ -154,7 +155,7 @@ export default function EditorialFooter() {
             {categories.slice(0, 5).map((cat) => (
               <li key={cat.id}>
                 <Link
-                  href={`/category/${cat.slug}`}
+                  href={categoryPath(cat.slug)}
                   className="footer-link text-neutral-300 text-[13px] no-underline hover:text-white"
                 >
                   {cat.name}

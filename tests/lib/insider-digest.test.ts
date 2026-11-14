@@ -30,12 +30,16 @@ describe('Insider daily digest', () => {
       latest: [{
         title: 'Latest <AI> story',
         slug: 'latest-ai-story',
+        categorySlug: 'ai',
+        subCategorySlug: 'automation',
         summary: 'A useful & concise summary.',
         viewCount: 5,
       }],
       hottest: [{
         title: 'Most read story',
         slug: 'most-read-story',
+        categorySlug: 'finance',
+        subCategorySlug: 'investing',
         summary: 'The hottest story today.',
         viewCount: 100,
       }],
@@ -45,8 +49,8 @@ describe('Insider daily digest', () => {
     expect(email.subject).toContain('2026-08-31');
     expect(email.html).toContain('Latest &lt;AI&gt; story');
     expect(email.html).not.toContain('Latest <AI> story');
-    expect(email.html).toContain('/article/latest-ai-story');
-    expect(email.html).toContain('/article/most-read-story');
+    expect(email.html).toContain('/ai/automation/latest-ai-story');
+    expect(email.html).toContain('/finance/investing/most-read-story');
     expect(email.html).toContain('Unsubscribe');
     expect(email.text).toContain('https://aidealsuk.com');
   });

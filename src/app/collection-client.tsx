@@ -7,13 +7,15 @@ import VerticalAffiliateSidebar from '@/components/VerticalAffiliateSidebar';
 import PublicArticleImage from '@/components/PublicArticleImage';
 import EditorialHeader from '@/components/EditorialHeader';
 import EditorialFooter from '@/components/EditorialFooter';
+import { articlePath } from '@/lib/routes';
 import styles from './collection.module.css';
 
-export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category';
+export type CollectionKind = 'latest' | 'editorial' | 'hottest' | 'affiliates' | 'category' | 'subcategory';
 type AffiliateSort = 'latest' | 'clicks' | 'commission' | 'cookie';
 interface Article {
   id: string; title: string; slug: string; excerpt?: string; content?: string;
-  thumbnailUrl?: string; viewCount: number; createdAt: string; categoryName?: string; authorName?: string;
+  thumbnailUrl?: string; viewCount: number; createdAt: string; categoryName?: string; categorySlug?: string;
+  subCategoryName?: string; subCategorySlug?: string; authorName?: string;
 }
 interface Affiliate {
   id: string; name: string; commission: string; cookie: string; isTopPick: boolean;
@@ -26,6 +28,7 @@ const config = {
   editorial: { title: 'Editorial Picks', eyebrow: 'Selected by our editors', description: 'A closer look at what matters. Reporting, ideas and analysis worth your time.', feature: 'In the spotlight', section: 'Worth a closer read', icon: Sparkles },
   affiliates: { title: 'Affiliate Deals', eyebrow: 'The partner directory', description: 'Explore partner tools and programmes. Compare the details, find your next opportunity.', feature: '', section: 'Explore the directory', icon: Tag },
   category: { title: 'Category Articles', eyebrow: 'Explore the topic', description: 'The latest reporting and fresh perspectives, all in one place.', feature: 'Start here', section: 'Explore more stories', icon: BookOpen },
+  subcategory: { title: 'Subcategory Articles', eyebrow: 'Explore the topic', description: 'Focused reporting and fresh perspectives from this topic.', feature: 'Start here', section: 'Explore more stories', icon: BookOpen },
 };
 const collections = [
   { kind: 'latest', href: '/latest', label: 'Latest', icon: Clock3 },
@@ -56,7 +59,7 @@ function ArticleMeta({ article, views = false }: { article: Article; views?: boo
 }
 function Story({ article, rank, variant = 'card', label }: { article: Article; rank?: number; variant?: 'lead' | 'compact' | 'card'; label?: string }) {
   return <article className={`${styles.story} ${styles[variant]}`} data-motion="rise">
-    <Link href={`/article/${article.slug}`} className={styles.storyLink}>
+    <Link href={articlePath(article)} className={styles.storyLink}>
       <div className={styles.media}>
         <PublicArticleImage src={article.thumbnailUrl} alt="" loading={variant === 'lead' ? 'eager' : 'lazy'} fetchPriority={variant === 'lead' ? 'high' : 'auto'} />
         {label && <span className={styles.featureLabel}>{rank ? <Flame size={13} aria-hidden="true" /> : <BookOpen size={13} aria-hidden="true" />}{label}</span>}
@@ -73,10 +76,10 @@ function Story({ article, rank, variant = 'card', label }: { article: Article; r
   </article>;
 }
 
-export default function CollectionClient({ kind, categorySlug, categoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string }) {
-  return <CollectionView key={`${kind}:${categorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} />;
+export default function CollectionClient({ kind, categorySlug, categoryName, subCategorySlug, subCategoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; subCategorySlug?: string; subCategoryName?: string }) {
+  return <CollectionView key={`${kind}:${categorySlug || ''}:${subCategorySlug || ''}`} kind={kind} categorySlug={categorySlug} categoryName={categoryName} subCategorySlug={subCategorySlug} subCategoryName={subCategoryName} />;
 }
-function CollectionView({ kind, categorySlug, categoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string }) {
+function CollectionView({ kind, categorySlug, categoryName, subCategorySlug, subCategoryName }: { kind: CollectionKind; categorySlug?: string; categoryName?: string; subCategorySlug?: string; subCategoryName?: string }) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [affiliates, setAffiliates] = useState<Affiliate[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 9, totalPages: 0, hasMore: false });
@@ -89,6 +92,8 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
   const Icon = details.icon;
   const title = kind === 'category' && categorySlug
     ? categoryName ? categoryTitle(categoryName) : categoryTitleFromSlug(categorySlug)
+    : kind === 'subcategory' && subCategorySlug
+      ? subCategoryName ? categoryTitle(subCategoryName) : categoryTitleFromSlug(subCategorySlug)
     : details.title;
   const loadingInitial = loading && request.page === 1;
   const count = isDeals ? affiliates.length : articles.length;
@@ -99,6 +104,10 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
     if (kind === 'editorial') params.set('tab', 'editorial');
     if (kind === 'hottest') params.set('tab', 'popular');
     if (kind === 'category' && categorySlug) params.set('category_slug', categorySlug);
+    if (kind === 'subcategory' && categorySlug && subCategorySlug) {
+      params.set('category_slug', categorySlug);
+      params.set('sub_category_slug', subCategorySlug);
+    }
     if (isDeals) params.set('sort', request.sort);
     if (request.query) params.set('q', request.query);
     fetch(`/api/v1/public/${isDeals ? 'affiliates' : 'articles'}?${params}`, { signal: controller.signal })
@@ -118,7 +127,7 @@ function CollectionView({ kind, categorySlug, categoryName }: { kind: Collection
       })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [request, kind, categorySlug, isDeals]);
+  }, [request, kind, categorySlug, subCategorySlug, isDeals]);
 
   function updateRequest(change: Partial<typeof request>) {
     setLoading(true);

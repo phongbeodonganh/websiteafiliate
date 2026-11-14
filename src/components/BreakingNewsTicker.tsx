@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Flame } from 'lucide-react';
+import { articlePath } from '@/lib/routes';
 
 interface BreakingNewsTickerProps {
   newsText?: string;
@@ -11,7 +12,7 @@ interface BreakingNewsTickerProps {
 
 export default function BreakingNewsTicker({
   newsText = 'Apple chính thức công bố chip M4 Max thế hệ mới với hiệu suất xử lý AI tăng gấp 3 lần.',
-  newsLink = '/article/case-study-faceless-youtube-automation-ai-avatars',
+  newsLink = articlePath({ slug: 'case-study-faceless-youtube-automation-ai-avatars' }),
 }: BreakingNewsTickerProps) {
   return (
     <div className="glass-panel rounded-2xl p-4 flex items-center justify-between border-l-4 border-l-cyan-500 bg-gradient-to-r from-cyan-950/30 via-slate-900/40 to-transparent border border-slate-800/80 shadow-lg mb-8">
