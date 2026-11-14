@@ -340,3 +340,77 @@ describe('Task 2 — TrafficDomainsTable contract (TRF-02, TRF-04)', () => {
     expect(table).toBeGreaterThan(banner);
   });
 });
+
+describe('Task 3 — TrafficDetailModal core report contract (TRF-05)', () => {
+  const source = readSource('src/components/admin/traffic/TrafficDetailModal.tsx');
+
+  it('opens from the table row and loads the stored report from GET /domains/[id] (no refresh on open)', () => {
+    const page = readSource('src/app/admin/page.tsx');
+    expect(page.indexOf('<TrafficDetailModal')).toBeGreaterThan(-1);
+    expect(source.indexOf('`/api/v1/cms/traffic/domains/${row.id}`')).toBeGreaterThan(-1);
+    // No refresh call on mount — only the explicit Làm mới handler POSTs.
+    const refreshIdx = source.indexOf('/refresh`');
+    const loadIdx = source.indexOf('const loadStored');
+    expect(refreshIdx).toBeGreaterThan(loadIdx);
+  });
+
+  it('renders the 6 core metric cards with Vietnamese labels and em-dash nulls', () => {
+    for (const label of [
+      'Lượt truy cập/tháng',
+      'Hạng toàn cầu',
+      'Hạng quốc gia',
+      'Bounce rate',
+      'Trang/phiên',
+      'Thời gian TB/phiên',
+    ]) {
+      expect(source.indexOf(label)).toBeGreaterThan(-1);
+    }
+    expect(source.match(/'—'/g)?.length ?? 0).toBeGreaterThanOrEqual(5);
+  });
+
+  it('renders the 5 remaining core sections with Vietnamese titles', () => {
+    for (const section of ['Lịch sử theo tháng', 'Nguồn traffic', 'Top quốc gia', 'Từ khóa hàng đầu', 'AI referrals']) {
+      expect(source.indexOf(section)).toBeGreaterThan(-1);
+    }
+    // Monthly history computes MoM client-side.
+    expect(source.indexOf('function momChange')).toBeGreaterThan(-1);
+    // Sources cover all 13 channels (SOURCE_LABELS length).
+    expect(source.match(/\['\w+', '[^']+'\]/g)?.length ?? 0).toBe(13);
+  });
+
+  it('the header shows domain + report month + "Dữ liệu ước tính" badge and a working Làm mới button', () => {
+    expect(source.indexOf('Dữ liệu ước tính')).toBeGreaterThan(-1);
+    expect(source.indexOf('formatMonth(overview?.month ?? null)')).toBeGreaterThan(-1);
+    expect(source.indexOf('Làm mới')).toBeGreaterThan(-1);
+    const fnStart = source.indexOf('async function handleRefresh');
+    const fn = source.slice(fnStart, fnStart + 700);
+    expect(fn).toContain('/refresh`');
+    expect(fn).toContain("onToast('success', 'Đã làm mới dữ liệu domain')");
+    expect(fn).toContain('onRefreshed(');
+  });
+
+  it('modal is accessible: dialog role, aria-modal, labelled, ESC + backdrop close', () => {
+    expect(source.indexOf('role="dialog"')).toBeGreaterThan(-1);
+    expect(source.indexOf('aria-modal="true"')).toBeGreaterThan(-1);
+    expect(source.indexOf('aria-labelledby="traffic-detail-title"')).toBeGreaterThan(-1);
+    expect(source.indexOf("event.key === 'Escape'")).toBeGreaterThan(-1);
+    expect(source.indexOf('onClick={onClose}')).toBeGreaterThan(-1);
+  });
+
+  it('never renders raw snake_case labels: display names are Vietnamese', () => {
+    // The section titles must be Vietnamese — the snake_case field names appear
+    // only inside typed source lookups, never as visible header strings.
+    const visibleSnakes = ['monthly_visits', 'traffic_sources', 'top_keywords', 'top_regions', 'ai_traffic'];
+    for (const field of visibleSnakes) {
+      // Allowed only in typed access like `report?.monthly_visits` — never as a
+      // quoted label or title string.
+      expect(source).not.toMatch(new RegExp(`["'>]${field}["'<]`));
+    }
+  });
+
+  it('body scrolls with the admin custom-scrollbar and stacks responsively', () => {
+    expect(source.indexOf('custom-scrollbar')).toBeGreaterThan(-1);
+    expect(source.indexOf('xl:grid-cols-2')).toBeGreaterThan(-1);
+    expect(source.indexOf('grid-cols-2 md:grid-cols-3 xl:grid-cols-6')).toBeGreaterThan(-1);
+  });
+});

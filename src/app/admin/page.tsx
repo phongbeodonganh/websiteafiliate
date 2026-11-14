@@ -10,6 +10,7 @@ import { ARTICLE_CONTENT_TYPES, isArticleContentType, articleContentTypeLabel, t
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import TrafficSettingsCard from '@/components/admin/traffic/TrafficSettingsCard';
 import TrafficDomainsTable from '@/components/admin/traffic/TrafficDomainsTable';
+import TrafficDetailModal from '@/components/admin/traffic/TrafficDetailModal';
 import {
   upsertRow,
   type TrafficConfigData,
@@ -1687,6 +1688,16 @@ export default function AdminDashboardPage() {
           onOpenDetail={setTrafficDetailRow}
           onToast={showCmsToast}
         />
+
+        {trafficDetailRow && (
+          <TrafficDetailModal
+            key={trafficDetailRow.id}
+            row={trafficDetailRow}
+            onClose={() => setTrafficDetailRow(null)}
+            onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
+            onToast={showCmsToast}
+          />
+        )}
       </div>
     );
   };
