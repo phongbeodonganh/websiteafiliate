@@ -18,10 +18,16 @@ import {
   formatPercent,
 } from '@/lib/traffic/format';
 import type { AiTraffic, MonthlyVisit, TopRegion, TrafficResponse, TrafficSources } from '@/types/traffic';
-import { trafficFetch, type TrafficRow } from './traffic-helpers';
+import { trafficFetch, type TrafficConfigData, type TrafficRow } from './traffic-helpers';
+import AdsPanel from './panels/AdsPanel';
+import ReferringSitesPanel from './panels/ReferringSitesPanel';
+import SerankingPanel from './panels/SerankingPanel';
+import TrustpilotPanel from './panels/TrustpilotPanel';
+import WhoisPanel from './panels/WhoisPanel';
 
 interface TrafficDetailModalProps {
   row: TrafficRow;
+  config: TrafficConfigData | null;
   onClose: () => void;
   onRefreshed: (row: TrafficRow) => void;
   onToast: (type: 'success' | 'error', text: string) => void;
@@ -98,7 +104,7 @@ function EmptyHint({ text = 'Chưa có dữ liệu' }: { text?: string }) {
   return <p className="text-xs text-slate-500 py-3 text-center">{text}</p>;
 }
 
-export default function TrafficDetailModal({ row, onClose, onRefreshed, onToast }: TrafficDetailModalProps) {
+export default function TrafficDetailModal({ row, config, onClose, onRefreshed, onToast }: TrafficDetailModalProps) {
   const [report, setReport] = useState<TrafficResponse | null>(row.report ?? null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -163,6 +169,15 @@ export default function TrafficDetailModal({ row, onClose, onRefreshed, onToast 
   }))
     .filter((source) => source.value != null)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+
+  // Missing-credential flags from the masked /config payload drive the panels'
+  // 'Chưa cấu hình key' states (config.missing carries env-var names).
+  const missingList = config?.missing ?? [];
+  const missingWhois = missingList.includes('WHOIS_API_KEY');
+  const missingTrustpilot = missingList.includes('TRUSTPILOT_SCRAPER_URL');
+  const missingSeranking = missingList.includes('SE_RANKING_API_KEY');
+  const missingSerpApi = missingList.includes('SERPAPI_KEY');
+  const missingTabApi = missingList.includes('TABAPI_KEY');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="presentation">
@@ -403,6 +418,22 @@ export default function TrafficDetailModal({ row, onClose, onRefreshed, onToast 
                   <EmptyHint text="Chưa có dữ liệu referral từ AI assistants." />
                 )}
               </SectionCard>
+
+              {/* Dữ liệu mở rộng — 5 panel click-to-load (tốn credits, không
+                  bao giờ tự fetch; mỗi panel tự quản trạng thái của mình) */}
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-white font-medium text-sm">Dữ liệu mở rộng</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Các panel dưới đây gọi API bên ngoài và tốn credits — chỉ tải khi bạn bấm mở từng panel.
+                  </p>
+                </div>
+                <WhoisPanel domain={row.domain} missingKey={missingWhois} />
+                <TrustpilotPanel domain={row.domain} missingKey={missingTrustpilot} />
+                <SerankingPanel domain={row.domain} missingKey={missingSeranking} />
+                <AdsPanel domain={row.domain} missingKey={missingSerpApi} />
+                <ReferringSitesPanel domain={row.domain} missingKey={missingTabApi} />
+              </div>
             </>
           ) : null}
         </div>

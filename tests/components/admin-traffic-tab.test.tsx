@@ -34,17 +34,6 @@ function readSource(...parts: string[]): string {
   return readFileSync(join(process.cwd(), ...parts), 'utf8');
 }
 
-function makeRow(overrides: Partial<TrafficRow> = {}): TrafficRow {
-  return {
-    id: 'row-1',
-    domain: 'example.com',
-    report: null,
-    lastFetchedAt: null,
-    lastError: null,
-    ...overrides,
-  };
-}
-
 describe('Task 1 — traffic tab wiring in the admin shell (TRF-01)', () => {
   const source = readSource('src/app/admin/page.tsx');
 
@@ -412,5 +401,125 @@ describe('Task 3 — TrafficDetailModal core report contract (TRF-05)', () => {
     expect(source.indexOf('custom-scrollbar')).toBeGreaterThan(-1);
     expect(source.indexOf('xl:grid-cols-2')).toBeGreaterThan(-1);
     expect(source.indexOf('grid-cols-2 md:grid-cols-3 xl:grid-cols-6')).toBeGreaterThan(-1);
+  });
+});
+
+describe('Task 4 — five click-to-load extended panels (TRF-05)', () => {
+  const PANELS: Array<[string, string, string]> = [
+    ['WhoisPanel', 'src/components/admin/traffic/panels/WhoisPanel.tsx', 'WHOIS_API_KEY'],
+    ['TrustpilotPanel', 'src/components/admin/traffic/panels/TrustpilotPanel.tsx', 'TRUSTPILOT_SCRAPER_URL'],
+    ['SerankingPanel', 'src/components/admin/traffic/panels/SerankingPanel.tsx', 'SE_RANKING_API_KEY'],
+    ['AdsPanel', 'src/components/admin/traffic/panels/AdsPanel.tsx', 'SERPAPI_KEY'],
+    ['ReferringSitesPanel', 'src/components/admin/traffic/panels/ReferringSitesPanel.tsx', 'TABAPI_KEY'],
+  ];
+
+  const readPanel = (file: string) => readSource(file);
+
+  it("the modal hosts a 'Dữ liệu mở rộng' section with all 5 panels and maps each to its env key", () => {
+    const source = readSource('src/components/admin/traffic/TrafficDetailModal.tsx');
+    expect(source.indexOf('Dữ liệu mở rộng')).toBeGreaterThan(-1);
+    for (const [name] of PANELS) {
+      expect(source.indexOf(`<${name}`)).toBeGreaterThan(-1);
+    }
+    for (const envKey of PANELS.map(([, , key]) => key)) {
+      expect(source.indexOf(`'${envKey}'`)).toBeGreaterThan(-1);
+    }
+  });
+
+  it('panels load only on user click: every panel fetches from a toggle/click handler, never from an effect', () => {
+    for (const [name, file] of PANELS) {
+      const source = readPanel(file);
+      // No useEffect at all in the panel body (click-to-load contract).
+      expect(source.indexOf('useEffect'), `${name} must not use useEffect`).toBe(-1);
+      // The fetch is triggered from a toggle/click handler.
+      expect(
+        /(function toggle|async function load|onClick)/.test(source),
+        `${name} must load from a user click`
+      ).toBe(true);
+    }
+  });
+
+  it('every soft-slice panel checks .error before rendering success data; the hard-error ads route guards result.ok', () => {
+    // Soft-slice HTTP-200 { data, error } convention: whois, trustpilot,
+    // referring-sites, seranking (both sub-loads).
+    for (const [name, file] of PANELS.filter(([name]) => name !== 'AdsPanel')) {
+      const source = readPanel(file);
+      expect(source.indexOf('sliceMessage('), `${name} must guard the slice .error`).toBeGreaterThan(-1);
+      // The guard happens BEFORE any data render: setErrorMessage on error path.
+      expect(source.indexOf('setErrorMessage(error)'), `${name} routes slice errors to the error state`).toBeGreaterThan(-1);
+    }
+    // Hard-error convention (non-2xx envelope): /ads + /ads/detail via trafficFetch.
+    const ads = readPanel('src/components/admin/traffic/panels/AdsPanel.tsx');
+    expect(ads.indexOf('if (!result.ok)')).toBeGreaterThan(-1);
+    expect(ads.indexOf('setErrorMessage(result.message)')).toBeGreaterThan(-1);
+    expect(ads).not.toContain('sliceMessage');
+  });
+
+  it('every panel renders the Vietnamese missing-key state with its action disabled', () => {
+    for (const [name, file] of PANELS) {
+      const source = readPanel(file);
+      expect(source.indexOf('missingKey'), `${name} consumes missingKey`).toBeGreaterThan(-1);
+      expect(source.indexOf('PanelMissingKey'), `${name} renders PanelMissingKey`).toBeGreaterThan(-1);
+    }
+  });
+
+  it('each panel has loading, error (role=alert retry) and empty states', () => {
+    for (const [name, file] of PANELS) {
+      const source = readPanel(file);
+      expect(source.indexOf('PanelLoading'), `${name} has a loading state`).toBeGreaterThan(-1);
+      expect(source.indexOf('PanelError'), `${name} has an error state`).toBeGreaterThan(-1);
+      expect(source.indexOf('PanelEmpty'), `${name} has an empty state`).toBeGreaterThan(-1);
+    }
+    // Shared shell renders the alert + Vietnamese labels once, pinned here.
+    const shell = readSource('src/components/admin/traffic/panels/panel-shell.tsx');
+    expect(shell.indexOf('role="alert"')).toBeGreaterThan(-1);
+    expect(shell.indexOf('Thử lại')).toBeGreaterThan(-1);
+    expect(shell.indexOf('Chưa cấu hình key — vào Cấu hình API')).toBeGreaterThan(-1);
+  });
+
+  it('WhoisPanel renders registrar/created/expires/age/privacy cards + nameservers and has a history sub-load', () => {
+    const source = readPanel('src/components/admin/traffic/panels/WhoisPanel.tsx');
+    for (const label of ['Tuổi domain', 'Nhà đăng ký', 'Ngày tạo', 'Ngày hết hạn', 'Quyền riêng tư', 'Name server', 'Trạng thái']) {
+      expect(source.indexOf(label)).toBeGreaterThan(-1);
+    }
+    expect(source.indexOf('/whois/history?domain=')).toBeGreaterThan(-1);
+    expect(source.indexOf('Lịch sử thay đổi')).toBeGreaterThan(-1);
+  });
+
+  it('TrustpilotPanel renders name, trust score, stars, review count, categories and rating buckets', () => {
+    const source = readPanel('src/components/admin/traffic/panels/TrustpilotPanel.tsx');
+    for (const marker of ['business.name', 'trust_score', 'review_count', 'categories', 'RatingDistribution']) {
+      expect(source.indexOf(marker)).toBeGreaterThan(-1);
+    }
+  });
+
+  it('AdsPanel paginates via next_page_token ("Tải thêm") and expands creatives via /ads/detail', () => {
+    const source = readPanel('src/components/admin/traffic/panels/AdsPanel.tsx');
+    expect(source.indexOf('next_page_token')).toBeGreaterThan(-1);
+    expect(source.indexOf('Tải thêm creative')).toBeGreaterThan(-1);
+    expect(source.indexOf('/api/v1/cms/traffic/ads/detail?advertiser_id=')).toBeGreaterThan(-1);
+    expect(source.indexOf('page_token')).toBeGreaterThan(-1);
+    // MetricCards: advertisers, creatives, active, longest-running.
+    for (const label of ['Nhà quảng cáo', 'Creative đã tải', 'Đang chạy', 'Chạy lâu nhất']) {
+      expect(source.indexOf(label)).toBeGreaterThan(-1);
+    }
+    expect(source.indexOf('Theo nhà quảng cáo')).toBeGreaterThan(-1);
+  });
+
+  it('ReferringSitesPanel shows DR/backlinks/referring domains/dofollow + top backlinks + the 5-credit disclosure', () => {
+    const source = readPanel('src/components/admin/traffic/panels/ReferringSitesPanel.tsx');
+    for (const label of ['Domain Rating', 'Backlinks', 'Tên miền giới thiệu', 'Dofollow backlink', 'Top backlink']) {
+      expect(source.indexOf(label)).toBeGreaterThan(-1);
+    }
+    expect(source.indexOf('tốn 5 credit TabAPI')).toBeGreaterThan(-1);
+    expect(source.indexOf('lưu cache 24 giờ')).toBeGreaterThan(-1);
+  });
+
+  it('SerankingPanel exposes two separate load buttons (ads + competitors) with slice guards', () => {
+    const source = readPanel('src/components/admin/traffic/panels/SerankingPanel.tsx');
+    expect(source.indexOf('seranking/ads?domain=')).toBeGreaterThan(-1);
+    expect(source.indexOf('seranking/competitors?domain=')).toBeGreaterThan(-1);
+    expect(source.indexOf('Tải mẫu quảng cáo')).toBeGreaterThan(-1);
+    expect(source.indexOf('Tải đối thủ quảng cáo')).toBeGreaterThan(-1);
   });
 });

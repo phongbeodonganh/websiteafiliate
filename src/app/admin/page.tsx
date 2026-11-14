@@ -1693,6 +1693,7 @@ export default function AdminDashboardPage() {
           <TrafficDetailModal
             key={trafficDetailRow.id}
             row={trafficDetailRow}
+            config={trafficConfig}
             onClose={() => setTrafficDetailRow(null)}
             onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
             onToast={showCmsToast}
