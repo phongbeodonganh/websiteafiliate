@@ -62,6 +62,9 @@ import { PUT as subCatPUT, DELETE as subCatDELETE } from '@/app/api/v1/cms/sub-c
 import { GET as subscribersGET } from '@/app/api/v1/cms/subscribers/route';
 import { DELETE as subscriberDELETE } from '@/app/api/v1/cms/subscribers/[id]/route';
 import { GET as trafficConfigGET, PUT as trafficConfigPUT } from '@/app/api/v1/cms/traffic/config/route';
+import { GET as trafficDomainsGET, POST as trafficDomainsPOST } from '@/app/api/v1/cms/traffic/domains/route';
+import { GET as trafficDomainGET, DELETE as trafficDomainDELETE } from '@/app/api/v1/cms/traffic/domains/[id]/route';
+import { POST as trafficDomainRefreshPOST } from '@/app/api/v1/cms/traffic/domains/[id]/refresh/route';
 import { POST as uploadPOST } from '@/app/api/v1/cms/upload/route';
 import { GET as usersGET, POST as usersPOST } from '@/app/api/v1/cms/users/route';
 import { PUT as userPUT, DELETE as userDELETE } from '@/app/api/v1/cms/users/[id]/route';
@@ -219,6 +222,13 @@ const ROUTES: RouteEntry[] = [
   // traffic config: separated admin guard (insights-style) — `if (!user) 401` then `if (role!=='admin') 403`
   { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/config/route.ts', path: '/api/v1/cms/traffic/config', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficConfigGET },
   { verb: 'PUT', routeFile: 'src/app/api/v1/cms/traffic/config/route.ts', path: '/api/v1/cms/traffic/config', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficConfigPUT },
+
+  // traffic domains: separated admin guard (insights-style) on all verbs — 401 on missing token
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/domains/route.ts', path: '/api/v1/cms/traffic/domains', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficDomainsGET },
+  { verb: 'POST', routeFile: 'src/app/api/v1/cms/traffic/domains/route.ts', path: '/api/v1/cms/traffic/domains', expectedNoAuthStatus: 401, hasParamsArg: false, handler: trafficDomainsPOST },
+  { verb: 'GET', routeFile: 'src/app/api/v1/cms/traffic/domains/[id]/route.ts', path: '/api/v1/cms/traffic/domains/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: trafficDomainGET },
+  { verb: 'DELETE', routeFile: 'src/app/api/v1/cms/traffic/domains/[id]/route.ts', path: '/api/v1/cms/traffic/domains/' + DUMMY_OBJECT_ID, expectedNoAuthStatus: 401, hasParamsArg: true, handler: trafficDomainDELETE },
+  { verb: 'POST', routeFile: 'src/app/api/v1/cms/traffic/domains/[id]/refresh/route.ts', path: '/api/v1/cms/traffic/domains/' + DUMMY_OBJECT_ID + '/refresh', expectedNoAuthStatus: 401, hasParamsArg: true, handler: trafficDomainRefreshPOST },
 
   // upload → 401
   { verb: 'POST', routeFile: 'src/app/api/v1/cms/upload/route.ts', path: '/api/v1/cms/upload', expectedNoAuthStatus: 401, hasParamsArg: false, handler: uploadPOST },

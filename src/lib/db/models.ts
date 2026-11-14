@@ -349,6 +349,36 @@ const InsightsCacheSchema = new Schema<IInsightsCache>({
   fetchedAt: { type: Date, default: Date.now },
 });
 
+// 11. TrafficDomain (Phase 06 / TRF-02, TRF-03): persistent traffic-web domain
+// reports. `report` is the raw snake_case TabAPI TrafficResponse passed through
+// unshaped (Schema.Types.Mixed). Unique index on `domain` makes "Thêm & chạy"
+// (POST /cms/traffic/domains) an upsert: a duplicate domain updates the row
+// instead of duplicating it.
+export interface ITrafficDomain extends Document {
+  domain: string;
+  report: unknown;
+  lastFetchedAt: Date | null;
+  lastError: { code: string; message: string } | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const TrafficDomainSchema = new Schema<ITrafficDomain>(
+  {
+    domain: { type: String, required: true, lowercase: true, trim: true, unique: true },
+    report: { type: Schema.Types.Mixed },
+    lastFetchedAt: { type: Date, default: null },
+    lastError: {
+      type: new Schema(
+        { code: { type: String }, message: { type: String } },
+        { _id: false }
+      ),
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
+
 // Model Exports (preventing overwrite model errors in Next.js hot reload)
 export const UserModel: Model<IUser> = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 export const CategoryModel: Model<ICategory> = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
@@ -361,6 +391,7 @@ export const ClickLogModel: Model<IClickLog> = mongoose.models.ClickLog || mongo
 export const SubscriberModel: Model<ISubscriber> = mongoose.models.Subscriber || mongoose.model<ISubscriber>('Subscriber', SubscriberSchema);
 export const SettingModel: Model<ISetting> = mongoose.models.Setting || mongoose.model<ISetting>('Setting', SettingSchema);
 export const InsightsCacheModel: Model<IInsightsCache> = mongoose.models.InsightsCache || mongoose.model<IInsightsCache>('InsightsCache', InsightsCacheSchema);
+export const TrafficDomainModel: Model<ITrafficDomain> = mongoose.models.TrafficDomain || mongoose.model<ITrafficDomain>('TrafficDomain', TrafficDomainSchema);
 
 export async function syncAffiliateNumericFields() {
   try {
