@@ -18,9 +18,5 @@ export function articlePath(input: {
   categorySlug?: string | null;
   subCategorySlug?: string | null;
 }) {
-  const category = categoryPath(input.categorySlug || FALLBACK_CATEGORY_SLUG);
-  const article = segment(input.slug, '');
-  return input.subCategorySlug
-    ? `${category}/${segment(input.subCategorySlug, '')}/${article}`
-    : `${category}/${article}`;
+  return `/article/${segment(input.slug, '')}`;
 }

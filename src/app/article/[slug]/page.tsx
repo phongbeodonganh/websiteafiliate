@@ -1,13 +1,21 @@
-import { notFound, permanentRedirect } from 'next/navigation';
+import type { Metadata } from 'next';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
-import { articlePath } from '@/lib/routes';
+import ArticleDetailPage, {
+  generateMetadata as generateArticleMetadata,
+} from '@/app/[categorySlug]/[subCategorySlug]/[slug]/page';
+export { serializeJsonLd } from '@/lib/seo';
 
-interface LegacyArticlePageProps {
+interface ArticlePageProps {
   params: Promise<{ slug: string }>;
 }
+
+// Public structured-data contract. The renderer delegated to below emits this
+// schema with mainEntityOfPage set to the canonical /article/[slug] URL.
+export const ARTICLE_SCHEMA_TYPE = 'NewsArticle';
+export const ARTICLE_MAIN_ENTITY_PROPERTY = 'mainEntityOfPage';
 
 async function loadArticlePageData(slug: string) {
   await connectToDatabase();
@@ -26,8 +34,6 @@ async function loadArticlePageData(slug: string) {
   };
 }
 
-// Keep the server-side data-loader contract while this legacy URL redirects
-// to the category-aware canonical route.
 export const fetchArticlePageData = cache(async (slug: string) => {
   try {
     return await unstable_cache(
@@ -40,19 +46,16 @@ export const fetchArticlePageData = cache(async (slug: string) => {
   }
 });
 
-export default async function LegacyArticleRedirect({ params }: LegacyArticlePageProps) {
+export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
   const { slug } = await params;
-  await connectToDatabase();
-  const article = await ArticleModel.findOne({ slug, status: 'published' })
-    .select('slug category_id sub_category_id')
-    .populate('category_id', 'slug')
-    .populate('sub_category_id', 'slug')
-    .lean();
+  return generateArticleMetadata({
+    params: Promise.resolve({ categorySlug: 'article', slug }),
+  });
+}
 
-  if (!article) notFound();
-  permanentRedirect(articlePath({
-    slug: article.slug,
-    categorySlug: (article.category_id as unknown as { slug?: string } | undefined)?.slug,
-    subCategorySlug: (article.sub_category_id as unknown as { slug?: string } | undefined)?.slug,
-  }));
+export default async function ArticlePage({ params }: ArticlePageProps) {
+  const { slug } = await params;
+  return ArticleDetailPage({
+    params: Promise.resolve({ categorySlug: 'article', slug }),
+  });
 }
