@@ -64,6 +64,14 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 - **HYG-01 — Single canonical data layer & no dead code:** `src/lib/db/schema.ts` twin, dead components, `drizzle-orm`/`pg`/`@google/genai` deps, root `sqlite.db*` and prototype clutter removed; `models.ts` is the only schema source. [CONCERNS tech debt #3–5] — status: **gap**
 - **HYG-02 — Admin CMS modularized:** the ~4k-line single-file admin extracted tab-by-tab into per-tab modules with shared typed fetch hooks — no behavior change (URL-state sync preserved). [CONCERNS tech debt #1] — status: **gap**
 
+## Traffic Intelligence (Phase 6 INSERTED — traffic-web integration, approved 2026-11-13)
+
+- **TRF-01 — Credential management:** admin saves/clears the five traffic-web credentials (TabAPI, SerpApi, WhoisXML, SE Ranking, Trustpilot scraper URL) + `TRAFFIC_MONTHS` (3–12) in the Traffic tab; GET returns masked values only; DB primary with env fallback; keys never leave the server; admin-only route. — status: **complete** (06-01; `tests/api/cms-traffic-config.test.ts`, `tests/lib/traffic/credentials.test.ts`)
+- **TRF-02 — Add & run:** entering a domain/URL and clicking "Thêm & chạy" normalizes it, fetches the TabAPI report (24h cache, in-flight dedup), and upserts a persistent row; Vietnamese errors (invalid_domain, missing_api_key, insufficient_credits…). — status: **complete** (06-01 + 06-02; `tests/api/cms-traffic-domains.test.ts`)
+- **TRF-03 — Persistent tracked list:** tracked domains persist in MongoDB (`TrafficDomainModel`) across restarts; refresh forces re-fetch preserving the previous report on upstream failure; delete removes. — status: **complete** (06-01; `tests/api/cms-traffic-domains.test.ts`)
+- **TRF-04 — List-Domain table:** Domain, visits/month, global rank, country rank, bounce rate, pages/visit, top country, MoM trend (green/red), updated-at; client-side search + column sort; null metrics render "—". — status: **complete** (06-02; `tests/components/admin-traffic-tab.test.tsx`)
+- **TRF-05 — Detail modal + extended panels:** core TabAPI report (6 metric cards, monthly history, 13 traffic sources, top countries, keywords, AI referrals) plus five click-to-load panels (Whois + history, Trustpilot, SE Ranking ads/competitors, Google Ads Transparency with pagination, Referring sites) with slice-error and missing-key states. — status: **complete** (06-01 + 06-02; 8 provider routes + `tests/components/admin-traffic-tab.test.tsx`)
+
 ---
 
 ## Traceability
@@ -101,5 +109,10 @@ Derived from the governing V5.2 spec (`specv2.md`) + STANDING V3/V4 constraints 
 | OPS-01 | Phase 5 | Pending |
 | OPS-02 | Phase 5 | Pending |
 | OPS-03 | Phase 5 | Pending |
+| TRF-01 | Phase 6 | Complete |
+| TRF-02 | Phase 6 | Complete |
+| TRF-03 | Phase 6 | Complete |
+| TRF-04 | Phase 6 | Complete |
+| TRF-05 | Phase 6 | Complete |
 
-Coverage: 31/31 requirements mapped · no orphans · no duplicates.
+Coverage: 36/36 requirements mapped · no orphans · no duplicates.
