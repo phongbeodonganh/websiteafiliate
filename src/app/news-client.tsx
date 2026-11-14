@@ -11,6 +11,7 @@ import EditorialHeader from "@/components/EditorialHeader";
 import EditorialFooter from "@/components/EditorialFooter";
 import EditorialBackdrop from "@/components/EditorialBackdrop";
 import PublicArticleImage, { ARTICLE_PLACEHOLDER } from "@/components/PublicArticleImage";
+import { articlePath } from "@/lib/routes";
 import styles from "./page.module.css";
 
 const fallbackImage = ARTICLE_PLACEHOLDER;
@@ -26,6 +27,8 @@ export type Article = {
   thumbnailUrl?: string;
   createdAt: string;
   categoryName?: string | null;
+  categorySlug?: string | null;
+  subCategorySlug?: string | null;
   authorName?: string | null;
   authorAvatar?: string | null;
 };
@@ -49,7 +52,7 @@ type ArticleResponse = {
   message?: string;
 };
 
-const articleHref = (article: Article) => `/article/${article.slug}`;
+const articleHref = (article: Article) => articlePath(article);
 const imageFor = (article: Article) => article.thumbnailUrl || fallbackImage;
 
 function plainText(value?: string) {

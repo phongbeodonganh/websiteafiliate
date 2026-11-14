@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Eye, Loader2 } from 'lucide-react';
 import PublicArticleImage, { ARTICLE_PLACEHOLDER } from '@/components/PublicArticleImage';
+import { articlePath, categoryPath } from '@/lib/routes';
 
 const fallbackImage = ARTICLE_PLACEHOLDER;
 
@@ -16,6 +17,8 @@ interface CategoryArticle {
   thumbnailUrl?: string;
   viewCount: number;
   createdAt: string;
+  categorySlug?: string;
+  subCategorySlug?: string;
 }
 
 interface CategorySection {
@@ -150,7 +153,7 @@ export default function CategoryArticleSections() {
               <div className="flex items-center gap-4">
                 <span className="text-xs font-semibold text-neutral-500">{category.pagination.total} ARTICLES</span>
                 <Link
-                  href={`/category/${category.slug}`}
+                  href={categoryPath(category.slug)}
                   role="button"
                   className="border border-black bg-black px-4 py-2 text-[10px] font-bold uppercase text-white transition-colors duration-150 hover:bg-neutral-800"
                 >
@@ -165,7 +168,7 @@ export default function CategoryArticleSections() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.articles.map((article, index) => (
                   <article key={article.id} className="clickable-card group relative flex cursor-pointer flex-col border border-[#E2E2DE] bg-white" data-motion="rise" style={{ '--motion-delay': `${(index % 4) * 55}ms` } as React.CSSProperties}>
-                    <Link href={`/article/${article.slug}`} className="block aspect-video overflow-hidden bg-neutral-100">
+                    <Link href={articlePath({ ...article, categorySlug: article.categorySlug || category.slug })} className="block aspect-video overflow-hidden bg-neutral-100">
                       <PublicArticleImage src={article.thumbnailUrl || fallbackImage} alt={article.title} className="h-full w-full" loading="lazy" />
                     </Link>
                     <div className="flex flex-1 flex-col p-5">
@@ -174,10 +177,10 @@ export default function CategoryArticleSections() {
                         <span className="flex items-center gap-1"><Eye size={12} /> {article.viewCount || 0}</span>
                       </div>
                       <h3 className="mb-3 text-lg font-bold leading-tight text-black">
-                        <Link href={`/article/${article.slug}`} className="card-stretched-link hover:underline">{article.title}</Link>
+                        <Link href={articlePath({ ...article, categorySlug: article.categorySlug || category.slug })} className="card-stretched-link hover:underline">{article.title}</Link>
                       </h3>
                       <p className="mb-5 text-sm leading-relaxed text-neutral-600">{excerptFor(article)}</p>
-                      <Link href={`/article/${article.slug}`} className="mt-auto flex items-center justify-between border-t border-[#E2E2DE] pt-4 text-xs font-bold uppercase text-black">
+                      <Link href={articlePath({ ...article, categorySlug: article.categorySlug || category.slug })} className="mt-auto flex items-center justify-between border-t border-[#E2E2DE] pt-4 text-xs font-bold uppercase text-black">
                         Read article <ArrowRight size={15} />
                       </Link>
                     </div>

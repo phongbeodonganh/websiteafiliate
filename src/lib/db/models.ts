@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { parseCommissionRate, parseCookieDays } from '@/lib/utils';
 import { ARTICLE_CONTENT_TYPES, type ArticleContentType } from '@/lib/article-content-types';
+import { normalizeAffiliateUrl } from '@/lib/affiliate-url';
 
 // 1. User
 export interface IUser extends Document {
@@ -68,6 +69,7 @@ export interface IAffiliateLink extends Document {
   name: string;
   description?: string;
   base_url: string;
+  normalized_base_url?: string;
   product_url?: string;
   commission?: string;
   commission_rate?: number;
@@ -82,7 +84,8 @@ export interface IAffiliateLink extends Document {
 const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   name: { type: String, required: true },
   description: { type: String, default: '', maxlength: 300 },
-  base_url: { type: String, required: true },
+  base_url: { type: String, required: true, trim: true },
+  normalized_base_url: { type: String },
   product_url: { type: String, default: '' },
   commission: { type: String },
   commission_rate: { type: Number, default: 0 },
@@ -93,6 +96,27 @@ const AffiliateLinkSchema = new Schema<IAffiliateLink>({
   click_count: { type: Number, default: 0 },
   created_at: { type: Date, default: Date.now }
 });
+
+// New writes always receive a canonical identity. The partial unique index is
+// safe to add while legacy documents are still missing this field; the CMS API
+// separately checks those legacy rows until they are naturally updated.
+AffiliateLinkSchema.pre('validate', function () {
+  const normalizedUrl = normalizeAffiliateUrl(this.base_url);
+  if (!normalizedUrl) {
+    this.invalidate('base_url', 'Affiliate tracking URL must be a non-empty HTTP or HTTPS URL.');
+    return;
+  }
+  this.normalized_base_url = normalizedUrl;
+});
+
+AffiliateLinkSchema.index(
+  { normalized_base_url: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { normalized_base_url: { $type: 'string' } },
+    name: 'affiliate_tracking_url_unique',
+  }
+);
 
 // 4.5 Blacklist
 export interface IBlacklist extends Document {

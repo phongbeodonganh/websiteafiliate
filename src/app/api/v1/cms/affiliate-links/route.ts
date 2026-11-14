@@ -4,6 +4,32 @@ import { connectToDatabase } from '@/lib/db/mongodb';
 import { AffiliateLinkModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { isHttpUrl } from '@/lib/seo';
+import { isDuplicateKeyError, normalizeAffiliateUrl } from '@/lib/affiliate-url';
+
+async function findDuplicateUrl(normalizedUrl: string) {
+  const indexedMatch = await AffiliateLinkModel.findOne({ normalized_base_url: normalizedUrl }).select('_id');
+  if (indexedMatch) return indexedMatch;
+
+  // Compatibility path for campaigns created before normalized_base_url was
+  // introduced. Once a legacy document is saved, the schema hook backfills it.
+  const legacyLinks = await AffiliateLinkModel.find(
+    { normalized_base_url: { $exists: false } },
+    { _id: 1, base_url: 1 }
+  ).lean();
+  return legacyLinks.find((link) => normalizeAffiliateUrl(link.base_url) === normalizedUrl) || null;
+}
+
+function duplicateUrlResponse(existingId?: unknown) {
+  return NextResponse.json(
+    {
+      status: 'error',
+      code: 'AFFILIATE_URL_EXISTS',
+      message: 'An affiliate campaign with this tracking URL already exists.',
+      ...(existingId ? { existingId: String(existingId) } : {}),
+    },
+    { status: 409 }
+  );
+}
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
@@ -40,7 +66,7 @@ export async function GET(req: Request) {
       status: 'success',
       data: links,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ status: 'error', message: 'Unable to load affiliate links.' }, { status: 500 });
   }
 }
@@ -62,20 +88,25 @@ export async function POST(req: Request) {
     }
 
     const finalBaseUrl = base_url || baseUrl;
-    const finalProductUrl = product_url || productUrl || finalBaseUrl;
 
-    if (!name || !finalBaseUrl) {
+    if (!name || typeof finalBaseUrl !== 'string' || !finalBaseUrl.trim()) {
       return NextResponse.json(
         { status: 'error', message: 'Enter a campaign name and tracking URL.' },
         { status: 400 }
       );
     }
 
+    const cleanBaseUrl = finalBaseUrl.trim();
+    const suppliedProductUrl = product_url || productUrl;
+    const finalProductUrl = typeof suppliedProductUrl === 'string' && suppliedProductUrl.trim()
+      ? suppliedProductUrl.trim()
+      : cleanBaseUrl;
+
     // AFF-01 scheme gate: only http(s) URLs may enter the link store (they become the
     // 302 redirect destination and the Jina scrape target). Reject BEFORE any DB write.
     // finalProductUrl always falls back to finalBaseUrl, so it is present whenever
     // finalBaseUrl passed the required-field check.
-    if (!isHttpUrl(finalBaseUrl) || !isHttpUrl(finalProductUrl)) {
+    if (!isHttpUrl(cleanBaseUrl) || !isHttpUrl(finalProductUrl)) {
       return NextResponse.json(
         { status: 'error', message: 'The tracking URL must use HTTP or HTTPS.' },
         { status: 400 }
@@ -84,12 +115,26 @@ export async function POST(req: Request) {
 
     const finalCommission = commission || 'N/A';
     const finalCookie = cookie || '30 Days';
+    const normalizedBaseUrl = normalizeAffiliateUrl(cleanBaseUrl);
+
+    if (!normalizedBaseUrl) {
+      return NextResponse.json(
+        { status: 'error', message: 'Enter a non-empty HTTP or HTTPS tracking URL.' },
+        { status: 400 }
+      );
+    }
 
     await connectToDatabase();
+    await AffiliateLinkModel.init();
+
+    const duplicate = await findDuplicateUrl(normalizedBaseUrl);
+    if (duplicate) return duplicateUrlResponse(duplicate._id);
+
     const newLink = await AffiliateLinkModel.create({
       name,
       description: description?.trim() || '',
-      base_url: finalBaseUrl,
+      base_url: cleanBaseUrl,
+      normalized_base_url: normalizedBaseUrl,
       product_url: finalProductUrl,
       commission: finalCommission,
       commission_rate: parseCommissionRate(finalCommission),
@@ -121,6 +166,9 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error) {
+    // The unique index is the concurrency guard for parallel/batch requests
+    // that both pass the friendly pre-check before either insert commits.
+    if (isDuplicateKeyError(error)) return duplicateUrlResponse();
     return NextResponse.json({ status: 'error', message: 'Unable to create the affiliate link.' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Eye, ArrowUpRight, Star, Loader2, ChevronDown } from 'lucide-react';
+import { articlePath } from '@/lib/routes';
 
 export interface ArticleItem {
   id: string | number;
@@ -17,6 +18,8 @@ export interface ArticleItem {
   createdAt?: string | null;
   authorName?: string | null;
   categoryName?: string | null;
+  categorySlug?: string | null;
+  subCategorySlug?: string | null;
 }
 
 interface ArticleGridProps {
@@ -131,7 +134,7 @@ export default function ArticleGrid({ initialArticles, initialPagination, curren
                 </div>
 
                 <h3 className="text-lg font-bold text-slate-900 mb-3 leading-snug group-hover:text-[#0056B3] transition-colors line-clamp-2">
-                  <Link className="card-stretched-link" href={`/article/${article.slug}`}>{article.title}</Link>
+                  <Link className="card-stretched-link" href={articlePath(article)}>{article.title}</Link>
                 </h3>
 
                 <p className="text-sm text-slate-600 line-clamp-2 mb-6 leading-relaxed">
@@ -140,7 +143,7 @@ export default function ArticleGrid({ initialArticles, initialPagination, curren
               </div>
 
               <Link
-                href={`/article/${article.slug}`}
+                href={articlePath(article)}
                 className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-[#0056B3] group-hover:text-blue-800"
               >
                 <span>Read Full Story</span>
