@@ -4,16 +4,16 @@ milestone: V5.2
 current_phase: 06
 current_phase_name: Traffic Intelligence Tab (traffic-web integration)
 status: executing
-stopped_at: Plan 06-01 complete, proceeding to 06-02
-last_updated: "2026-11-14T03:10:00.000Z"
+stopped_at: Plan 06-02 complete (Phase 6 fully executed) — next: /gsd-verify-work or milestone close
+last_updated: "2026-11-14T10:15:00.000Z"
 last_activity: 2026-11-14
-last_activity_desc: Plan 06-01 complete (traffic-web backend port + 11 CMS traffic routes)
-state_head: ee809f9
+last_activity_desc: Plan 06-02 complete (Traffic tab UI: settings card, Add & run + List-Domain table, detail modal + 5 click-to-load panels)
+state_head: 032c6ac
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 22
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-09-11)
 ## Current Position
 
 Phase: 06 (Traffic Intelligence Tab — traffic-web integration) — EXECUTING
-Plan: 2 of 2 (06-01 complete; 06-02 UI plan next)
-Status: Executing Phase 06 — backend done, UI remaining
-Last activity: 2026-11-14 — Plan 06-01 complete (traffic-web data layer port + credentials + TrafficDomain + 11 CMS traffic routes)
+Plan: 2 of 2 (06-01 and 06-02 both complete; Phase 6 fully executed)
+Status: Executing Phase 06 — all plans done; next step is /gsd-verify-work (manual UAT deferred: needs live TabAPI credential)
+Last activity: 2026-11-14 — Plan 06-02 complete (Traffic tab UI: credential settings, Add & run + List-Domain table, detail modal + 5 click-to-load panels)
 
-Progress: [████████░░] 86%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [████████░░] 86%
 | Phase 02 P08 | 84min | 2 tasks | 5 files |
 | Phase 03 P02 | 20min | 3 tasks | 13 files |
 | Phase 06 P01 | 75min | 4 tasks | 43 files |
+| Phase 06 P02 | 30min | 4 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,10 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-01: credential resolution centralized in src/lib/traffic/credentials.ts (DB primary, env fallback); routes never read process.env for provider keys (grep-verified) — keys never leave the server, GET config returns masked ••••••last4 only
 - [Phase 06]: 06-01: error envelope on traffic routes = { status:'error', error:{code,message}, message } — preserves traffic-web error codes (invalid_domain/missing_api_key/insufficient_credits) + Vietnamese messages while matching the repo cms envelope
 - [Phase 06]: 06-01: TrafficDomain upsert-by-domain for Add & run (duplicate updates, never duplicates); refresh uses getTraffic force:true (bypasses cache read); upstream failure persists lastError and keeps the previous report intact; GET /domains returns full stored reports without pagination (admin scale is tens of domains)
+- [Phase 06]: 06-02: traffic UI calls go through trafficFetch (Bearer-token pattern) instead of cmsFetch — cmsFetch's English status-mapped copy would replace the routes' actionable Vietnamese messages (missing_api_key/invalid_domain/insufficient_credits) on non-400 statuses
+- [Phase 06]: 06-02: component tests are node-environment source-contract (02-08 fs read + indexOf) + pure-helper unit tests (filterRows/sortRows/momTrend/sliceMessage/derivePanelPhase) — repo has no jsdom/@testing-library; behavior pinned without a render stack or new deps
+- [Phase 06]: 06-02: click-to-load enforced by construction — zero useEffect in any panel, fetch only from toggle/click handlers; soft-slice {data,error} guarded (sliceMessage) on whois/trustpilot/referring-sites/seranking, hard-error envelope guarded on ads; missing-key states derive from /config missing list, never a doomed fetch
+- [Phase 06]: 06-02: react-hooks/set-state-in-effect kept clean in new code — override-state pattern (settings months select), await-gated setState in modal load effect, Date.now() frozen via useState initializer in AdsPanel
 
 ### Roadmap Evolution
 
@@ -147,6 +152,6 @@ Items acknowledged and deferred at milestone close, most recent first:
 
 ## Session Continuity
 
-Last session: 2026-11-14T03:10:00.000Z
-Stopped at: Plan 06-01 complete (traffic backend: ported libs, credentials, TrafficDomain, 11 CMS routes) — 134 tests green, build green
-Resume file: .planning/phases/06-traffic-intelligence-tab-traffic-web-integration/06-01-SUMMARY.md
+Last session: 2026-11-14T10:15:00.000Z
+Stopped at: Plan 06-02 complete (Traffic admin UI: tab wiring, settings card, Add & run + List-Domain table, detail modal + 5 click-to-load panels) — 45 tests green, tsc clean, build green
+Resume file: .planning/phases/06-traffic-intelligence-tab-traffic-web-integration/06-02-SUMMARY.md

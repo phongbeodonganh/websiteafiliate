@@ -163,7 +163,7 @@ Plans:
 
 **Plans**:
 - [x] 06-01-PLAN.md — Traffic backend: port traffic-web data layer (12 libs + 6 type modules), masked credential storage (DB primary/env fallback), TrafficDomain collection with add&run/refresh/detail/delete, and all 11 CMS traffic routes (config, domains CRUD, 7 provider panels) — complete 2026-11-14
-- [ ] 06-02-PLAN.md — Traffic tab UI: List table, Add & run form, detail modal (core report + 5 click-to-load panels), credential config panel
+- [x] 06-02-PLAN.md — Traffic tab UI: admin-only ?tab=traffic tab, credential settings card (masked display, PUT only-changed-fields, db/env/missing chips), Add & run + 10-column List-Domain table (client search/sort/MoM trend, refresh/delete), detail modal (6-section core report + 5 click-to-load panels with missing-key states) — complete 2026-11-14
 
 ## Progress
 
@@ -177,7 +177,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 (Phase 6 indepe
 | 3. SEO/GEO & Performance Hardening | 2/4 | In progress (Wave 1 done) | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
-| 6. Traffic Intelligence Tab (INSERTED) | 1/2 | In progress (backend done, UI remaining) | - |
+| 6. Traffic Intelligence Tab (INSERTED) | 2/2 | In progress (plans done — pending verify-work/milestone close) | - |
 
 ---
 
