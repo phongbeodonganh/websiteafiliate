@@ -67,14 +67,14 @@ describe('isHttpUrl (AFF-01 strict helper)', () => {
 });
 
 describe('POST /api/v1/cms/affiliate-links — scheme validation (AFF-01)', () => {
-  it('accepts valid http(s) base_url values and stores them verbatim (no normalization on write)', async () => {
+  it('accepts valid http(s) base_url values and trims surrounding whitespace on write', async () => {
     const { token } = await seedAdmin();
 
     const accepted = [
-      'https://example.com',
-      'http://example.com',
-      'HTTP://EXAMPLE.COM', // WHATWG URL lowercases the protocol, so uppercase passes
-      ' https://example.com ', // whitespace is trimmed before parsing, stored verbatim
+      'https://one.example.com',
+      'http://two.example.com',
+      'HTTP://THREE.EXAMPLE.COM', // WHATWG URL lowercases the protocol, so uppercase passes
+      ' https://four.example.com ',
     ];
 
     for (const base_url of accepted) {
@@ -83,7 +83,7 @@ describe('POST /api/v1/cms/affiliate-links — scheme validation (AFF-01)', () =
 
       const payload = await res.json();
       const stored = await AffiliateLinkModel.findById(payload.data.id);
-      expect(stored?.base_url).toBe(base_url); // accept/reject only — never mutated
+      expect(stored?.base_url).toBe(base_url.trim());
     }
   });
 
@@ -141,13 +141,16 @@ describe('POST /api/v1/cms/affiliate-links — scheme validation (AFF-01)', () =
     const empty = await postHandler(postRequest(token, { name: 'Campaign', base_url: '' }));
     expect(empty.status).toBe(400);
 
+    const whitespace = await postHandler(postRequest(token, { name: 'Campaign', base_url: '   ' }));
+    expect(whitespace.status).toBe(400);
+
     const after = await AffiliateLinkModel.countDocuments();
     expect(after).toBe(before);
   });
 });
 
 describe('PUT /api/v1/cms/affiliate-links/[id] — scheme validation (AFF-01)', () => {
-  it('accepts an update to a valid https URL and stores it verbatim', async () => {
+  it('accepts an update to a valid https URL and trims it', async () => {
     const { token } = await seedAdmin();
     const link = await seedLink();
 
@@ -158,10 +161,10 @@ describe('PUT /api/v1/cms/affiliate-links/[id] — scheme validation (AFF-01)', 
     expect(res.status).toBe(200);
 
     const payload = await res.json();
-    expect(payload.data.base_url).toBe(' https://updated.example.com ');
+    expect(payload.data.base_url).toBe('https://updated.example.com');
 
     const reloaded = await AffiliateLinkModel.findById(link._id);
-    expect(reloaded?.base_url).toBe(' https://updated.example.com ');
+    expect(reloaded?.base_url).toBe('https://updated.example.com');
   });
 
   it('rejects a scheme-carrying malicious base_url with 400 and leaves the stored document unchanged', async () => {
