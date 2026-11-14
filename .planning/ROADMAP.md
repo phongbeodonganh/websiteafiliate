@@ -161,7 +161,9 @@ Plans:
   4. Clicking "Chi tiết" opens a modal with the full core report (6 metric cards, monthly history, traffic sources, top countries, keywords, AI referrals) and five click-to-load extended panels that show a "chưa cấu hình key" state when their key is absent
   5. `npm run lint`, `npm test` and `npm run build` stay green; every new CMS route is covered by the parameterized 401/403 auth gate inventory
 
-**Plans**: TBD
+**Plans**:
+- [x] 06-01-PLAN.md — Traffic backend: port traffic-web data layer (12 libs + 6 type modules), masked credential storage (DB primary/env fallback), TrafficDomain collection with add&run/refresh/detail/delete, and all 11 CMS traffic routes (config, domains CRUD, 7 provider panels) — complete 2026-11-14
+- [ ] 06-02-PLAN.md — Traffic tab UI: List table, Add & run form, detail modal (core report + 5 click-to-load panels), credential config panel
 
 ## Progress
 
@@ -175,7 +177,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 (Phase 6 indepe
 | 3. SEO/GEO & Performance Hardening | 2/4 | In progress (Wave 1 done) | - |
 | 4. V5.2 Presentation & Brand Alignment | 0/? | Not started | - |
 | 5. Production Readiness | 0/? | Not started | - |
-| 6. Traffic Intelligence Tab (INSERTED) | 0/? | Not started | - |
+| 6. Traffic Intelligence Tab (INSERTED) | 1/2 | In progress (backend done, UI remaining) | - |
 
 ---
 
