@@ -8,6 +8,8 @@ import { generateObjectId } from '@/lib/utils';
 import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import { ARTICLE_CONTENT_TYPES, isArticleContentType, articleContentTypeLabel, type ArticleContentType } from '@/lib/article-content-types';
 import RichTextEditor from '@/components/admin/RichTextEditor';
+import TrafficSettingsCard from '@/components/admin/traffic/TrafficSettingsCard';
+import type { TrafficConfigData, TrafficRow } from '@/components/admin/traffic/traffic-helpers';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
 import DialogHost from '@/components/admin/DialogHost';
 import { dialog } from '@/lib/dialog';
@@ -70,7 +72,7 @@ import {
 // fallback for a non-admin that reaches one via URL) and as the single source of
 // truth for which tabs only an admin may see. Every backing route keeps its 403 —
 // this set is a UI contract, not the access control.
-const ADMIN_ONLY_TABS = new Set(['insights', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
+const ADMIN_ONLY_TABS = new Set(['insights', 'traffic', 'subscribers', 'categories', 'users', 'links', 'blacklist', 'settings']);
 
 // Reusable Luxury Button Component
 const LuxuryButton = ({ children, variant = 'primary', className = '', ...props }: any) => {
@@ -275,6 +277,10 @@ export default function AdminDashboardPage() {
   const [insightsMissingEnv, setInsightsMissingEnv] = useState<string[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [insightsDays, setInsightsDays] = useState(28);
+  // Traffic Intelligence (Phase 06) State
+  const [trafficConfig, setTrafficConfig] = useState<TrafficConfigData | null>(null);
+  const [trafficRows, setTrafficRows] = useState<TrafficRow[]>([]);
+  const [trafficLoading, setTrafficLoading] = useState(false);
   // Subscribers Leads State
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
   const [subscribersStats, setSubscribersStats] = useState<any>({ totalSubscribers: 0, countToday: 0, countThisWeek: 0 });
@@ -833,6 +839,26 @@ export default function AdminDashboardPage() {
       .finally(() => setInsightsLoading(false));
   };
 
+  // Traffic Intelligence: config (masked credentials) + tracked domains. Fired
+  // lazily only when the traffic tab is opened by an admin (see useEffect below).
+  const loadTrafficData = () => {
+    const token = localStorage.getItem('token');
+    setTrafficLoading(true);
+    fetch('/api/v1/cms/traffic/config', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status === 'success') setTrafficConfig(d.data);
+      })
+      .catch(() => {});
+    fetch('/api/v1/cms/traffic/domains', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.status === 'success') setTrafficRows(d.data);
+      })
+      .catch(() => {})
+      .finally(() => setTrafficLoading(false));
+  };
+
   useEffect(() => {
     if (activeTab === 'users' && currentUser?.role === 'admin') {
       loadUsersData();
@@ -842,6 +868,9 @@ export default function AdminDashboardPage() {
     }
     if (activeTab === 'insights' && currentUser?.role === 'admin') {
       loadInsightsData();
+    }
+    if (activeTab === 'traffic' && currentUser?.role === 'admin') {
+      loadTrafficData();
     }
   }, [activeTab, currentUser]);
 
@@ -1604,6 +1633,41 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Traffic Intelligence View (Phase 06): credential settings + domain list +
+  // detail modal. Data fetching is delegated to the traffic components; this
+  // renderer stays thin and only owns the config/domains state.
+  const renderTrafficView = () => {
+    const tabApiMissing = Boolean(trafficConfig && trafficConfig.missing.includes('TABAPI_KEY'));
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="flex justify-between items-end">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">Traffic Intelligence</h2>
+            <p className="text-slate-400 text-sm">
+              Theo dõi traffic ước tính, thứ hạng và nguồn truy cập của các domain (dữ liệu TabAPI).
+            </p>
+          </div>
+        </div>
+
+        <TrafficSettingsCard config={trafficConfig} onSaved={setTrafficConfig} onToast={showCmsToast} />
+
+        {tabApiMissing && (
+          <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex items-start gap-4">
+            <AlertTriangle size={24} className="text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-white font-semibold mb-1">
+                Chưa cấu hình TabAPI key — nhập trong phần Cấu hình để sử dụng
+              </p>
+              <p className="text-slate-400 text-sm">
+                TabAPI là nguồn dữ liệu chính cho traffic, thêm &amp; chạy và làm mới domain.
+              </p>
             </div>
           </div>
         )}
@@ -3437,6 +3501,7 @@ export default function AdminDashboardPage() {
 
     if (activeTab === 'dashboard') return renderDashboardView();
     if (activeTab === 'insights' && currentUser.role === 'admin') return renderInsightsView();
+    if (activeTab === 'traffic' && currentUser.role === 'admin') return renderTrafficView();
     if (activeTab === 'articles') return renderArticlesView();
     if (activeTab === 'subscribers' && currentUser.role === 'admin') return renderSubscribersView();
     if (activeTab === 'categories' && currentUser.role === 'admin') return renderCategoriesView();
@@ -3499,6 +3564,7 @@ export default function AdminDashboardPage() {
               {currentUser.role === 'admin' && (
                 <>
                   <NavItem id="insights" icon={TrendingUp} label="SEO Insights" active={activeTab === "insights" && !editingArticle && !previewArticle} onClick={() => navigate({ tab: "insights" })} currentUser={currentUser} requiredRole="admin" />
+                  <NavItem id="traffic" icon={Globe} label="Traffic Intelligence" active={activeTab === "traffic" && !editingArticle && !previewArticle} onClick={() => navigate({ tab: "traffic" })} currentUser={currentUser} requiredRole="admin" />
                   <div className="pt-4 pb-2 px-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">System (Admin)</div>
                   <NavItem id="subscribers" icon={Mail} label="Insider" active={activeTab === "subscribers" && !editingArticle && !previewArticle} onClick={() => navigate({ tab: "subscribers" })} currentUser={currentUser} requiredRole="admin" />
                   <NavItem id="categories" icon={FolderTree} label="Categories" active={activeTab === "categories" && !editingArticle && !previewArticle} onClick={() => navigate({ tab: "categories" })} currentUser={currentUser} requiredRole="admin" />
