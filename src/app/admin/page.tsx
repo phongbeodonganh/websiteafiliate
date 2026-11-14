@@ -9,7 +9,12 @@ import { cmsFetch, errorMessageForResponse } from '@/lib/cms-fetch';
 import { ARTICLE_CONTENT_TYPES, isArticleContentType, articleContentTypeLabel, type ArticleContentType } from '@/lib/article-content-types';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import TrafficSettingsCard from '@/components/admin/traffic/TrafficSettingsCard';
-import type { TrafficConfigData, TrafficRow } from '@/components/admin/traffic/traffic-helpers';
+import TrafficDomainsTable from '@/components/admin/traffic/TrafficDomainsTable';
+import {
+  upsertRow,
+  type TrafficConfigData,
+  type TrafficRow,
+} from '@/components/admin/traffic/traffic-helpers';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
 import DialogHost from '@/components/admin/DialogHost';
 import { dialog } from '@/lib/dialog';
@@ -281,6 +286,7 @@ export default function AdminDashboardPage() {
   const [trafficConfig, setTrafficConfig] = useState<TrafficConfigData | null>(null);
   const [trafficRows, setTrafficRows] = useState<TrafficRow[]>([]);
   const [trafficLoading, setTrafficLoading] = useState(false);
+  const [trafficDetailRow, setTrafficDetailRow] = useState<TrafficRow | null>(null);
   // Subscribers Leads State
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
   const [subscribersStats, setSubscribersStats] = useState<any>({ totalSubscribers: 0, countToday: 0, countThisWeek: 0 });
@@ -1671,6 +1677,16 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        <TrafficDomainsTable
+          rows={trafficRows}
+          loading={trafficLoading}
+          onAdded={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
+          onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
+          onDeleted={(id) => setTrafficRows((prev) => prev.filter((r) => r.id !== id))}
+          onOpenDetail={setTrafficDetailRow}
+          onToast={showCmsToast}
+        />
       </div>
     );
   };
