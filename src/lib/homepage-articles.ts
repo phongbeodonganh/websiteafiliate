@@ -16,6 +16,8 @@ export type HomepageArticle = {
   thumbnailUrl?: string;
   createdAt: string;
   categoryName?: string | null;
+  categorySlug?: string | null;
+  subCategorySlug?: string | null;
   authorName?: string | null;
   authorAvatar?: string | null;
 };
@@ -47,6 +49,7 @@ async function findArticles(limit: number, tab?: "popular" | "editorial", query?
   const articles = await ArticleModel.find(filter)
     .populate("author_id", "name avatar username")
     .populate("category_id", "name slug")
+    .populate("sub_category_id", "name slug")
     .sort(sort)
     .limit(limit)
     .lean();
@@ -59,6 +62,7 @@ async function findArticles(limit: number, tab?: "popular" | "editorial", query?
       title: doc.title,
       slug: doc.slug,
       excerpt: doc.excerpt || excerptFallback,
+      content: doc.content || "",
       isFeatured: Boolean(doc.is_featured),
       viewCount: Number(doc.view_count || 0),
       thumbnailUrl: doc.thumbnail_url || "",
@@ -68,6 +72,8 @@ async function findArticles(limit: number, tab?: "popular" | "editorial", query?
           ? new Date(doc.created_at).toISOString()
           : "",
       categoryName: populatedValue(doc.category_id, "name") || null,
+      categorySlug: populatedValue(doc.category_id, "slug") || null,
+      subCategorySlug: populatedValue(doc.sub_category_id, "slug") || null,
       authorName:
         populatedValue(doc.author_id, "name") ||
         populatedValue(doc.author_id, "username") ||

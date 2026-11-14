@@ -18,7 +18,7 @@ export interface InsightsPayload {
   funnel: FunnelRow[];
 }
 
-// GA4 pagePath cho bài viết có dạng "/article/<slug>" (xem src/app/article/[slug]/page.tsx).
+// GA4 pagePath cho bài viết có dạng "/<category>/<sub-category>/<slug>".
 function slugFromPagePath(pagePath: string): string | null {
   const match = pagePath.match(/^\/article\/([^/?]+)/);
   return match ? decodeURIComponent(match[1]) : null;

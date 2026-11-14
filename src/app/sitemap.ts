@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { connectToDatabase } from '@/lib/db/mongodb';
-import { ArticleModel, CategoryModel, SettingModel } from '@/lib/db/models';
+import { ArticleModel, CategoryModel, SettingModel, SubCategoryModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
+import { articlePath, categoryPath, subCategoryPath } from '@/lib/routes';
 
 // D-08: ISR with 3600s revalidation — one Atlas query per hour max; crawlers
 // get cached sitemap between revalidations. CMS writes bust the cache via
@@ -12,56 +13,85 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let baseUrl = normalizeSiteUrl();
   let articleEntries: MetadataRoute.Sitemap = [];
   let categoryEntries: MetadataRoute.Sitemap = [];
+  let subCategoryEntries: MetadataRoute.Sitemap = [];
   let newestContentDate: Date | undefined;
 
   try {
     await connectToDatabase();
-
     const settings = await SettingModel.findOne();
     baseUrl = normalizeSiteUrl(settings?.canonicalUrl);
 
-    const [articles, categories] = await Promise.all([
-      ArticleModel.find({ status: 'published' })
-        .select('slug updated_at created_at')
-        .sort({ created_at: -1 })
-        .lean(),
-      CategoryModel.aggregate([
-        {
-          $lookup: {
-            from: ArticleModel.collection.name,
-            let: { categoryId: '$_id' },
-            pipeline: [
-              { $match: { $expr: { $and: [{ $eq: ['$category_id', '$$categoryId'] }, { $eq: ['$status', 'published'] }] } } },
-              { $limit: 1 },
-            ],
-            as: 'publishedArticles',
-          },
+    const [articles, categories, subCategories] = await Promise.all([
+    ArticleModel.find({ status: 'published' })
+      .select('slug category_id sub_category_id updated_at created_at')
+      .populate('category_id', 'slug')
+      .populate('sub_category_id', 'slug')
+      .sort({ created_at: -1 })
+      .lean(),
+    CategoryModel.aggregate([
+      {
+        $lookup: {
+          from: ArticleModel.collection.name,
+          let: { categoryId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $and: [{ $eq: ['$category_id', '$$categoryId'] }, { $eq: ['$status', 'published'] }] } } },
+            { $limit: 1 },
+          ],
+          as: 'publishedArticles',
         },
-        { $match: { 'publishedArticles.0': { $exists: true } } },
-        { $project: { slug: 1, created_at: 1 } },
-      ]),
-    ]);
+      },
+      { $match: { 'publishedArticles.0': { $exists: true } } },
+      { $project: { slug: 1, created_at: 1 } },
+    ]),
+    SubCategoryModel.aggregate([
+      {
+        $lookup: {
+          from: ArticleModel.collection.name,
+          let: { subCategoryId: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $and: [{ $eq: ['$sub_category_id', '$$subCategoryId'] }, { $eq: ['$status', 'published'] }] } } },
+            { $limit: 1 },
+          ],
+          as: 'publishedArticles',
+        },
+      },
+      { $match: { 'publishedArticles.0': { $exists: true } } },
+      { $lookup: { from: CategoryModel.collection.name, localField: 'category_id', foreignField: '_id', as: 'category' } },
+      { $unwind: '$category' },
+      { $project: { slug: 1, created_at: 1, categorySlug: '$category.slug' } },
+    ]),
+  ]);
 
     articleEntries = articles.map((article) => ({
-      url: `${baseUrl}/article/${article.slug}`,
-      lastModified: article.updated_at || article.created_at,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }));
+    url: `${baseUrl}${articlePath({
+      slug: article.slug,
+      categorySlug: (article.category_id as unknown as { slug?: string } | undefined)?.slug,
+      subCategorySlug: (article.sub_category_id as unknown as { slug?: string } | undefined)?.slug,
+    })}`,
+    lastModified: article.updated_at || article.created_at,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
 
     categoryEntries = categories.map((category) => ({
-      url: `${baseUrl}/category/${category.slug}`,
-      lastModified: category.created_at,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    }));
+    url: `${baseUrl}${categoryPath(category.slug)}`,
+    lastModified: category.created_at,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }));
+
+    subCategoryEntries = subCategories.map((subCategory) => ({
+    url: `${baseUrl}${subCategoryPath(subCategory.categorySlug, subCategory.slug)}`,
+    lastModified: subCategory.created_at,
+    changeFrequency: 'weekly',
+    priority: 0.65,
+  }));
 
     newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
   } catch {
-    // Build-time prerender (e.g. CI) has no MongoDB — emit static entries only;
-    // ISR revalidation (or revalidateSitemap() on CMS writes) refreshes at runtime.
+    // Builds without MongoDB still emit static entries; runtime ISR fills in
+    // the content URLs once the database is available.
   }
-
   const trustPagesUpdated = new Date('2026-09-04T00:00:00.000Z');
   const staticEntrySeeds: Array<{
     path: string;
@@ -92,6 +122,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticEntries,
     ...categoryEntries,
+    ...subCategoryEntries,
     ...articleEntries,
   ];
 }

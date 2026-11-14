@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-// TEMP LOAD TEST: uncomment to restore per-request CSP nonces.
-// import { headers } from "next/headers";
+import { headers } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
@@ -104,9 +104,7 @@ export default async function RootLayout({
   // (set in src/proxy.ts) and stamp it onto its own inline bootstrap scripts —
   // otherwise statically-optimized routes (e.g. /admin, /admin/login) ship
   // those scripts with no nonce and the CSP in proxy.ts blocks them outright.
-  // TEMP LOAD TEST: restore together with the nonce CSP in src/proxy.ts.
-  // const nonce = (await headers()).get('x-nonce') ?? undefined;
-  const nonce = undefined;
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   let sysSettings;
   try {
@@ -167,13 +165,17 @@ export default async function RootLayout({
         )}
         {gaId && (
           <>
-            <script
+            <Script
+              id="google-analytics"
               async
               nonce={nonce}
+              strategy="afterInteractive"
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
             />
-            <script
+            <Script
+              id="google-analytics-init"
               nonce={nonce}
+              strategy="afterInteractive"
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];
