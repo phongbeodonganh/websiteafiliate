@@ -18,5 +18,13 @@ export function articlePath(input: {
   categorySlug?: string | null;
   subCategorySlug?: string | null;
 }) {
-  return `/article/${segment(input.slug, '')}`;
+  const category = categoryPath(input.categorySlug || FALLBACK_CATEGORY_SLUG);
+  const article = segment(input.slug, '');
+  return input.subCategorySlug
+    ? `${category}/${segment(input.subCategorySlug, '')}/${article}`
+    : `${category}/${article}`;
+}
+
+export function legacyArticlePath(slug: string) {
+  return `/article/${segment(slug, '')}`;
 }

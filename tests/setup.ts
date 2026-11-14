@@ -10,6 +10,10 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 
 const mongod = await MongoMemoryServer.create({
+  // MongoDB 8.2.6 hangs before emitting any startup output on the Windows test
+  // environment. Pin the test binary to the known-working 7.0 release instead
+  // of inheriting mongodb-memory-server's moving default.
+  binary: { version: '7.0.24' },
   instance: { launchTimeout: 30_000 },
 });
 process.env.MONGODB_URI = mongod.getUri();

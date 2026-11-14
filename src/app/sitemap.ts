@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, CategoryModel, SettingModel, SubCategoryModel } from '@/lib/db/models';
 import { normalizeSiteUrl } from '@/lib/seo';
-import { articlePath, categoryPath, subCategoryPath } from '@/lib/routes';
+import { articlePath, categoryPath, legacyArticlePath, subCategoryPath } from '@/lib/routes';
 
 // D-08: ISR with 3600s revalidation — one Atlas query per hour max; crawlers
 // get cached sitemap between revalidations. CMS writes bust the cache via
@@ -63,11 +63,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
     articleEntries = articles.map((article) => ({
-    url: `${baseUrl}${articlePath({
-      slug: article.slug,
-      categorySlug: (article.category_id as unknown as { slug?: string } | undefined)?.slug,
-      subCategorySlug: (article.sub_category_id as unknown as { slug?: string } | undefined)?.slug,
-    })}`,
+    url: `${baseUrl}${
+      (article.category_id as unknown as { slug?: string } | undefined)?.slug
+        ? articlePath({
+            slug: article.slug,
+            categorySlug: (article.category_id as unknown as { slug?: string }).slug,
+            subCategorySlug: (article.sub_category_id as unknown as { slug?: string } | undefined)?.slug,
+          })
+        : legacyArticlePath(article.slug)
+    }`,
     lastModified: article.updated_at || article.created_at,
     changeFrequency: 'weekly',
     priority: 0.8,
