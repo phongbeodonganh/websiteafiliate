@@ -52,15 +52,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const newestContentDate = articles[0]?.updated_at || articles[0]?.created_at;
-  const staticEntries: MetadataRoute.Sitemap = [
+  const trustPagesUpdated = new Date('2026-09-04T00:00:00.000Z');
+  const staticEntrySeeds: Array<{
+    path: string;
+    changeFrequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    priority: number;
+    lastModified?: Date;
+  }> = [
     { path: '', changeFrequency: 'daily' as const, priority: 1 },
     { path: '/latest', changeFrequency: 'daily' as const, priority: 0.8 },
     { path: '/hottest', changeFrequency: 'daily' as const, priority: 0.7 },
     { path: '/editorial-picks', changeFrequency: 'weekly' as const, priority: 0.7 },
     { path: '/affiliates', changeFrequency: 'weekly' as const, priority: 0.6 },
-  ].map((entry) => ({
+    { path: '/about', changeFrequency: 'monthly' as const, priority: 0.5, lastModified: trustPagesUpdated },
+    { path: '/contact', changeFrequency: 'monthly' as const, priority: 0.5, lastModified: trustPagesUpdated },
+    { path: '/privacy-policy', changeFrequency: 'yearly' as const, priority: 0.3, lastModified: trustPagesUpdated },
+    { path: '/terms', changeFrequency: 'yearly' as const, priority: 0.3, lastModified: trustPagesUpdated },
+    { path: '/affiliate-disclosure', changeFrequency: 'yearly' as const, priority: 0.4, lastModified: trustPagesUpdated },
+  ];
+  const staticEntries: MetadataRoute.Sitemap = staticEntrySeeds.map((entry) => ({
     url: `${baseUrl}${entry.path}`,
-    ...(newestContentDate ? { lastModified: newestContentDate } : {}),
+    ...(entry.lastModified || newestContentDate
+      ? { lastModified: entry.lastModified || newestContentDate }
+      : {}),
     changeFrequency: entry.changeFrequency,
     priority: entry.priority,
   }));

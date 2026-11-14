@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Eye } from 'lucide-react';
+import { ArrowRight, BookOpen, CalendarDays, Clock3, Eye } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import type { Types } from 'mongoose';
 import AffiliateCtaBlock from '@/components/AffiliateCtaBlock';
@@ -14,6 +14,9 @@ import EditorialFooter from '@/components/EditorialFooter';
 import EditorialBackdrop from '@/components/EditorialBackdrop';
 import PublicArticleImage from '@/components/PublicArticleImage';
 import ArticleContent from '@/components/ArticleContent';
+import ArticleReadingTools from '@/components/ArticleReadingTools';
+import ArticleTableOfContents from '@/components/ArticleTableOfContents';
+import AuthorAvatar from '@/components/AuthorAvatar';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { ArticleModel, SettingModel } from '@/lib/db/models';
 import { sanitizeArticleContent } from '@/lib/sanitize';
@@ -24,7 +27,7 @@ export const revalidate = 0;
 
 interface ArticlePageProps { params: Promise<{ slug: string }>; }
 
-interface PopulatedAuthor { _id: Types.ObjectId; name?: string; username?: string; }
+interface PopulatedAuthor { _id: Types.ObjectId; name?: string; username?: string; avatar?: string; }
 interface PopulatedCategory { _id: Types.ObjectId; name?: string; slug?: string; }
 interface PopulatedPlacement {
   position_label: string;
@@ -88,6 +91,7 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
   const categoryName = populatedCategory?.name;
   const categorySlug = populatedCategory?.slug;
   const authorName = populatedAuthor?.name || populatedAuthor?.username;
+  const authorAvatar = populatedAuthor?.avatar;
   const keyTakeaways = Array.isArray(doc.key_takeaways) ? doc.key_takeaways.map((item) => item.trim()).filter(Boolean) : [];
   const populatedPlacements = (Array.isArray(doc.affiliate_placements) ? doc.affiliate_placements : []) as unknown as PopulatedPlacement[];
   const placements = populatedPlacements
@@ -123,8 +127,24 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
     const relatedCategory = related.category_id as unknown as PopulatedCategory | undefined;
     const sameAuthor = Boolean(authorId && relatedAuthor?._id?.toString() === authorId.toString());
     const sameCategory = Boolean(categoryId && relatedCategory?._id?.toString() === categoryId.toString());
-    return { id: related._id.toString(), title: related.title, slug: related.slug, viewCount: related.view_count, sameAuthor, sameCategory, score: Number(sameAuthor) + Number(sameCategory) };
+    return {
+      id: related._id.toString(),
+      title: related.title,
+      slug: related.slug,
+      viewCount: related.view_count,
+      thumbnailUrl: related.thumbnail_url,
+      categoryName: relatedCategory?.name,
+      createdAt: related.created_at,
+      sameAuthor,
+      sameCategory,
+      score: Number(sameAuthor) + Number(sameCategory),
+    };
   }).sort((a, b) => b.score - a.score).slice(0, 4);
+
+  const sanitizedContent = sanitizeArticleContent(doc.content);
+  const articleWords = doc.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length;
+  const readingMinutes = Math.max(1, Math.ceil(articleWords / 220));
+  const publishedDate = new Date(doc.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   const articleSchema = {
     '@context': 'https://schema.org', '@type': 'NewsArticle', headline: doc.title,
@@ -178,71 +198,135 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
         </nav>
       </div>
 
-      <main className={styles.layout}>
+      <main className={styles.articleMain}>
         <article className={styles.articleBox}>
-          {categoryName && (categorySlug
-            ? <Link className={styles.category} href={`/category/${categorySlug}`}>{categoryName}</Link>
-            : <p className={styles.category}>{categoryName}</p>)}
-          <h1>{doc.title}</h1>
-          <div className="flex min-w-0 flex-wrap items-center gap-3 mb-6 pb-6 border-b border-slate-100 text-sm text-slate-600">
-            <div className="w-9 h-9 rounded-full bg-black text-white font-bold flex items-center justify-center text-sm shadow-sm">
-              {(authorName || 'A')[0].toUpperCase()}
+          <header className={styles.articleHeader} data-motion="rise">
+            {categoryName && (categorySlug
+              ? <Link className={styles.category} href={`/category/${categorySlug}`}>{categoryName}</Link>
+              : <p className={styles.category}>{categoryName}</p>)}
+            <h1>{doc.title}</h1>
+            {doc.excerpt && <p className={styles.articleDek}>{doc.excerpt}</p>}
+
+            <div className={styles.mastheadFooter}>
+              <div className={styles.authorMeta}>
+                <AuthorAvatar className={styles.authorAvatar} name={authorName || 'AIDEALSUK Editorial'} src={authorAvatar} />
+                <div className={styles.authorMetaText}>
+                  <p>By {authorName || 'AIDEALSUK Editorial'}</p>
+                  <div className={styles.metadata}>
+                    <span><CalendarDays aria-hidden="true" /> {publishedDate}</span>
+                    <span><Clock3 aria-hidden="true" /> {readingMinutes} min read</span>
+                    <span><Eye aria-hidden="true" /> {doc.view_count || 0} views</span>
+                  </div>
+                </div>
+              </div>
+              <SocialShare title={doc.title} variant="compact" />
             </div>
-            <div className="min-w-0">
-              <p className="font-bold text-slate-900 m-0 leading-tight">
-                By {authorName || 'AIDEALSUK Editorial'}
-              </p>
-              <p className="text-xs text-slate-500 m-0 mt-0.5">
-                Published on {new Date(doc.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} &middot; {doc.view_count || 0} views
-              </p>
-            </div>
-          </div>
+          </header>
+
           <figure className={`${styles.heroImage} public-article-image-frame`} data-motion="fade">
             <PublicArticleImage src={doc.thumbnail_url} alt={doc.title} loading="eager" fetchPriority="high" />
           </figure>
-          {keyTakeaways.length > 0 && <section className={styles.takeaways} data-motion="rise"><p>Key Takeaways</p><ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul></section>}
 
-          <ArticleContent className={styles.articleContent} html={sanitizeArticleContent(doc.content)} />
-
-          {/* ── Editor's Verdict — inline mid-article recommendation ── */}
-          {verdictPlacement && (
-            <EditorVerdict
-              articleId={articleId}
-              toolName={verdictPlacement.link.name}
-              affiliateLinkId={verdictPlacement.link.id}
-              commission={verdictPlacement.link.commission}
-            />
-          )}
-
-          {/* ── Remaining affiliate offers (as <aside>) ── */}
-          {remainingPlacements.length > 0 && (
-            <aside className={styles.placements} aria-label="Affiliate recommendations" data-motion="rise">
-              <h2>Recommended Offers</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {remainingPlacements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+          <div className={styles.layout}>
+            <aside className={styles.leftRail} aria-label="Article contents" data-motion="rise">
+              <div className={styles.leftSticky} data-toc-rail="true">
+                <ArticleTableOfContents key={`desktop-${articleId}`} contentId="article-content" />
+                <VerticalAffiliateSidebar sticky={false} variant="article" />
               </div>
             </aside>
-          )}
 
-          {relatedArticles.length > 0 && <section className={styles.related} data-motion="rise">
-            <div className={styles.relatedHeading}><p>Continue Reading</p><h2>Related Articles</h2></div>
-            <div className={styles.relatedGrid}>{relatedArticles.map((related) => <Link key={related.id} href={`/article/${related.slug}`} className={`${styles.relatedCard} clickable-card`}>
-              <div className={styles.relationLabels}>{related.sameAuthor && <span>Same author</span>}{related.sameCategory && <span>Same category</span>}</div>
-              <h3>{related.title}</h3><p><span><Eye size={13} /> {related.viewCount} views</span><ArrowRight size={14} /></p>
-            </Link>)}</div>
-          </section>}
-          <SocialShare title={doc.title} />
+            <div className={styles.readingColumn}>
+              <ArticleReadingTools key={articleId} contentId="article-content" slug={doc.slug} />
+              <details className={styles.mobileContents}>
+                <summary>In this article <BookOpen size={16} aria-hidden="true" /></summary>
+                <ArticleTableOfContents key={`mobile-${articleId}`} contentId="article-content" />
+              </details>
+              {keyTakeaways.length > 0 && (
+                <section className={styles.takeaways} data-motion="rise">
+                  <p>Key Takeaways</p>
+                  <ul>{keyTakeaways.map((item, index) => <li key={`${index}-${item}`}>{item.replace(/^[-\s]+/, '')}</li>)}</ul>
+                </section>
+              )}
+
+              <ArticleContent id="article-content" className={styles.articleContent} html={sanitizedContent} />
+
+              <div className={styles.articleEnd}>
+                <span aria-hidden="true">◆</span>
+                <p>A fresh perspective is worth sharing.</p>
+                <SocialShare title={doc.title} variant="compact" />
+              </div>
+
+              {verdictPlacement && (
+                <EditorVerdict
+                  articleId={articleId}
+                  toolName={verdictPlacement.link.name}
+                  affiliateLinkId={verdictPlacement.link.id}
+                  commission={verdictPlacement.link.commission}
+                />
+              )}
+
+              {remainingPlacements.length > 0 && (
+                <aside className={styles.placements} aria-label="Affiliate recommendations" data-motion="rise">
+                  <p className={styles.sectionEyebrow}>Selected partner offers</p>
+                  <h2>Tools worth a closer look</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {remainingPlacements.map((placement, index) => <AffiliateCtaBlock key={`${placement.link.id}-${index}`} articleId={articleId} link={placement.link} positionLabel={placement.positionLabel} variant="editorial" />)}
+                  </div>
+                </aside>
+              )}
+
+              <section className={styles.authorBio} aria-labelledby="author-bio-title" data-motion="rise">
+                <AuthorAvatar className={styles.authorBioAvatar} name={authorName || 'AIDEALSUK Editorial'} src={authorAvatar} />
+                <div>
+                  <p className={styles.sectionEyebrow}>About the author</p>
+                  <h2 id="author-bio-title">{authorName || 'AIDEALSUK Editorial'}</h2>
+                  <p>
+                    {authorName
+                      ? `${authorName} contributes reporting and analysis to AIDEALSUK across artificial intelligence, finance, and the tools shaping modern work.`
+                      : 'The AIDEALSUK editorial desk reports on artificial intelligence, finance, and the tools shaping modern work—with clarity over hype.'}
+                  </p>
+                </div>
+              </section>
+            </div>
+
+            <aside className={styles.rightRail} role="complementary" aria-label="Latest news" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
+              <div className={styles.rightSticky} tabIndex={0} role="region" aria-label="Latest news">
+                {latestArticles.length > 0 && <section className={styles.latestNews}>
+                  <p>Recently Published</p><h2>Latest News</h2>
+                  <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
+                  <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
+                </section>}
+              </div>
+            </aside>
+          </div>
         </article>
-
-        <aside className={styles.rightRail} role="complementary" aria-label="Sidebar" data-motion="rise" style={{ '--motion-delay': '80ms' } as React.CSSProperties}>
-          <VerticalAffiliateSidebar hideWhenEmpty sticky={false} />
-          {latestArticles.length > 0 && <section className={styles.latestNews}>
-            <p>Recently Published</p><h2>Latest News</h2>
-            <div>{latestArticles.map((latest) => <Link key={latest._id.toString()} href={`/article/${latest.slug}`}><h3>{latest.title}</h3><span>{new Date(latest.created_at).toLocaleDateString()} · {latest.view_count} views</span></Link>)}</div>
-            <Link className={styles.latestAll} href="/latest">View all latest <ArrowRight size={14} /></Link>
-          </section>}
-        </aside>
       </main>
+
+      {relatedArticles.length > 0 && (
+        <section className={styles.related} aria-labelledby="related-title" data-motion="rise">
+          <div className={styles.relatedHeading}>
+            <div><p>Continue Reading</p><h2 id="related-title">Read Next</h2></div>
+            <Link href="/latest">All latest stories <ArrowRight aria-hidden="true" /></Link>
+          </div>
+          <div className={styles.relatedGrid}>
+            {relatedArticles.map((related) => (
+              <Link key={related.id} href={`/article/${related.slug}`} className={`${styles.relatedCard} clickable-card`}>
+                <div className={`${styles.relatedMedia} public-article-image-frame`}>
+                  <PublicArticleImage src={related.thumbnailUrl} alt="" loading="lazy" />
+                </div>
+                <div className={styles.relatedCardBody}>
+                  <div className={styles.relationLabels}>
+                    <span>{related.categoryName || 'Analysis'}</span>
+                    {related.sameAuthor && <span>Same author</span>}
+                  </div>
+                  <h3>{related.title}</h3>
+                  <p><span><Eye size={13} /> {related.viewCount} views</span><ArrowRight size={14} /></p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── Sticky mobile CTA bar (dismissible) ── */}
       {verdictPlacement && (

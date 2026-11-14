@@ -1,0 +1,19 @@
+.progress { position: fixed; top: 0; inset-inline: 0; height: 3px; z-index: 1100; pointer-events: none; background: transparent; }
+.progress > span { display: block; width: 100%; height: 100%; background: var(--editorial-accent); transform-origin: left; transition: transform 150ms linear; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 22px; margin-bottom: 30px; border-bottom: 1px solid var(--editorial-divider); scroll-margin-top: 120px; }
+.progressLabel { display: flex; align-items: center; gap: 8px; color: var(--editorial-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.progressLabel > svg { color: var(--editorial-accent); }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--editorial-accent); }
+.actions { display: flex; align-items: center; gap: 14px; }
+.sizeControls { display: flex; align-items: center; border: 1px solid var(--editorial-divider); border-radius: 5px; background: var(--editorial-surface); }
+.sizeControls > span { color: var(--editorial-copy); font-size: 13px; padding: 0 3px; }
+.toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 36px; min-height: 38px; background: transparent; border: 0; color: var(--editorial-muted); cursor: pointer; transition: color 150ms, background 150ms; }
+.toolbar button:hover { color: var(--editorial-accent); background: var(--editorial-accent-soft); }
+.toolbar button:disabled { opacity: .3; cursor: default; }
+.toolbar button:focus-visible, .backToReading:focus-visible { outline: 2px solid var(--editorial-accent); outline-offset: 4px; }
+.save { font-size: 11px; padding: 0 5px; }
+.save[aria-pressed='true'] { color: var(--editorial-accent); }
+.storageError { flex-basis: 100%; font-size: 12px; color: #b42318; margin: 0; }
+.backToReading { position: fixed; bottom: 98px; right: 22px; display: grid; place-items: center; height: 42px; width: 42px; border: 1px solid var(--editorial-ink); border-radius: 50%; background: var(--editorial-ink); color: #ffffff; z-index: 30; box-shadow: 0 6px 24px rgba(17, 17, 17, .18); cursor: pointer; }
+@media (max-width: 520px) { .actions { gap: 8px; } .save span { display: none; } .backToReading { right: 14px; } }
+@media (prefers-reduced-motion: reduce) { .progress > span, .toolbar button { transition: none; } }

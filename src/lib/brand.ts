@@ -15,3 +15,6 @@ export const BRAND_COPYRIGHT = (year = new Date().getFullYear()) =>
 
 /** Canonical domain (used when DB settings are not yet loaded) */
 export const BRAND_DOMAIN = 'https://aidealsuk.com';
+
+/** Public inbox used by the trust, legal, and editorial pages. */
+export const BRAND_EMAIL = 'hello@aidealsuk.com';

@@ -21,7 +21,19 @@ export function sanitizeGeneratedHtmlContent(htmlContent: string, allowedBaseUrl
   // Regex to match <a ... href="..." ...>
   const hrefRegex = /<a\s+([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi;
 
+  // Gemini occasionally leaks raw Markdown link syntax `[text](url)` into an
+  // href attribute instead of emitting a clean HTML anchor (seen in production
+  // as e.g. href="/article/[https://aidealsuk.com](https://aidealsuk.com)/article/...",
+  // which Google then crawls as a real broken URL). These characters never
+  // belong in a legitimate href, so any href containing them is malformed
+  // regardless of whether it looks relative.
+  const hasMarkdownArtifacts = (value: string) => /[[\]()]/.test(value);
+
   return htmlContent.replace(hrefRegex, (match, prefix, href, suffix) => {
+    if (hasMarkdownArtifacts(href)) {
+      return `<a ${prefix}href="#" ${suffix}>`;
+    }
+
     // Keep relative links or anchor links intact
     if (href.startsWith('#') || href.startsWith('/')) {
       return match;

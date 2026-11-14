@@ -11,6 +11,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Minimal, self-contained server bundle (server.js + traced node_modules).
+  // Built once in CI and shipped to the VPS as-is, so the VPS never runs
+  // `next build` (which OOMs on its 4GB RAM).
+  output: 'standalone',
   // Allow development through the LAN and ephemeral ngrok hostnames, including
   // Next.js's WebSocket HMR requests. This option only affects the dev server.
   allowedDevOrigins: ['192.168.102.172', '*.ngrok-free.app'],

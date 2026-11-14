@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   await connectToDatabase();
-  const exists = await CategoryModel.exists({ slug });
-  if (!exists) notFound();
-  return <CollectionClient kind="category" categorySlug={slug} />;
+  const category = await CategoryModel.findOne({ slug }).select('name').lean();
+  if (!category) notFound();
+  return <CollectionClient kind="category" categorySlug={slug} categoryName={category.name} />;
 }

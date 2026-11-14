@@ -49,6 +49,7 @@ export async function GET(req: Request) {
         entities: doc.entities || [],
         faqSchema: doc.faq_schema || [],
         affiliatePlacements: doc.affiliate_placements || [],
+        publishedAt: doc.published_at || null,
         createdAt: doc.created_at,
         updatedAt: doc.updated_at,
       };
@@ -120,6 +121,7 @@ export async function POST(req: Request) {
       excerpt: excerpt || '',
       content: sanitizeArticleContent(content),
       status: status || 'draft',
+      published_at: status === 'published' ? new Date() : undefined,
       is_featured: Boolean(isFeatured),
       revenue: revenue ? Number(revenue) : 0,
       meta_title: metaTitle || title,
@@ -139,6 +141,7 @@ export async function POST(req: Request) {
         status: 'success',
         data: {
           id: newArticle._id.toString(),
+          publishedAt: newArticle.published_at || null,
           ...newArticle.toObject(),
         },
       },

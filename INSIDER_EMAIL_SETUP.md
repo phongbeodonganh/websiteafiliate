@@ -22,17 +22,15 @@ POST /api/v1/cron/insider-digest
 Authorization: Bearer <INSIDER_CRON_SECRET>
 ```
 
-It sends the summary for the GMT+12 calendar day that just ended. Since midnight GMT+12 is 12:00 UTC, install this crontab on the production VPS:
+It sends the summary for the GMT+12 calendar day that just ended. The production
+PM2 configuration starts `websiteafiliate-insider-cron` automatically on every
+deploy. The worker performs one idempotent catch-up run after deployment, then
+runs daily at 12:00 UTC (midnight GMT+12). No server crontab setup is required.
 
-```cron
-CRON_TZ=UTC
-0 12 * * * curl -fsS -X POST -H "Authorization: Bearer <INSIDER_CRON_SECRET>" https://aidealsuk.com/api/v1/cron/insider-digest | logger -t aidealsuk-insider
-```
-
-Check cron output with:
+Check scheduler output with:
 
 ```bash
-journalctl -t aidealsuk-insider
+pm2 logs websiteafiliate-insider-cron
 ```
 
 The application sends through Resend's batch API in groups of 100 recipients. A per-day marker on each subscriber and a Resend idempotency key prevent ordinary cron retries from sending duplicate digests.

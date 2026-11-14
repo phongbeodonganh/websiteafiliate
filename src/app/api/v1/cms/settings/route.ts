@@ -19,6 +19,7 @@ export async function GET() {
       });
     }
 
+
     const doc = currentSettings.toObject();
 
     return NextResponse.json({
@@ -38,6 +39,7 @@ export async function GET() {
         schemaJsonld: doc.schemaJsonld,
         headScripts: doc.headScripts,
         googleAnalyticsId: doc.googleAnalyticsId,
+        googleSiteVerification: doc.googleSiteVerification,
         primaryColor: doc.primary_color,
         accentColor: doc.accent_color,
         themeMode: doc.theme_mode,
@@ -81,6 +83,7 @@ export async function PUT(req: Request) {
       schemaJsonld,
       headScripts,
       googleAnalyticsId,
+      googleSiteVerification,
       primaryColor,
       accentColor,
       themeMode,
@@ -125,6 +128,7 @@ export async function PUT(req: Request) {
       }
       currentSettings.googleAnalyticsId = trimmed;
     }
+    if (googleSiteVerification !== undefined) currentSettings.googleSiteVerification = String(googleSiteVerification).trim();
     if (primaryColor !== undefined) currentSettings.primary_color = primaryColor;
     if (accentColor !== undefined) currentSettings.accent_color = accentColor;
     if (themeMode !== undefined) currentSettings.theme_mode = themeMode;
@@ -160,6 +164,7 @@ export async function PUT(req: Request) {
         schemaJsonld: doc.schemaJsonld,
         headScripts: doc.headScripts,
         googleAnalyticsId: doc.googleAnalyticsId,
+        googleSiteVerification: doc.googleSiteVerification,
         primaryColor: doc.primary_color,
         accentColor: doc.accent_color,
         themeMode: doc.theme_mode,

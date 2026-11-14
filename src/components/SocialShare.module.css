@@ -1,3 +1,154 @@
-.share{border-top:1px solid #d7d7d7;margin-top:42px;padding-top:32px}.share>p{font-size:10px;font-weight:700;letter-spacing:.12em;margin:0 0 5px;text-transform:uppercase}.headingRow{align-items:center;display:flex;justify-content:space-between}.headingRow h2{font-size:26px;margin:0;text-transform:uppercase}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}.actions button{align-items:center;background:#fff;border:1px solid #111;color:#111;cursor:pointer;display:inline-flex;font:inherit;font-size:11px;font-weight:700;gap:7px;min-height:40px;padding:0 14px;text-transform:uppercase;transition:transform 160ms ease}.actions button:hover{transform:scale(1.04)}.actions button:focus-visible{outline:2px solid #111;outline-offset:3px}.actions button span{align-items:center;background:#111;color:#fff;display:inline-flex;font-size:11px;height:18px;justify-content:center;line-height:1;min-width:18px;padding:0 3px}
+.share {
+  border-top: 1px solid #d7d7d7;
+  margin-top: 42px;
+  padding-top: 32px;
+}
 
-@media(max-width:520px){.actions button{flex:1 1 calc(50% - 9px);justify-content:center}}
+.share > p {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 5px;
+  text-transform: uppercase;
+}
+
+.headingRow {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.headingRow h2 {
+  font-size: 26px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 22px;
+}
+
+.actions button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #111111;
+  color: #111111;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 14px;
+  text-transform: uppercase;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.actions button:hover {
+  transform: translateY(-2px);
+}
+
+.actions button:focus-visible {
+  outline: 2px solid #85ddd5;
+  outline-offset: 3px;
+}
+
+.actions button span {
+  align-items: center;
+  background: #111111;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 11px;
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 18px;
+  padding: 0 3px;
+}
+
+.compact {
+  align-items: center;
+  border-top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.compact .headingRow h2 {
+  color: var(--editorial-muted);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.compact .actions {
+  gap: 6px;
+  margin: 0;
+}
+
+.compact .actions button {
+  background: var(--editorial-surface);
+  border-color: var(--editorial-divider);
+  color: var(--editorial-copy);
+  font-size: 9px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.compact .actions button:hover {
+  background: var(--editorial-accent-soft);
+  border-color: var(--editorial-accent);
+  color: var(--editorial-accent);
+}
+
+.compact .actions button span {
+  background: transparent;
+  color: inherit;
+  height: auto;
+  min-width: 12px;
+  padding: 0;
+}
+
+@media (max-width: 620px) {
+  .compact {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .compact .actions {
+    width: 100%;
+  }
+
+  .compact .actions button {
+    flex: 1 1 calc(33.333% - 6px);
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .actions button {
+    flex: 1 1 calc(50% - 9px);
+    justify-content: center;
+  }
+
+  .compact .actions button {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actions button {
+    transition: none;
+  }
+
+  .actions button:hover {
+    transform: none;
+  }
+}

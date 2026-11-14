@@ -16,8 +16,8 @@ export async function GET(req: Request) {
         const filter = { status: 'published' as const, category_id: category._id };
         const [articles, total] = await Promise.all([
           ArticleModel.find(filter)
-            .select('title slug excerpt content thumbnail_url view_count is_featured created_at')
-            .sort({ created_at: -1 })
+            .select('title slug excerpt content thumbnail_url view_count is_featured published_at created_at')
+            .sort({ published_at: -1, created_at: -1, _id: -1 })
             .limit(limit),
           ArticleModel.countDocuments(filter),
         ]);
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
             thumbnailUrl: article.thumbnail_url || '',
             viewCount: article.view_count,
             isFeatured: article.is_featured,
-            createdAt: article.created_at,
+            createdAt: article.published_at || article.created_at,
             categoryName: category.name,
             categorySlug: category.slug,
           })),

@@ -1,0 +1,111 @@
+.toc {
+  background: var(--editorial-surface);
+  border: 1px solid var(--editorial-divider);
+  border-top: 3px solid var(--editorial-ink);
+  border-radius: 10px;
+  color: var(--editorial-ink);
+  padding: 22px;
+}
+
+.header {
+  align-items: center;
+  border-bottom: 1px solid var(--editorial-divider);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+}
+
+.header p,
+.header span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.header p {
+  color: var(--editorial-accent);
+}
+
+.header span {
+  color: var(--editorial-muted);
+}
+
+.toc h2 {
+  color: var(--editorial-ink);
+  font-size: 23px;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin: 0 0 18px;
+}
+
+.toc ol {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc li {
+  min-width: 0;
+}
+
+.toc li[data-level='3'] {
+  padding-left: 16px;
+}
+
+.toc a {
+  align-items: start;
+  color: var(--editorial-muted);
+  display: grid;
+  font-size: 12px;
+  gap: 10px;
+  grid-template-columns: 2px minmax(0, 1fr);
+  line-height: 1.45;
+  border-radius: 5px;
+  padding: 9px 8px;
+  text-decoration: none;
+  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.toc a > span {
+  background: var(--editorial-divider);
+  height: 100%;
+  min-height: 18px;
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.toc a:hover,
+.toc a:focus-visible,
+.toc li[data-active='true'] a {
+  color: var(--editorial-ink);
+  transform: translateX(2px);
+}
+
+.toc li[data-active='true'] a { background: var(--editorial-accent-soft); }
+
+.toc li[data-active='true'] a > span {
+  background: var(--editorial-accent);
+  box-shadow: none;
+}
+
+.toc a:focus-visible {
+  outline: 2px solid var(--editorial-accent);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toc a,
+  .toc a > span {
+    transition: none;
+  }
+
+  .toc a:hover,
+  .toc a:focus-visible,
+  .toc li[data-active='true'] a {
+    transform: none;
+  }
+}

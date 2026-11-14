@@ -1,15 +1,18 @@
 'use client';
 
 import { Check, Copy, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import styles from './SocialShare.module.css';
 
 interface SocialShareProps {
   title: string;
+  variant?: 'default' | 'compact';
 }
 
-export default function SocialShare({ title }: SocialShareProps) {
+export default function SocialShare({ title, variant = 'default' }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
+  const headingId = useId();
+  const compact = variant === 'compact';
 
   const currentUrl = () => window.location.href;
 
@@ -59,18 +62,18 @@ export default function SocialShare({ title }: SocialShareProps) {
   };
 
   return (
-    <section className={styles.share} aria-labelledby="share-heading" data-motion="rise">
-      <p>Share To</p>
+    <section className={`${styles.share} ${compact ? styles.compact : ''}`} aria-labelledby={headingId} data-motion="rise">
+      {!compact && <p>Share To</p>}
       <div className={styles.headingRow}>
-        <h2 id="share-heading">Social Media</h2>
-        <Share2 aria-hidden="true" size={22} />
+        <h2 id={headingId}>{compact ? 'Share article' : 'Social Media'}</h2>
+        {!compact && <Share2 aria-hidden="true" size={22} />}
       </div>
       <div className={styles.actions}>
         <button type="button" onClick={() => shareOn('facebook')} aria-label="Share on Facebook"><span>f</span> Facebook</button>
         <button type="button" onClick={() => shareOn('x')} aria-label="Share on X"><span>𝕏</span> X</button>
         <button type="button" onClick={() => shareOn('linkedin')} aria-label="Share on LinkedIn"><span>in</span> LinkedIn</button>
         <button type="button" onClick={shareNative}><Share2 size={15} /> Share</button>
-        <button type="button" onClick={copyLink}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? 'Copied' : 'Copy link'}</button>
+        <button type="button" onClick={copyLink} aria-live="polite">{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? 'Copied' : 'Copy link'}</button>
       </div>
     </section>
   );
