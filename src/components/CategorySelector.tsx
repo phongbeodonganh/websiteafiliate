@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { ChevronDown, Layers, Check } from 'lucide-react';
+import { categoryPath } from '@/lib/routes';
 
 interface CategoryOption {
   id: string;
@@ -58,7 +59,7 @@ export default function CategorySelector({ placement }: { placement: 'header' | 
     if (!slug) {
       router.push('/');
     } else {
-      router.push(`/category/${encodeURIComponent(slug)}`);
+      router.push(categoryPath(slug));
     }
   }
 

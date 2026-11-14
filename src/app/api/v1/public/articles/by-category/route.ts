@@ -16,7 +16,8 @@ export async function GET(req: Request) {
         const filter = { status: 'published' as const, category_id: category._id };
         const [articles, total] = await Promise.all([
           ArticleModel.find(filter)
-            .select('title slug excerpt content thumbnail_url view_count is_featured published_at created_at')
+            .select('title slug excerpt content thumbnail_url view_count is_featured sub_category_id published_at created_at')
+            .populate('sub_category_id', 'slug')
             .sort({ published_at: -1, created_at: -1, _id: -1 })
             .limit(limit),
           ArticleModel.countDocuments(filter),
@@ -39,6 +40,7 @@ export async function GET(req: Request) {
             createdAt: article.published_at || article.created_at,
             categoryName: category.name,
             categorySlug: category.slug,
+            subCategorySlug: (article.sub_category_id as unknown as { slug?: string } | undefined)?.slug || null,
           })),
           pagination: {
             total,

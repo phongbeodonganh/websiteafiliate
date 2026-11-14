@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { SettingModel } from "@/lib/db/models";
@@ -150,13 +151,17 @@ export default async function RootLayout({
         )}
         {gaId && (
           <>
-            <script
+            <Script
+              id="google-analytics"
               async
               nonce={nonce}
+              strategy="afterInteractive"
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
             />
-            <script
+            <Script
+              id="google-analytics-init"
               nonce={nonce}
+              strategy="afterInteractive"
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];

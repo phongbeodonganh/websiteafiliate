@@ -50,10 +50,16 @@ function toDigestArticle(article: {
   meta_description?: string;
   content: string;
   view_count: number;
+  category_id?: unknown;
+  sub_category_id?: unknown;
 }): InsiderDigestArticle {
+  const category = article.category_id as { slug?: string } | undefined;
+  const subCategory = article.sub_category_id as { slug?: string } | undefined;
   return {
     title: article.title,
     slug: article.slug,
+    categorySlug: category?.slug,
+    subCategorySlug: subCategory?.slug,
     summary: summarizeArticle(article),
     viewCount: article.view_count || 0,
   };
@@ -89,11 +95,15 @@ export async function POST(req: Request) {
       ArticleModel.find(articleFilter)
         .sort({ created_at: -1 })
         .limit(latestLimit)
-        .select('title slug excerpt meta_description content view_count'),
+        .select('title slug excerpt meta_description content view_count category_id sub_category_id')
+        .populate('category_id', 'slug')
+        .populate('sub_category_id', 'slug'),
       ArticleModel.find(hottestArticleFilter)
         .sort({ view_count: -1, created_at: -1 })
         .limit(hottestLimit)
-        .select('title slug excerpt meta_description content view_count'),
+        .select('title slug excerpt meta_description content view_count category_id sub_category_id')
+        .populate('category_id', 'slug')
+        .populate('sub_category_id', 'slug'),
     ]);
     const latest = latestDocuments.map((article) => toDigestArticle(article.toObject()));
     const hottest = hottestDocuments.map((article) => toDigestArticle(article.toObject()));

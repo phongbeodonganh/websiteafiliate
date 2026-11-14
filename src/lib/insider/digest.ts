@@ -1,6 +1,10 @@
+import { articlePath } from '@/lib/routes';
+
 export interface InsiderDigestArticle {
   title: string;
   slug: string;
+  categorySlug?: string;
+  subCategorySlug?: string;
   summary: string;
   viewCount: number;
 }
@@ -51,12 +55,12 @@ function escapeHtml(value: string) {
     .replaceAll("'", '&#039;');
 }
 
-function articleUrl(siteUrl: string, slug: string) {
-  return `${siteUrl}/article/${encodeURIComponent(slug)}`;
+function articleUrl(siteUrl: string, article: InsiderDigestArticle) {
+  return `${siteUrl}${articlePath(article)}`;
 }
 
 function renderArticle(article: InsiderDigestArticle, siteUrl: string, badge?: string) {
-  const url = escapeHtml(articleUrl(siteUrl, article.slug));
+  const url = escapeHtml(articleUrl(siteUrl, article));
   const safeTitle = escapeHtml(article.title);
   const safeSummary = escapeHtml(article.summary);
   const badgeMarkup = badge
@@ -107,10 +111,10 @@ export function buildInsiderDigestEmail(input: {
   const safeSiteUrl = escapeHtml(input.siteUrl);
   const safeUnsubscribeUrl = escapeHtml(input.unsubscribeUrl);
   const latestText = input.latest.map((article) => (
-    `- ${article.title}\n  ${article.summary}\n  ${articleUrl(input.siteUrl, article.slug)}`
+    `- ${article.title}\n  ${article.summary}\n  ${articleUrl(input.siteUrl, article)}`
   )).join('\n\n');
   const hottestText = input.hottest.map((article, index) => (
-    `${index + 1}. ${article.title}\n   ${article.summary}\n   ${articleUrl(input.siteUrl, article.slug)}`
+    `${index + 1}. ${article.title}\n   ${article.summary}\n   ${articleUrl(input.siteUrl, article)}`
   )).join('\n\n');
 
   return {
