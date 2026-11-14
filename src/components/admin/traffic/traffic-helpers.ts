@@ -240,7 +240,7 @@ export interface PanelViewInput {
  *  - collapsed: header only (nothing fetched)
  *  - loading:   spinner
  *  - error:     Vietnamese slice/route error + retry
- *  - missing:   'Chưa cấu hình key — vào Cấu hình API' + disabled action
+ *  - missing:   'Chưa cấu hình key — vào tab Quản lý cấu hình' + disabled action
  *  - ready:     data
  *  - empty:     fetched successfully but provider returned nothing
  */

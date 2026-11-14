@@ -93,8 +93,17 @@ describe('Task 1 — traffic tab wiring in the admin shell (TRF-01)', () => {
 
   it("renders the missing-TabAPI amber banner with the exact Vietnamese copy", () => {
     expect(
-      source.indexOf('Chưa cấu hình TabAPI key — nhập trong phần Cấu hình để sử dụng')
+      source.indexOf('Chưa cấu hình TabAPI key — nhập trong tab Quản lý cấu hình để sử dụng')
     ).toBeGreaterThan(-1);
+  });
+
+  it("splits the view into 'Domains' and 'Quản lý cấu hình' sub-tabs via a segmented control", () => {
+    // Sub-tab state drives the two branches inside renderTrafficView.
+    expect(source.indexOf("useState<'domains' | 'config'>('domains')")).toBeGreaterThan(-1);
+    expect(source.indexOf("label: 'Quản lý cấu hình'")).toBeGreaterThan(-1);
+    expect(source.indexOf("label: 'Domains'")).toBeGreaterThan(-1);
+    // The switcher is an accessible tablist.
+    expect(source.indexOf('role="tablist"')).toBeGreaterThan(-1);
   });
 });
 
@@ -319,14 +328,18 @@ describe('Task 2 — TrafficDomainsTable contract (TRF-02, TRF-04)', () => {
     expect(source.indexOf('group-hover:opacity-100')).toBeGreaterThan(-1);
   });
 
-  it('the table is wired under the settings card in renderTrafficView', () => {
+  it('the settings card renders in the Quản lý cấu hình branch, the table in the Domains branch', () => {
     const page = readSource('src/app/admin/page.tsx');
+    // The config branch (ternary) is listed before the domains branch, so the
+    // card appears earlier in the source than the table.
     const card = page.indexOf('<TrafficSettingsCard');
-    const banner = page.indexOf('Chưa cấu hình TabAPI key — nhập trong phần Cấu hình để sử dụng');
     const table = page.indexOf('<TrafficDomainsTable');
     expect(card).toBeGreaterThan(-1);
     expect(table).toBeGreaterThan(card);
-    expect(table).toBeGreaterThan(banner);
+    // The banner (Domains branch) references the config sub-tab by name.
+    const banner = page.indexOf('Chưa cấu hình TabAPI key — nhập trong tab Quản lý cấu hình để sử dụng');
+    expect(banner).toBeGreaterThan(-1);
+    expect(banner).toBeGreaterThan(card);
   });
 });
 
@@ -474,7 +487,7 @@ describe('Task 4 — five click-to-load extended panels (TRF-05)', () => {
     const shell = readSource('src/components/admin/traffic/panels/panel-shell.tsx');
     expect(shell.indexOf('role="alert"')).toBeGreaterThan(-1);
     expect(shell.indexOf('Thử lại')).toBeGreaterThan(-1);
-    expect(shell.indexOf('Chưa cấu hình key — vào Cấu hình API')).toBeGreaterThan(-1);
+    expect(shell.indexOf('Chưa cấu hình key — vào tab Quản lý cấu hình')).toBeGreaterThan(-1);
   });
 
   it('WhoisPanel renders registrar/created/expires/age/privacy cards + nameservers and has a history sub-load', () => {
