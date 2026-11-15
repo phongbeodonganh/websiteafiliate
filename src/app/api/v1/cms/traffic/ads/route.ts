@@ -8,8 +8,6 @@ import { AdsApiError, getAds } from '@/lib/traffic/ads-transparency';
 
 export const runtime = 'nodejs';
 
-const PAGE_TOKEN = /^[A-Za-z0-9_\-=+/.]{1,2048}$/;
-
 function errorResponse(status: number, code: string, message: string) {
   return NextResponse.json({ error: { code, message } }, { status });
 }
@@ -35,10 +33,8 @@ export async function GET(req: Request) {
     return errorResponse(400, 'invalid_domain', message);
   }
 
-  const pageToken = new URL(req.url).searchParams.get('page_token');
-  if (pageToken !== null && !PAGE_TOKEN.test(pageToken)) {
-    return errorResponse(400, 'invalid_page_token', 'Mã trang không hợp lệ.');
-  }
+  // no_cache=true chỉ từ nút "Làm mới" (có xác nhận) — gọi lại SerpApi, tốn 1 lượt.
+  const noCache = new URL(req.url).searchParams.get('no_cache') === 'true';
 
   await connectToDatabase();
   const settings = await SettingModel.findOne();
@@ -48,7 +44,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const data = await getAds(domain, resolved.serpapi.value, pageToken);
+    const data = await getAds(domain, resolved.serpapi.value, { noCache });
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'private, max-age=0, must-revalidate' },
     });

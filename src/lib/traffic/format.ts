@@ -42,6 +42,37 @@ export function formatPercent(value: number | null | undefined): string {
   return value == null ? "—" : `${(value * 100).toFixed(1)}%`;
 }
 
+/**
+ * Percent with vi-VN comma decimals ("48,2%") — used by the screening table
+ * where the spec pins the Vietnamese decimal separator.
+ */
+export function formatPercentLocale(value: number | null | undefined): string {
+  if (value == null) return "—";
+  return `${(value * 100).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}%`;
+}
+
+/**
+ * Compact visits in Vietnamese units with the explicit "Tỷ" suffix (never "T",
+ * which reads as "thousand"): "14 Tr", "3,4 Tỷ", "856".
+ */
+export function formatVisitsCompact(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  const abs = Math.abs(value);
+  const units: Array<{ threshold: number; suffix: string }> = [
+    { threshold: 1e9, suffix: " Tỷ" },
+    { threshold: 1e6, suffix: " Tr" },
+    { threshold: 1e3, suffix: " N" },
+  ];
+  for (const { threshold, suffix } of units) {
+    if (abs >= threshold) {
+      const scaled = value / threshold;
+      const rounded = scaled >= 100 ? Math.round(scaled) : Math.round(scaled * 10) / 10;
+      return `${rounded.toLocaleString("vi-VN", { maximumFractionDigits: 1 })}${suffix}`;
+    }
+  }
+  return Math.round(value).toLocaleString("vi-VN");
+}
+
 export function formatDuration(value: number | null | undefined): string {
   if (value == null) return "—";
   const totalSeconds = Math.max(0, Math.round(value));

@@ -212,6 +212,17 @@ describe('Task 2 — traffic list helpers (TRF-02, TRF-04)', () => {
     expect(sortRows(dated, 'updated', 'asc')[0].id).toBe('old');
   });
 
+  it('A5: domains without data sink last on every metric sort (even visits=0), but not on domain sort', () => {
+    const rows = [
+      row('empty', 'empty.com', { visits: 0 }),
+      row('big', 'big.com', { visits: 500 }),
+      row('small', 'small.com', { visits: 10 }),
+    ];
+    expect(sortRows(rows, 'visits', 'asc').map((r) => r.id)).toEqual(['small', 'big', 'empty']);
+    expect(sortRows(rows, 'visits', 'desc').map((r) => r.id)).toEqual(['big', 'small', 'empty']);
+    expect(sortRows(rows, 'domain', 'asc').map((r) => r.id)).toEqual(['big', 'empty', 'small']);
+  });
+
   it('momTrend computes MoM from the last two monthly points and returns null otherwise', () => {
     expect(momTrend([{ month: '2026-01', visits: 100 }, { month: '2026-02', visits: 125 }])).toBeCloseTo(0.25);
     expect(momTrend([{ month: '2026-01', visits: 100 }, { month: '2026-02', visits: 50 }])).toBeCloseTo(-0.5);
@@ -265,67 +276,127 @@ describe('Task 2 — traffic list helpers (TRF-02, TRF-04)', () => {
   });
 });
 
-describe('Task 2 — TrafficDomainsTable contract (TRF-02, TRF-04)', () => {
+describe('Task 2 — TrafficDomainsTable contract (TRF-02, TRF-04, screening rework)', () => {
   const source = readSource('src/components/admin/traffic/TrafficDomainsTable.tsx');
 
-  it('renders all 10 table columns with Vietnamese headers', () => {
+  it('defines columns once (COLUMNS) and renders thead + tbody from the same activeColumns — no header/body drift', () => {
+    // A1 regression: the old table rendered 9 <th> but 10 <td> per row.
+    expect(source.indexOf('const COLUMNS: ColumnDef[]')).toBeGreaterThan(-1);
+    const thead = source.indexOf('activeColumns.map((column) => (', source.indexOf('<thead>'));
+    const tbody = source.indexOf('activeColumns.map((column) => (', source.indexOf('<tbody>'));
+    expect(thead).toBeGreaterThan(-1);
+    expect(tbody).toBeGreaterThan(thead);
+    // Empty state spans exactly the rendered column count.
+    expect(source.indexOf('colSpan={columnCount}')).toBeGreaterThan(-1);
+  });
+
+  it('renders the 10 screening columns + 4 optional columns with Vietnamese headers', () => {
     for (const header of [
       'Domain',
       'Lượt truy cập/tháng',
+      'Xu hướng',
+      'Thị trường chính',
+      'Cơ cấu traffic',
+      'Đối thủ quảng cáo',
+      'Chương trình affiliate',
+      'Điểm sơ bộ',
+      'Cập nhật',
+      'Hành động',
+      // Ẩn mặc định, bật qua "Chọn cột"
       'Hạng toàn cầu',
       'Hạng quốc gia',
       'Bounce rate',
       'Trang/phiên',
-      'Xu hướng',
-      'Cập nhật',
-      'Hành động',
     ]) {
       expect(source.indexOf(header)).toBeGreaterThan(-1);
     }
-    // The Top quốc gia cell renders code + share from the first region.
-    expect(source.indexOf('top_regions?.[0]')).toBeGreaterThan(-1);
+    expect(source.indexOf('Chọn cột')).toBeGreaterThan(-1);
+    expect(source.indexOf('optional: true')).toBeGreaterThan(-1);
+    // Optional columns default hidden; the choice persists in localStorage.
+    expect(source.indexOf("COLUMNS_STORAGE_KEY = 'traffic_table_columns_v1'")).toBeGreaterThan(-1);
   });
 
-  it('numbers are vi-VN formatted and null metrics render an em dash', () => {
-    expect(source.indexOf('formatCompactNumber')).toBeGreaterThan(-1);
-    expect(source.indexOf('formatPercent')).toBeGreaterThan(-1);
-    expect(source.match(/'—'/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+  it('actions are always visible (A6) — no hover-only opacity', () => {
+    expect(source.indexOf('group-hover:opacity-100')).toBe(-1);
+    expect(source.indexOf('Làm mới traffic')).toBeGreaterThan(-1);
+    expect(source.indexOf('title="Chi tiết"')).toBeGreaterThan(-1);
+    expect(source.indexOf("dialog.confirm('Bỏ theo dõi domain này?')")).toBeGreaterThan(-1);
   });
 
-  it('search filters client-side and column sort toggles asc/desc', () => {
+  it('visits use Vietnamese compact units (Tỷ, never T) with a full-number tooltip; market uses vi decimals', () => {
+    expect(source.indexOf('formatVisitsCompact')).toBeGreaterThan(-1);
+    expect(source.indexOf('formatPercentLocale')).toBeGreaterThan(-1);
+    expect(source.indexOf('formatNumber(overview.visits)')).toBeGreaterThan(-1);
+  });
+
+  it('search + quick filters + sort chain; default sort is score desc with no-data rows last (A5)', () => {
     expect(source.indexOf('filterRows(rows, searchQuery)')).toBeGreaterThan(-1);
-    expect(source.indexOf('sortRows(filterRows(rows, searchQuery), sortKey, sortDir)')).toBeGreaterThan(-1);
+    expect(source.indexOf("useState<TrafficSortKey>('score')")).toBeGreaterThan(-1);
+    expect(source.indexOf('sortRows(filteredRows, sortKey, sortDir, externalAds)')).toBeGreaterThan(-1);
     expect(source.indexOf('function toggleSort(key: TrafficSortKey)')).toBeGreaterThan(-1);
-    expect(source.indexOf("setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'))")).toBeGreaterThan(-1);
     expect(source.indexOf('aria-sort=')).toBeGreaterThan(-1);
+    // Quick filters (A8): traffic tối thiểu, US tối thiểu, trực tiếp tối đa, trạng thái.
+    for (const filter of ['Traffic tối thiểu', 'Tỷ trọng US tối thiểu', 'Tỷ trọng trực tiếp tối đa', 'Trạng thái làm việc']) {
+      expect(source.indexOf(filter)).toBeGreaterThan(-1);
+    }
   });
 
-  it('Add & run POSTs the domain and surfaces the route Vietnamese error inline + toast on failure', () => {
+  it('Add & run accepts multiple domains, confirms the call count, then POSTs sequentially', () => {
+    expect(source.indexOf('parseDomainList')).toBeGreaterThan(-1);
     const fnStart = source.indexOf('async function handleAdd');
-    const fn = source.slice(fnStart, source.indexOf('setAdding(false)', fnStart));
+    const fn = source.slice(fnStart, source.indexOf('async function handleRefresh', fnStart));
+    expect(fn).toContain('dialog.confirm(');
+    expect(fn).toContain('lượt gọi TabAPI');
     expect(fn).toContain("trafficFetch<AddRunResponse>('/api/v1/cms/traffic/domains'");
     expect(fn).toContain("method: 'POST'");
-    expect(fn).toContain('setAddError(message)');
-    expect(fn).toContain("onToast('success', 'Đã thêm domain')");
-    // The submit button shows a spinner while running and is disabled.
-    expect(source.indexOf('adding ? <Loader2 size={14} className="animate-spin" />')).toBeGreaterThan(-1);
-    expect(source.indexOf('disabled={adding || !addValue.trim()}')).toBeGreaterThan(-1);
     // Inline alert is a role="alert" region.
     expect(source.indexOf('role="alert"')).toBeGreaterThan(-1);
   });
 
-  it('refresh POSTs the row route with a row-level spinner; delete requires confirm then DELETEs', () => {
-    expect(source.indexOf('/refresh`,')).toBeGreaterThan(-1);
-    expect(source.indexOf('refreshingId === row.id ? <Loader2 size={15} className="animate-spin" />')).toBeGreaterThan(-1);
-    expect(source.indexOf("dialog.confirm('Bỏ theo dõi domain này?')")).toBeGreaterThan(-1);
-    expect(source.indexOf("method: 'DELETE'")).toBeGreaterThan(-1);
-    expect(source.indexOf('onDeleted(row.id)')).toBeGreaterThan(-1);
+  it('work status persists via PATCH on the domain row + note via dialog.prompt (A6)', () => {
+    expect(source.indexOf("method: 'PATCH'")).toBeGreaterThan(-1);
+    expect(source.indexOf('WORK_STATUSES')).toBeGreaterThan(-1);
+    expect(source.indexOf('WORK_STATUS_LABELS')).toBeGreaterThan(-1);
+    expect(source.indexOf('dialog.prompt(')).toBeGreaterThan(-1);
+    expect(source.indexOf('onRowUpdated(')).toBeGreaterThan(-1);
   });
 
-  it('empty and loading states exist; actions reveal on row hover', () => {
+  it('module dots read client-side load records; ads column never fetches (A2.6, A6)', () => {
+    expect(source.indexOf('getModuleLoads')).toBeGreaterThan(-1);
+    expect(source.indexOf('ModuleDots')).toBeGreaterThan(-1);
+    // "Đối thủ quảng cáo" chỉ đọc từ dữ liệu Ads đã tải — không có fetch trong bảng.
+    expect(source.indexOf('/api/v1/cms/traffic/ads')).toBe(-1);
+    expect(source.indexOf('externalAds')).toBeGreaterThan(-1);
+  });
+
+  it('score cell, sparkline trend and stacked mix bar render from stored data only', () => {
+    expect(source.indexOf('computePreliminaryScore')).toBeGreaterThan(-1);
+    expect(source.indexOf('Điểm sơ bộ')).toBeGreaterThan(-1);
+    expect(source.indexOf('computeTrafficMix')).toBeGreaterThan(-1);
+    expect(source.indexOf('Sparkline')).toBeGreaterThan(-1);
+    expect(source.indexOf('isEmptyTrafficReport')).toBeGreaterThan(-1);
+    expect(source.indexOf('Không có dữ liệu')).toBeGreaterThan(-1);
+    // Phương pháp tính điểm hiển thị ngay trên tiêu đề cột (icon ⓘ) — không
+    // chỉ trong tooltip từng ô, sinh từ config để không lệch trọng số.
+    expect(source.indexOf('ScoreMethodologyHint')).toBeGreaterThan(-1);
+    expect(source.indexOf('scoreMethodology()')).toBeGreaterThan(-1);
+  });
+
+  it('work-status badge explains the four statuses on hover (A6)', () => {
+    expect(source.indexOf('Trạng thái xét duyệt — Chưa xét: mặc định · Đang xét: đang phân tích · Chọn: giữ lại · Loại: loại bỏ')).toBeGreaterThan(-1);
+  });
+
+  it('CSV export builds from the visible columns only (A8)', () => {
+    expect(source.indexOf('buildCsv')).toBeGreaterThan(-1);
+    expect(source.indexOf('function exportCsv')).toBeGreaterThan(-1);
+    expect(source.indexOf("column.key !== 'actions'")).toBeGreaterThan(-1);
+  });
+
+  it('refresh POSTs the row route with a row-level spinner; empty and loading states exist', () => {
+    expect(source.indexOf('/refresh`,')).toBeGreaterThan(-1);
+    expect(source.indexOf('refreshingId === row.id ? <Loader2 size={15} className="animate-spin" />')).toBeGreaterThan(-1);
     expect(source.indexOf('Chưa theo dõi domain nào')).toBeGreaterThan(-1);
     expect(source.indexOf('SkeletonRow')).toBeGreaterThan(-1);
-    expect(source.indexOf('group-hover:opacity-100')).toBeGreaterThan(-1);
   });
 
   it('the settings card renders in the Quản lý cấu hình branch, the table in the Domains branch', () => {
@@ -506,16 +577,30 @@ describe('Task 4 — five click-to-load extended panels (TRF-05)', () => {
     }
   });
 
-  it('AdsPanel paginates via next_page_token ("Tải thêm") and expands creatives via /ads/detail', () => {
+  it('AdsPanel uses exactly 1 SerpApi call per domain (no pagination, no ad details) and renders the 3 stat cells', () => {
     const source = readPanel('src/components/admin/traffic/panels/AdsPanel.tsx');
-    expect(source.indexOf('next_page_token')).toBeGreaterThan(-1);
-    expect(source.indexOf('Tải thêm creative')).toBeGreaterThan(-1);
-    expect(source.indexOf('/api/v1/cms/traffic/ads/detail?advertiser_id=')).toBeGreaterThan(-1);
-    expect(source.indexOf('page_token')).toBeGreaterThan(-1);
-    // MetricCards: advertisers, creatives, active, longest-running.
-    for (const label of ['Nhà quảng cáo', 'Creative đã tải', 'Đang chạy', 'Chạy lâu nhất']) {
+    // Old credit-draining flows are gone.
+    expect(source.indexOf('next_page_token')).toBe(-1);
+    expect(source.indexOf('Tải thêm creative')).toBe(-1);
+    expect(source.indexOf('/api/v1/cms/traffic/ads/detail')).toBe(-1);
+    expect(source.indexOf('page_token')).toBe(-1);
+    expect(source.indexOf('Chạy lâu nhất')).toBe(-1);
+    // Single-call copy + refresh (no_cache=true, confirmed via dialog).
+    expect(source.indexOf('1 lượt SerpApi cho mỗi domain')).toBeGreaterThan(-1);
+    expect(source.indexOf('no_cache')).toBeGreaterThan(-1);
+    expect(source.indexOf('dialog.confirm')).toBeGreaterThan(-1);
+    // Stat cells: advertisers (+active sub), external active, sample/total creatives.
+    for (const label of ['Nhà quảng cáo', 'Bên ngoài đang chạy', 'Creative (mẫu / khoảng tổng)']) {
       expect(source.indexOf(label)).toBeGreaterThan(-1);
     }
+    // Fixed sample-size disclaimer under the section title + owner/status badges.
+    expect(source.indexOf('chỉ tính trong mẫu nên thấp hơn thực tế')).toBeGreaterThan(-1);
+    expect(source.indexOf('Chính chủ')).toBeGreaterThan(-1);
+    expect(source.indexOf('Bên ngoài')).toBeGreaterThan(-1);
+    expect(source.indexOf('Đang chạy')).toBeGreaterThan(-1);
+    expect(source.indexOf('Ngừng')).toBeGreaterThan(-1);
+    // No affiliate guessing label — the API cannot prove it.
+    expect(source.toLowerCase().indexOf('affiliate')).toBe(-1);
     expect(source.indexOf('Theo nhà quảng cáo')).toBeGreaterThan(-1);
   });
 

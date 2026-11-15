@@ -28,7 +28,7 @@ import { signToken } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { trafficFixture } from '../lib/traffic/fixture';
 import { GET as domainsGET, POST as domainsPOST } from '@/app/api/v1/cms/traffic/domains/route';
-import { GET as domainGET, DELETE as domainDELETE } from '@/app/api/v1/cms/traffic/domains/[id]/route';
+import { GET as domainGET, DELETE as domainDELETE, PATCH as domainPATCH } from '@/app/api/v1/cms/traffic/domains/[id]/route';
 import { POST as refreshPOST } from '@/app/api/v1/cms/traffic/domains/[id]/refresh/route';
 
 const UNIQUE = () => `${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
@@ -51,10 +51,11 @@ function jsonRequest(method: string, body?: Record<string, unknown>) {
   });
 }
 
-function idRequest(method: string, id: string) {
+function idRequest(method: string, id: string, body?: Record<string, unknown>) {
   return new Request(`http://localhost/api/v1/cms/traffic/domains/${id}`, {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: body ? JSON.stringify(body) : undefined,
   });
 }
 
@@ -222,6 +223,56 @@ describe('POST /api/v1/cms/traffic/domains/[id]/refresh (TRF-03)', () => {
     expect(stored!.report).toEqual(trafficFixture);
     expect(stored!.lastError?.code).toBe('insufficient_credits');
     expect(stored!.lastError?.message).toContain('credits');
+  });
+});
+
+describe('PATCH /api/v1/cms/traffic/domains/[id] (A6 — trạng thái làm việc)', () => {
+  it('cập nhật workStatus + workNote, không gọi upstream', async () => {
+    await domainsPOST(jsonRequest('POST', { domain: 'vercel.com' }));
+    fetchMock.mockClear();
+    const row = await TrafficDomainModel.findOne({ domain: 'vercel.com' });
+
+    const res = await domainPATCH(
+      idRequest('PATCH', row!._id.toString(), { workStatus: 'dang_xet', workNote: 'UA cao, xem sau' }),
+      { params: Promise.resolve({ id: row!._id.toString() }) },
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.data.workStatus).toBe('dang_xet');
+    expect(json.data.workNote).toBe('UA cao, xem sau');
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    const stored = await TrafficDomainModel.findById(row!._id);
+    expect(stored!.workStatus).toBe('dang_xet');
+    expect(stored!.workNote).toBe('UA cao, xem sau');
+  });
+
+  it('workStatus mặc định là chua_xet cho domain mới', async () => {
+    await domainsPOST(jsonRequest('POST', { domain: 'vercel.com' }));
+    const stored = await TrafficDomainModel.findOne({ domain: 'vercel.com' });
+    expect(stored!.workStatus).toBe('chua_xet');
+    expect(stored!.workNote).toBe('');
+  });
+
+  it('workStatus sai enum → 400', async () => {
+    await domainsPOST(jsonRequest('POST', { domain: 'vercel.com' }));
+    const row = await TrafficDomainModel.findOne({ domain: 'vercel.com' });
+    const res = await domainPATCH(
+      idRequest('PATCH', row!._id.toString(), { workStatus: 'khong_biet' }),
+      { params: Promise.resolve({ id: row!._id.toString() }) },
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('body rỗng → 400 empty_update', async () => {
+    await domainsPOST(jsonRequest('POST', { domain: 'vercel.com' }));
+    const row = await TrafficDomainModel.findOne({ domain: 'vercel.com' });
+    const res = await domainPATCH(
+      idRequest('PATCH', row!._id.toString(), {}),
+      { params: Promise.resolve({ id: row!._id.toString() }) },
+    );
+    expect(res.status).toBe(400);
   });
 });
 

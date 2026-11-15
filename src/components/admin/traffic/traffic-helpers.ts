@@ -10,10 +10,28 @@
 //   would replace them with its English status-mapped copy.
 
 import type { MonthlyVisit, TrafficResponse } from '@/types/traffic';
+import {
+  computePreliminaryScore,
+  getMarketShare,
+  isEmptyTrafficReport,
+  trendFromMonthly,
+} from '@/lib/traffic/table-insights';
 
 // ---------------------------------------------------------------------------
 // DTOs
 // ---------------------------------------------------------------------------
+
+/** Trạng thái làm việc của domain trong quy trình sàng lọc (A6). */
+export type WorkStatus = 'chua_xet' | 'dang_xet' | 'chon' | 'loai';
+
+export const WORK_STATUSES: WorkStatus[] = ['chua_xet', 'dang_xet', 'chon', 'loai'];
+
+export const WORK_STATUS_LABELS: Record<WorkStatus, string> = {
+  chua_xet: 'Chưa xét',
+  dang_xet: 'Đang xét',
+  chon: 'Chọn',
+  loai: 'Loại',
+};
 
 /** One row of GET /api/v1/cms/traffic/domains. */
 export interface TrafficRow {
@@ -23,6 +41,8 @@ export interface TrafficRow {
   lastFetchedAt: string | null;
   lastError: { code: string; message: string } | null;
   updatedAt?: string | null;
+  workStatus?: WorkStatus;
+  workNote?: string;
 }
 
 export type TrafficConfigKey =
@@ -123,18 +143,29 @@ export function filterRows(rows: TrafficRow[], query: string): TrafficRow[] {
 }
 
 export type TrafficSortKey =
+  | 'domain'
   | 'visits'
   | 'global_rank'
   | 'country_rank'
   | 'bounce_rate'
   | 'pages_per_visit'
+  | 'market_share'
+  | 'external_ads'
+  | 'score'
+  | 'trend'
   | 'updated';
 
 export type SortDir = 'asc' | 'desc';
 
-function sortMetric(row: TrafficRow, key: TrafficSortKey): number | null {
+function sortMetric(
+  row: TrafficRow,
+  key: TrafficSortKey,
+  externalAds?: Record<string, number>
+): number | null {
   const overview = row.report?.overview ?? null;
   switch (key) {
+    case 'domain':
+      return null; // string comparison handled in sortRows
     case 'visits':
       return overview?.visits ?? null;
     case 'global_rank':
@@ -145,6 +176,14 @@ function sortMetric(row: TrafficRow, key: TrafficSortKey): number | null {
       return overview?.bounce_rate ?? null;
     case 'pages_per_visit':
       return overview?.pages_per_visit ?? null;
+    case 'market_share':
+      return getMarketShare(row.report);
+    case 'external_ads':
+      return externalAds?.[row.domain] ?? null;
+    case 'score':
+      return computePreliminaryScore(row.report).score;
+    case 'trend':
+      return trendFromMonthly(row.report?.monthly_visits);
     case 'updated': {
       const time = row.lastFetchedAt ? Date.parse(row.lastFetchedAt) : NaN;
       return Number.isNaN(time) ? null : time;
@@ -155,16 +194,28 @@ function sortMetric(row: TrafficRow, key: TrafficSortKey): number | null {
 /**
  * Sort rows on a numeric/date column. Null metrics always sink to the end
  * regardless of direction so '—' rows never hide sorted data.
+ *
+ * A5: domains without data sink below everything on every sort key except
+ * 'domain' (alphabetical), so empty rows never bury sortable signals.
+ * `externalAds` (domain → count, read from the client-side Ads cache) is only
+ * needed when sorting by 'external_ads'.
  */
 export function sortRows(
   rows: TrafficRow[],
   key: TrafficSortKey,
-  dir: SortDir
+  dir: SortDir,
+  externalAds?: Record<string, number>
 ): TrafficRow[] {
   const mult = dir === 'asc' ? 1 : -1;
   return [...rows].sort((a, b) => {
-    const av = sortMetric(a, key);
-    const bv = sortMetric(b, key);
+    if (key === 'domain') return a.domain.localeCompare(b.domain) * mult;
+    // A5: no-data rows sink last on every metric sort.
+    const emptyA = isEmptyTrafficReport(a.report);
+    const emptyB = isEmptyTrafficReport(b.report);
+    if (emptyA !== emptyB) return emptyA ? 1 : -1;
+
+    const av = sortMetric(a, key, externalAds);
+    const bv = sortMetric(b, key, externalAds);
     if (av == null && bv == null) return 0;
     if (av == null) return 1;
     if (bv == null) return -1;
@@ -178,11 +229,7 @@ export function sortRows(
  * the previous month has no positive baseline.
  */
 export function momTrend(monthly: MonthlyVisit[] | null | undefined): number | null {
-  if (!monthly || monthly.length < 2) return null;
-  const prev = monthly[monthly.length - 2]?.visits;
-  const last = monthly[monthly.length - 1]?.visits;
-  if (typeof prev !== 'number' || typeof last !== 'number' || prev <= 0) return null;
-  return (last - prev) / prev;
+  return trendFromMonthly(monthly);
 }
 
 /**

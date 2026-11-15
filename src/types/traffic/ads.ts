@@ -1,40 +1,45 @@
-export interface AdCreative {
+// Google Ads Transparency (SerpApi) — single-call payload.
+// One GET per domain (num=100, no pagination, no advertiser/detail calls).
+// The server groups ad_creatives by advertiser before returning, so the client
+// renders aggregates instead of raw creatives.
+
+/** One raw creative sample entry from ad_creatives[] (Unix seconds, UTC). */
+export interface AdCreativeSample {
   advertiser_id: string;
   advertiser: string;
-  ad_creative_id: string;
-  format: string | null;
-  target_domain: string | null;
-  image: string | null;
-  width: number | null;
-  height: number | null;
-  preview_link: string | null;
-  details_link: string | null;
-  total_days_shown: number | null;
-  first_shown: string | null;
-  last_shown: string | null;
+  first_shown: number | null;
+  last_shown: number | null;
+}
+
+/** Newest creative of an advertiser, used for the "creative mới nhất" line. */
+export interface AdsNewestCreative {
+  first_shown: number | null;
+  last_shown: number | null;
+}
+
+export type AdsOwnerFlag = "owner" | "external";
+
+/** One advertiser group — computed server-side from the 100-creative sample. */
+export interface AdsAdvertiserRow {
+  advertiser_id: string;
+  name: string;
+  creative_count: number;
+  newest_creative: AdsNewestCreative | null;
+  newest_run_days: number | null;
+  last_run: number | null;
+  is_active: boolean;
+  owner: AdsOwnerFlag;
 }
 
 export interface AdsResponse {
   domain: string;
+  /** Rounded total from search_information.total_results — display as "khoảng". */
   total_results: number | null;
-  creatives: AdCreative[];
-  next_page_token: string | null;
-}
-
-export interface AdDetailItem {
-  snippet: string | null;
-  image: string | null;
-}
-
-export interface AdDetailRegion {
-  name: string;
-  last_shown: string | null;
-}
-
-export interface AdDetail {
-  advertiser_id: string;
-  creative_id: string;
-  funded_by: string | null;
-  regions: AdDetailRegion[];
-  items: AdDetailItem[];
+  /** Number of creatives actually received (may be < num). */
+  sample_size: number;
+  advertiser_total: number;
+  advertiser_active: number;
+  external_active: number;
+  /** Sorted: active first, then last_run desc. */
+  advertisers: AdsAdvertiserRow[];
 }

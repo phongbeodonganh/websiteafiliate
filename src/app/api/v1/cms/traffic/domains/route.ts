@@ -65,6 +65,8 @@ export async function POST(req: Request) {
         domain: row.domain,
         report: row.report,
         lastFetchedAt: row.lastFetchedAt,
+        workStatus: row.workStatus,
+        workNote: row.workNote,
       },
     });
   } catch (error) {
@@ -109,6 +111,8 @@ export async function GET(req: Request) {
         lastFetchedAt: row.lastFetchedAt,
         lastError: row.lastError,
         updatedAt: row.updatedAt,
+        workStatus: row.workStatus,
+        workNote: row.workNote,
       })),
     });
   } catch (error) {

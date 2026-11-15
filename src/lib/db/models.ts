@@ -383,6 +383,9 @@ export interface ITrafficDomain extends Document {
   report: unknown;
   lastFetchedAt: Date | null;
   lastError: { code: string; message: string } | null;
+  // Screening workflow (A6): Chưa xét / Đang xét / Chọn / Loại + short note.
+  workStatus: 'chua_xet' | 'dang_xet' | 'chon' | 'loai';
+  workNote: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -399,6 +402,12 @@ const TrafficDomainSchema = new Schema<ITrafficDomain>(
       ),
       default: null,
     },
+    workStatus: {
+      type: String,
+      enum: ['chua_xet', 'dang_xet', 'chon', 'loai'],
+      default: 'chua_xet',
+    },
+    workNote: { type: String, default: '' },
   },
   { timestamps: true }
 );

@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampAdsCacheDays,
   clampTrafficMonths,
+  DEFAULT_ADS_CACHE_DAYS,
   DEFAULT_TRAFFIC_MONTHS,
+  getAdsCacheDays,
   getTrafficMonths,
+  MAX_ADS_CACHE_DAYS,
   MAX_TRAFFIC_MONTHS,
+  MIN_ADS_CACHE_DAYS,
   MIN_TRAFFIC_MONTHS,
 } from "@/lib/traffic/config";
 
@@ -33,5 +38,26 @@ describe("traffic months config", () => {
     expect(clampTrafficMonths(null)).toBe(DEFAULT_TRAFFIC_MONTHS);
     expect(clampTrafficMonths(undefined)).toBe(DEFAULT_TRAFFIC_MONTHS);
     expect(clampTrafficMonths(Number.NaN)).toBe(DEFAULT_TRAFFIC_MONTHS);
+  });
+});
+
+describe("ads cache days config", () => {
+  it("dùng giá trị mặc định khi env chưa được cấu hình hoặc sai định dạng", () => {
+    expect(getAdsCacheDays(undefined)).toBe(DEFAULT_ADS_CACHE_DAYS);
+    expect(getAdsCacheDays("  ")).toBe(DEFAULT_ADS_CACHE_DAYS);
+    expect(getAdsCacheDays("abc")).toBe(DEFAULT_ADS_CACHE_DAYS);
+  });
+
+  it("đọc số ngày hợp lệ từ env", () => {
+    expect(getAdsCacheDays("3")).toBe(3);
+    expect(getAdsCacheDays(` ${MAX_ADS_CACHE_DAYS} `)).toBe(MAX_ADS_CACHE_DAYS);
+  });
+
+  it("clamp TTL về khoảng 3–7 ngày", () => {
+    expect(clampAdsCacheDays(1)).toBe(MIN_ADS_CACHE_DAYS);
+    expect(clampAdsCacheDays(5)).toBe(5);
+    expect(clampAdsCacheDays(30)).toBe(MAX_ADS_CACHE_DAYS);
+    expect(clampAdsCacheDays(null)).toBe(DEFAULT_ADS_CACHE_DAYS);
+    expect(clampAdsCacheDays(undefined)).toBe(DEFAULT_ADS_CACHE_DAYS);
   });
 });

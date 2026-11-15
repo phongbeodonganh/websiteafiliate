@@ -1713,6 +1713,7 @@ export default function AdminDashboardPage() {
               onAdded={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
               onRefreshed={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
               onDeleted={(id) => setTrafficRows((prev) => prev.filter((r) => r.id !== id))}
+              onRowUpdated={(row) => setTrafficRows((prev) => upsertRow(prev, row))}
               onOpenDetail={setTrafficDetailRow}
               onToast={showCmsToast}
             />

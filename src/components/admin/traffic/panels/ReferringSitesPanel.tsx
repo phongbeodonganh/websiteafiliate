@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { formatDateTime, formatNumber } from '@/lib/traffic/format';
 import type { ReferringBacklink, ReferringSitesResponse, ReferringSitesResult } from '@/types/traffic';
 import { sliceMessage, trafficFetch } from '../traffic-helpers';
+import { recordModuleLoad } from '../module-loads';
 import { PanelCard, PanelEmpty, PanelError, PanelLoading, PanelMissingKey } from './panel-shell';
 
 interface ReferringSitesPanelProps {
@@ -56,7 +57,11 @@ export default function ReferringSitesPanel({ domain, missingKey }: ReferringSit
     } else {
       const error = sliceMessage(res.data.referring_sites);
       if (error) setErrorMessage(error);
-      else setResult(res.data.referring_sites?.data ?? null);
+      else {
+        setResult(res.data.referring_sites?.data ?? null);
+        // Instrumentation for the outer table's module dots — no UI change.
+        recordModuleLoad(domain, 'backlink');
+      }
     }
     setLoading(false);
   }
