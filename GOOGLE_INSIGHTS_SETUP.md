@@ -50,14 +50,14 @@ Nói đơn giản: Property ID là "địa chỉ nhà kho" để website đọc 
 3. Nếu **chưa có luồng nào**: nhấn **Add stream** → chọn **Web** → nhập địa chỉ website (ví dụ `https://yourdomain.com`) → đặt tên → **Create stream**.
 4. Nếu **đã có luồng**: nhấn vào luồng đó để mở chi tiết.
 5. Trong luồng, tìm dòng **Measurement ID** — một chuỗi bắt đầu bằng `G-`, ví dụ `G-AB12CD34EF`. Copy chuỗi này (lần này chính là chuỗi `G-...`, khác với Phần 1).
-6. Vào trang quản trị website: **Cấu hình website** → tab con **SEO & dữ liệu AI** → ô **"Mã đo lường Google Analytics (GA4)"** → dán chuỗi `G-...` vào → bấm **Lưu toàn bộ cấu hình**. Website sẽ tự gắn thẻ, không cần sửa code.
+6. Vào trang quản trị website: **Cấu hình website** → tab con **Tích hợp Google Insights** → ô **"Mã đo lường GA4 trên website — thẻ G-XXXX"** (ngay dưới ô Search Console Site URL) → dán chuỗi `G-...` vào → bấm **Lưu toàn bộ cấu hình**. Website sẽ tự gắn thẻ, không cần sửa code.
 7. Kiểm tra ngay lập tức:
    - Mở website của bạn trong một tab khác (tự vào 1 lượt).
    - Quay lại Google Analytics → **Reports** → **Realtime** (Thời gian thực).
    - Thấy "1 user" là thẻ đã hoạt động.
 8. Banner "chưa bật thu thập dữ liệu" sẽ tự biến mất sau khi có lượt truy cập đầu tiên (có thể mất tới 24–48 giờ).
 
-> Nếu ô "Mã đo lường Google Analytics (GA4)" đã có sẵn chuỗi `G-...` rồi mà GA4 vẫn báo chưa thu thập: đợi thêm 24–48h, hoặc kiểm tra chuỗi `G-...` đó có đúng là Measurement ID của luồng web trong GA4 này không (dán nhầm ID của property khác cũng gây hiện tượng trống dữ liệu).
+> Nếu ô "Mã đo lường GA4 trên website" đã có sẵn chuỗi `G-...` rồi mà GA4 vẫn báo chưa thu thập: đợi thêm 24–48h, hoặc kiểm tra chuỗi `G-...` đó có đúng là Measurement ID của luồng web trong GA4 này không (dán nhầm ID của property khác cũng gây hiện tượng trống dữ liệu).
 
 ---
 
@@ -209,7 +209,7 @@ Xong! Nếu mọi thứ ổn, biểu trạng thái trong tab cấu hình sẽ ch
 | Số liệu Search Console "lạc hậu" 1–2 ngày | Đặc thù của Google, dữ liệu Search Console luôn trễ khoảng 2 ngày | Đây là bình thường, không phải lỗi |
 | Dán JSON xong bấm Lưu báo "Service Account JSON không hợp lệ" | Copy thiếu (thiếu `{` hoặc `}`), hoặc dán nhầm nội dung khác | Mở lại file .json bằng Notepad, Ctrl+A, Ctrl+C, dán lại từ đầu |
 | Dán Property ID xong báo "không hợp lệ" | Đã dán nhầm Measurement ID dạng `G-XXXX` | Property ID phải là dãy số thuần (xem lại Phần 1) |
-| GA4 báo "chưa bật tính năng thu thập dữ liệu" / trang Phân tích SEO thiếu số pageviews | Website chưa gắn thẻ đo lường `G-XXXXXX` | Làm Phần 1B: lấy Measurement ID dán vào ô "Mã đo lường Google Analytics (GA4)" rồi Lưu |
+| GA4 báo "chưa bật tính năng thu thập dữ liệu" / trang Phân tích SEO thiếu số pageviews | Website chưa gắn thẻ đo lường `G-XXXXXX` | Làm Phần 1B: lấy Measurement ID dán vào ô "Mã đo lường GA4 trên website" (tab Tích hợp Google Insights) rồi Lưu |
 
 ---
 

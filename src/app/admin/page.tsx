@@ -2760,19 +2760,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Mã đo lường Google Analytics (GA4)</label>
-              <input
-                type="text"
-                value={settingsData?.googleAnalyticsId || ''}
-                onChange={(e) => setSettingsData({ ...settingsData, googleAnalyticsId: e.target.value })}
-                placeholder="G-XXXXXXXXXX"
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
-              />
-              <p className="text-[11px] text-slate-500 mt-1">Lấy Measurement ID từ Google Analytics 4 (Admin &gt; Data Streams). Để trống để tắt tracking.</p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Google Search Console Verification</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Google Search Console Verification (tùy chọn)</label>
               <input
                 type="text"
                 value={settingsData?.googleSiteVerification || ''}
@@ -2781,7 +2769,7 @@ export default function AdminDashboardPage() {
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono"
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Search Console &gt; Settings &gt; Ownership verification &gt; HTML tag — chỉ dán giá trị <code>content=&quot;...&quot;</code>, hệ thống tự render thẻ meta.
+                Chỉ dùng khi bạn xác minh quyền sở hữu website cho Search Console bằng phương pháp &quot;HTML tag&quot;. Nếu đã xác minh qua DNS hoặc phương pháp khác thì bỏ trống. KHÔNG liên quan đến tab Tích hợp Google Insights.
               </p>
             </div>
 
@@ -2902,6 +2890,22 @@ export default function AdminDashboardPage() {
               />
               <p className="text-[11px] text-slate-500 mt-1">
                 Search Console → Settings → copy đúng URL property (có thể là dạng URL-prefix hoặc sc-domain).
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">
+                Mã đo lường GA4 trên website — thẻ G-XXXX (bắt buộc để có số liệu)
+              </label>
+              <input
+                type="text"
+                value={settingsData?.googleAnalyticsId || ''}
+                onChange={(e) => setSettingsData({ ...settingsData, googleAnalyticsId: e.target.value })}
+                placeholder="G-XXXXXXXXXX"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
+              />
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Khác với GA4 Property ID phía trên: thẻ <span className="text-slate-300">G-XXXX</span> (Measurement ID) là đoạn code website dùng để <span className="text-amber-400">ghi lại</span> lượt truy cập, còn Property ID chỉ là địa chỉ để <span className="text-amber-400">đọc</span> số liệu. Thiếu thẻ này thì Google Analytics không ghi được gì và tab Phân tích SEO sẽ trống phần pageviews. Lấy từ GA4 → Admin → Data streams. Để trống để tắt tracking.
               </p>
             </div>
 
