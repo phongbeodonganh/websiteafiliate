@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db/mongodb';
 import { InsightsCacheModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
-import { isGoogleInsightsConfigured } from '@/lib/google/auth';
+import { getGoogleInsightsStatus } from '@/lib/google/config';
 import { buildInsightsPayload } from '@/lib/google/insights';
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h — tránh vượt quota GSC/GA4 khi admin mở lại tab nhiều lần trong ngày.
@@ -20,13 +20,15 @@ export async function GET(req: Request) {
     );
   }
 
-  if (!isGoogleInsightsConfigured()) {
+  // Credentials resolve from the Setting document (Settings > "Tích hợp
+  // Google") first, with env vars as fallback — so admin can fix this from
+  // the UI without a redeploy.
+  const insightsStatus = await getGoogleInsightsStatus();
+  if (!insightsStatus.configured) {
     return NextResponse.json({
       status: 'success',
       configured: false,
-      missingEnv: ['GOOGLE_SERVICE_ACCOUNT_JSON', 'GA4_PROPERTY_ID', 'GSC_SITE_URL'].filter(
-        (key) => !process.env[key]
-      ),
+      missingEnv: insightsStatus.missing,
       data: null,
     });
   }

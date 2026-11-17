@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { getGoogleAuthClient } from './auth';
+import { getGoogleInsightsConfig } from './config';
 
 export interface GscPagePerformance {
   page: string;
@@ -50,10 +51,10 @@ async function querySearchAnalytics(params: {
   dimensions: string[];
   rowLimit?: number;
 }): Promise<RawGscRow[]> {
-  const siteUrl = process.env.GSC_SITE_URL;
-  if (!siteUrl) throw new Error('GSC_SITE_URL is not set.');
+  const { gscSiteUrl: siteUrl } = await getGoogleInsightsConfig();
+  if (!siteUrl) throw new Error('GSC_SITE_URL is not configured (env or Settings).');
 
-  const auth = getGoogleAuthClient();
+  const auth = await getGoogleAuthClient();
   const searchconsole = google.searchconsole({ version: 'v1', auth });
   const res = await searchconsole.searchanalytics.query({
     siteUrl,

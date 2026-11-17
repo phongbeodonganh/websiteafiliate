@@ -315,6 +315,15 @@ export interface ISetting extends Document {
   // settings singleton can exist without it; env GEMINI_API_KEY stays primary.
   // Never returned raw by GET /api/v1/cms/settings — masked hint only.
   gemini_api_key?: string;
+  // Google Insights (GA4 Data API + Search Console API) credentials, editable
+  // from the admin Settings > "Tích hợp Google" screen. Values stored here
+  // take precedence over the env fallbacks (GOOGLE_SERVICE_ACCOUNT_JSON,
+  // GA4_PROPERTY_ID, GSC_SITE_URL) so each deployment can configure its own
+  // credentials without a redeploy. The service account JSON is never
+  // returned raw by GET — masked hint only.
+  google_service_account_json?: string;
+  ga4_property_id?: string;
+  gsc_site_url?: string;
   geo_latitude?: number;
   geo_longitude?: number;
   geo_region_name?: string;
@@ -355,6 +364,12 @@ const SettingSchema = new Schema<ISetting>({
   // as the final fallback in the Gemini key precedence chain after
   // request userApiKey and env GEMINI_API_KEY.
   gemini_api_key: { type: String },
+  // Google Insights credentials (see ISetting note above). Written by the
+  // admin-only settings PUT; service account JSON is read by GET only as a
+  // masked hint (service account client_email), never raw.
+  google_service_account_json: { type: String },
+  ga4_property_id: { type: String },
+  gsc_site_url: { type: String },
   geo_latitude: { type: Number, default: 40.7128 },
   geo_longitude: { type: Number, default: -74.0060 },
   geo_region_name: { type: String, default: 'EU' },

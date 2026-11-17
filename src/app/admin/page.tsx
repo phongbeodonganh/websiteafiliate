@@ -53,6 +53,7 @@ import {
   TrendingDown,
   Info,
   Package,
+  BarChart3,
 } from 'lucide-react';
 
 // D-13: the admin-only CMS tab ids. Used both by `renderContent` (permission-denied
@@ -368,7 +369,13 @@ export default function AdminDashboardPage() {
   const [blSearchQuery, setBlSearchQuery] = useState('');
 
   // Settings Sub-Tab
-  const [settingsSection, setSettingsSection] = useState<'appearance' | 'seo_geo' | 'code'>('appearance');
+  const [settingsSection, setSettingsSection] = useState<'appearance' | 'seo_geo' | 'google' | 'code'>('appearance');
+  // Google Insights credentials. The service-account JSON secret is kept in a
+  // separate state (never round-tripped through settingsData): GET only
+  // returns a masked hint, so the textarea starts empty and only a dirty
+  // value is included in the PUT payload — undefined keeps the stored one.
+  const [googleServiceAccountJson, setGoogleServiceAccountJson] = useState('');
+  const [googleServiceAccountDirty, setGoogleServiceAccountDirty] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -441,7 +448,14 @@ export default function AdminDashboardPage() {
 
     fetch('/api/v1/cms/settings', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
-      .then((d) => d.status === 'success' && setSettingsData(d.data));
+      .then((d) => {
+        if (d.status !== 'success') return;
+        setSettingsData(d.data);
+        // GET never returns the raw service-account JSON — reset the local
+        // editor so a stale typed value can never be re-sent unknowingly.
+        setGoogleServiceAccountJson('');
+        setGoogleServiceAccountDirty(false);
+      });
 
     fetch('/api/v1/cms/blacklist', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
@@ -912,13 +926,23 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
+      // Only send the service-account JSON when the admin actually typed into
+      // it this session — undefined means "keep the stored credentials".
+      const payload: Record<string, unknown> = { ...settingsData };
+      if (googleServiceAccountDirty) {
+        payload.googleServiceAccountJson = googleServiceAccountJson.trim();
+      } else {
+        delete payload.googleServiceAccountJson;
+      }
       const res = await fetch('/api/v1/cms/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(settingsData),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && data.status === 'success') {
+        setGoogleServiceAccountDirty(false);
+        setGoogleServiceAccountJson('');
         alert('Đã lưu cấu hình giao diện, hệ thống, SEO và GEO!');
       } else {
         alert(`Lỗi: ${data.message}`);
@@ -1146,10 +1170,21 @@ export default function AdminDashboardPage() {
         {insightsConfigured === false && (
           <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex items-start gap-4">
             <AlertTriangle size={24} className="text-amber-400 shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1">
               <p className="text-white font-semibold mb-1">Chưa cấu hình GA4 Data API / Search Console API</p>
               <p className="text-slate-400 text-sm mb-2">
-                Cần set các biến môi trường server sau (service account credentials, không nhập qua UI):
+                Nhập thông tin đăng nhập (service account JSON, GA4 Property ID, GSC Site URL) trong{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSettingsSection('google');
+                    navigate({ tab: 'settings' });
+                  }}
+                  className="text-amber-400 hover:text-amber-300 font-semibold underline decoration-amber-500/40 underline-offset-2"
+                >
+                  Cài đặt → Tích hợp Google
+                </button>
+                . Thiếu:
               </p>
               <ul className="text-xs font-mono text-amber-300/90 space-y-1">
                 {insightsMissingEnv.map((key) => (
@@ -2407,7 +2442,17 @@ export default function AdminDashboardPage() {
             : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
             }`}
         >
-          <Globe size={16} /> SEO & dữ liệu AI
+          <Globe size={16} /> SEO &amp; dữ liệu AI
+        </button>
+        <button
+          type="button"
+          onClick={() => setSettingsSection('google')}
+          className={`px-4 py-2 rounded-xl font-semibold text-xs transition-all flex items-center gap-2 ${settingsSection === 'google'
+            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+            : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+            }`}
+        >
+          <BarChart3 size={16} /> Tích hợp Google Insights
         </button>
       </div>
 
@@ -2758,6 +2803,117 @@ export default function AdminDashboardPage() {
                 placeholder='{"@context": "https://schema.org", "@type": "Organization", ...}'
                 className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-amber-300 font-mono resize-none"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {settingsSection === 'google' && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-in fade-in duration-300">
+          {/* Service Account credentials */}
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-5">
+            <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
+              <BarChart3 size={18} className="text-emerald-400" /> Service Account Google
+            </h3>
+
+            <div
+              className={`flex items-center gap-2 text-xs font-semibold rounded-xl px-4 py-3 border ${
+                settingsData?.serviceAccountConfigured
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+              }`}
+            >
+              {settingsData?.serviceAccountConfigured ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+              {settingsData?.serviceAccountConfigured
+                ? `Đã cấu hình${settingsData?.serviceAccountHint ? ` — ${settingsData.serviceAccountHint}` : ''}`
+                : 'Chưa cấu hình — tab Hiệu quả tìm kiếm sẽ trống cho tới khi nhập đủ 3 mục bên dưới'}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-2">
+                Nội dung file Service Account JSON (bắt buộc)
+              </label>
+              <textarea
+                rows={9}
+                value={googleServiceAccountJson}
+                onChange={(e) => {
+                  setGoogleServiceAccountJson(e.target.value);
+                  setGoogleServiceAccountDirty(true);
+                }}
+                placeholder={
+                  settingsData?.serviceAccountConfigured
+                    ? `Đã lưu trên máy chủ${settingsData?.serviceAccountHint ? ` (${settingsData.serviceAccountHint})` : ''} — dán JSON mới tại đây để thay thế, hoặc để trống để giữ nguyên`
+                    : 'Dán toàn bộ nội dung file JSON tải về từ Google Cloud Console (chấp nhận cả dạng base64)...'
+                }
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-[11px] text-emerald-300 font-mono resize-none focus:outline-none focus:border-emerald-500"
+                spellCheck={false}
+              />
+              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                Google Cloud Console → IAM &amp; Admin → Service Accounts → tạo tài khoản, tạo key JSON, bật
+                <span className="text-slate-300"> GA4 Data API</span> và
+                <span className="text-slate-300"> Search Console API</span>. Giá trị lưu trong CSDL sẽ
+                <span className="text-amber-400"> ưu tiên hơn biến môi trường</span> GOOGLE_SERVICE_ACCOUNT_JSON.
+              </p>
+            </div>
+
+            {settingsData?.serviceAccountConfigured && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!confirm('Xóa Service Account JSON đã lưu? Tab Hiệu quả tìm kiếm sẽ ngừng hoạt động cho tới khi nhập lại.')) return;
+                  setGoogleServiceAccountJson('');
+                  setGoogleServiceAccountDirty(true);
+                }}
+                className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold"
+              >
+                <Trash2 size={12} /> Xóa credentials đã lưu (nhớ bấm Lưu)
+              </button>
+            )}
+          </div>
+
+          {/* Property ID + Site URL */}
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-5">
+            <h3 className="text-white font-medium flex items-center gap-2 border-b border-slate-800 pb-3">
+              <Search size={18} className="text-amber-400" /> Property &amp; Website
+            </h3>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">GA4 Property ID (bắt buộc)</label>
+              <input
+                type="text"
+                value={settingsData?.ga4PropertyId || ''}
+                onChange={(e) => setSettingsData({ ...settingsData, ga4PropertyId: e.target.value })}
+                placeholder="123456789"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Google Analytics 4 → Admin → Property Settings → Property ID (chỉ gồm chữ số). Lưu ý khác với Measurement ID G-XXXXXXXX đã nhập ở tab SEO.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Search Console Site URL (bắt buộc)</label>
+              <input
+                type="text"
+                value={settingsData?.gscSiteUrl || ''}
+                onChange={(e) => setSettingsData({ ...settingsData, gscSiteUrl: e.target.value })}
+                placeholder="https://thehavendeals.com/ hoặc sc-domain:thehavendeals.com"
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Search Console → Settings → copy đúng URL property (có thể là dạng URL-prefix hoặc sc-domain).
+              </p>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-slate-300 font-semibold mb-1 flex items-center gap-1.5">
+                <Info size={12} className="text-cyan-400" /> Cấp quyền cho Service Account
+              </p>
+              <p>
+                1) GA4: Admin → Property Access Management → thêm email <code>client_email</code> trong file JSON với quyền <span className="text-slate-300">Viewer</span>.<br />
+                2) Search Console: Settings → Users and permissions → thêm cùng email với quyền <span className="text-slate-300">Restricted/Full</span>.<br />
+                3) Bấm <span className="text-amber-400">Lưu toàn bộ cấu hình</span> ở đầu trang, sau đó mở tab Hiệu quả tìm kiếm và bấm Làm mới.
+              </p>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { SettingModel } from '@/lib/db/models';
 import { getAuthUser } from '@/lib/auth';
 import { isValidCssColor } from '@/lib/sanitize';
 import { setPublicSettingsFromDocument } from '@/lib/public-data-cache';
+import { parseServiceAccountJson, invalidateGoogleInsightsConfigCache } from '@/lib/google/config';
 
 export async function GET(req: Request) {
   const user = await getAuthUser(req);
@@ -39,6 +40,13 @@ export async function GET(req: Request) {
         ? `••••••••${doc.gemini_api_key.slice(-4)}`
         : undefined;
 
+    // Google Insights (GA4 + Search Console) credential status. The service
+    // account JSON is never echoed — only whether it is set plus a masked
+    // hint (the service-account client_email) so an admin can tell WHICH
+    // account is in use without being able to reuse it elsewhere.
+    const serviceAccountJson = typeof doc.google_service_account_json === 'string' ? doc.google_service_account_json : '';
+    const serviceAccountHint = serviceAccountJson ? parseServiceAccountJson(serviceAccountJson)?.client_email : undefined;
+
     return NextResponse.json({
       status: 'success',
       data: {
@@ -67,6 +75,14 @@ export async function GET(req: Request) {
         footerText: doc.footer_text,
         customCss: doc.custom_css,
         ...(geminiApiKeyHint !== undefined ? { geminiApiKeyMasked: geminiApiKeyHint } : {}),
+        ga4PropertyId: doc.ga4_property_id || '',
+        gscSiteUrl: doc.gsc_site_url || '',
+        ...(user.role === 'admin'
+          ? {
+              serviceAccountConfigured: Boolean(serviceAccountJson),
+              ...(serviceAccountHint ? { serviceAccountHint } : {}),
+            }
+          : {}),
         geoLatitude: doc.geo_latitude,
         geoLongitude: doc.geo_longitude,
         geoRegionName: doc.geo_region_name,
@@ -115,6 +131,9 @@ export async function PUT(req: Request) {
       footerText,
       customCss,
       geminiApiKey,
+      googleServiceAccountJson,
+      ga4PropertyId,
+      gscSiteUrl,
       geoLatitude,
       geoLongitude,
       geoRegionName,
@@ -191,6 +210,44 @@ export async function PUT(req: Request) {
       const trimmedKey = String(geminiApiKey).trim();
       currentSettings.gemini_api_key = trimmedKey.length > 0 ? trimmedKey : '';
     }
+    // Google Insights (GA4 + Search Console) credentials. Same contract as
+    // gemini_api_key: undefined keeps the stored value, an empty string
+    // explicitly clears it, a non-empty string replaces it after validation.
+    // The raw service-account JSON is never logged or echoed — GET returns
+    // only a masked client_email hint.
+    if (ga4PropertyId !== undefined) {
+      const trimmed = String(ga4PropertyId).trim();
+      if (trimmed && !/^\d+$/.test(trimmed)) {
+        return NextResponse.json(
+          { status: 'error', message: 'GA4 Property ID không hợp lệ — chỉ gồm chữ số (ví dụ 123456789)' },
+          { status: 400 }
+        );
+      }
+      currentSettings.ga4_property_id = trimmed;
+    }
+    if (gscSiteUrl !== undefined) {
+      const trimmed = String(gscSiteUrl).trim();
+      if (trimmed && !/^(https?:\/\/|sc-domain:)/i.test(trimmed)) {
+        return NextResponse.json(
+          { status: 'error', message: 'GSC Site URL không hợp lệ — phải là https://domain/ hoặc sc-domain:domain' },
+          { status: 400 }
+        );
+      }
+      currentSettings.gsc_site_url = trimmed;
+    }
+    if (googleServiceAccountJson !== undefined) {
+      const trimmedJson = String(googleServiceAccountJson).trim();
+      if (trimmedJson) {
+        const parsed = parseServiceAccountJson(trimmedJson);
+        if (!parsed || !parsed.client_email || !parsed.private_key) {
+          return NextResponse.json(
+            { status: 'error', message: 'Service Account JSON không hợp lệ — phải là JSON (raw hoặc base64) chứa client_email và private_key' },
+            { status: 400 }
+          );
+        }
+      }
+      currentSettings.google_service_account_json = trimmedJson;
+    }
     if (geoLatitude !== undefined) currentSettings.geo_latitude = Number(geoLatitude);
     if (geoLongitude !== undefined) currentSettings.geo_longitude = Number(geoLongitude);
     if (geoRegionName !== undefined) currentSettings.geo_region_name = geoRegionName;
@@ -200,12 +257,18 @@ export async function PUT(req: Request) {
     await currentSettings.save();
     const doc = currentSettings.toObject();
     setPublicSettingsFromDocument(doc);
+    // Credentials may have just changed — drop the resolver cache so the
+    // Insights tab reflects them on the next click of "Làm mới".
+    invalidateGoogleInsightsConfigCache();
 
     // Same masked-hint contract as GET (never echo the raw stored key).
     const geminiApiKeyHint: string | undefined =
       typeof doc.gemini_api_key === 'string' && doc.gemini_api_key.length > 0
         ? `••••••••${doc.gemini_api_key.slice(-4)}`
         : undefined;
+
+    const savedServiceAccountJson = typeof doc.google_service_account_json === 'string' ? doc.google_service_account_json : '';
+    const savedServiceAccountHint = savedServiceAccountJson ? parseServiceAccountJson(savedServiceAccountJson)?.client_email : undefined;
 
     return NextResponse.json({
       status: 'success',
@@ -235,6 +298,10 @@ export async function PUT(req: Request) {
         footerText: doc.footer_text,
         customCss: doc.custom_css,
         ...(geminiApiKeyHint !== undefined ? { geminiApiKeyMasked: geminiApiKeyHint } : {}),
+        ga4PropertyId: doc.ga4_property_id || '',
+        gscSiteUrl: doc.gsc_site_url || '',
+        serviceAccountConfigured: Boolean(savedServiceAccountJson),
+        ...(savedServiceAccountHint ? { serviceAccountHint: savedServiceAccountHint } : {}),
         geoLatitude: doc.geo_latitude,
         geoLongitude: doc.geo_longitude,
         geoRegionName: doc.geo_region_name,

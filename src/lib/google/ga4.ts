@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { getGoogleAuthClient } from './auth';
+import { getGoogleInsightsConfig } from './config';
 
 export interface Ga4PageMetric {
   pagePath: string;
@@ -9,10 +10,10 @@ export interface Ga4PageMetric {
 }
 
 export async function getGa4PageMetrics(startDate: string, endDate: string): Promise<Ga4PageMetric[]> {
-  const propertyId = process.env.GA4_PROPERTY_ID;
-  if (!propertyId) throw new Error('GA4_PROPERTY_ID is not set.');
+  const { ga4PropertyId: propertyId } = await getGoogleInsightsConfig();
+  if (!propertyId) throw new Error('GA4_PROPERTY_ID is not configured (env or Settings).');
 
-  const auth = getGoogleAuthClient();
+  const auth = await getGoogleAuthClient();
   const analyticsData = google.analyticsdata({ version: 'v1beta', auth });
   const res = await analyticsData.properties.runReport({
     property: `properties/${propertyId}`,
